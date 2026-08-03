@@ -1,0 +1,95 @@
+import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
+
+import '../../features/exercises/presentation/exercise_list_screen.dart';
+import '../../features/history/presentation/history_screen.dart';
+import '../../features/settings/presentation/settings_screen.dart';
+import '../../features/workouts/presentation/active_session_screen.dart';
+import '../../features/workouts/presentation/dashboard_screen.dart';
+import '../../features/workouts/presentation/muscle_visualization_screen.dart';
+import '../../features/workouts/presentation/routines_screen.dart';
+import '../presentation/app_shell.dart';
+
+final _rootNavigatorKey = GlobalKey<NavigatorState>();
+
+final appRouter = GoRouter(
+  navigatorKey: _rootNavigatorKey,
+  initialLocation: '/',
+  routes: [
+    StatefulShellRoute.indexedStack(
+      builder: (context, state, navigationShell) {
+        return AppShell(navigationShell: navigationShell);
+      },
+      branches: [
+        // Branch 0: Dashboard / Home
+        StatefulShellBranch(
+          routes: [
+            GoRoute(
+              path: '/',
+              builder: (context, state) => const DashboardScreen(),
+              routes: [
+                GoRoute(
+                  path: 'visualizer',
+                  parentNavigatorKey: _rootNavigatorKey,
+                  builder: (context, state) =>
+                      const MuscleVisualizationScreen(),
+                ),
+                GoRoute(
+                  path: 'routines',
+                  parentNavigatorKey: _rootNavigatorKey,
+                  builder: (context, state) => const RoutinesScreen(),
+                ),
+              ],
+            ),
+          ],
+        ),
+        // Branch 1: Exercises Library
+        StatefulShellBranch(
+          routes: [
+            GoRoute(
+              path: '/exercises',
+              builder: (context, state) => const ExerciseListScreen(),
+            ),
+          ],
+        ),
+        // Branch 2: Log Workout / Active Session
+        StatefulShellBranch(
+          routes: [
+            GoRoute(
+              path: '/log',
+              builder: (context, state) => const ActiveSessionScreen(),
+            ),
+          ],
+        ),
+        // Branch 3: History
+        StatefulShellBranch(
+          routes: [
+            GoRoute(
+              path: '/history',
+              builder: (context, state) => const HistoryScreen(),
+            ),
+          ],
+        ),
+        // Branch 4: Settings
+        StatefulShellBranch(
+          routes: [
+            GoRoute(
+              path: '/settings',
+              builder: (context, state) => const SettingsScreen(),
+            ),
+          ],
+        ),
+      ],
+    ),
+    GoRoute(
+      path: '/routines',
+      parentNavigatorKey: _rootNavigatorKey,
+      builder: (context, state) => const RoutinesScreen(),
+    ),
+    GoRoute(
+      path: '/visualizer',
+      parentNavigatorKey: _rootNavigatorKey,
+      builder: (context, state) => const MuscleVisualizationScreen(),
+    ),
+  ],
+);

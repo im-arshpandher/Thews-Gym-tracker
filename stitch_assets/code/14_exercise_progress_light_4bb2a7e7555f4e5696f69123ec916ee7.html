@@ -1,0 +1,98 @@
+<html lang="en"><head><meta charset="utf-8"/><meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" name="viewport"/><link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&amp;family=Montserrat:wght@700;800&amp;display=swap" rel="stylesheet"/><link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/><script src="https://cdn.tailwindcss.com"></script><script id="tailwind-config">tailwind.config = { darkMode: "class", theme: { extend: { "colors": { "on-primary-fixed-variant": "#3c4d00", "inverse-surface": "#e5e2e1", "surface-container-low": "#1c1b1b", "on-secondary": "#313030", "primary-container": "#c3f400", "inverse-primary": "#506600", "surface-tint": "#abd600", "primary-fixed": "#c3f400", "on-error": "#690005", "inverse-on-surface": "#313030", "tertiary": "#ffffff", "outline": "#8e9379", "surface-dim": "#131313", "primary": "#ffffff", "tertiary-fixed": "#e4e2e1", "secondary": "#c8c6c5", "surface-container-highest": "#353534", "secondary-fixed": "#e5e2e1", "on-error-container": "#ffdad6", "on-tertiary-fixed": "#1b1c1c", "surface-variant": "#353534", "on-tertiary": "#303030", "surface-container": "#201f1f", "on-tertiary-fixed-variant": "#474747", "on-secondary-container": "#b7b5b4", "secondary-fixed-dim": "#c8c6c5", "on-secondary-fixed-variant": "#474746", "error-container": "#93000a", "surface": "#131313", "surface-container-high": "#2a2a2a", "on-tertiary-container": "#656464", "on-background": "#e5e2e1", "on-primary-fixed": "#161e00", "on-primary": "#283500", "on-surface-variant": "#c4c9ac", "surface-bright": "#3a3939", "primary-fixed-dim": "#abd600", "outline-variant": "#444933", "surface-container-lowest": "#0e0e0e", "on-primary-container": "#556d00", "on-secondary-fixed": "#1c1b1b", "tertiary-fixed-dim": "#c8c6c6", "secondary-container": "#474746", "error": "#ffb4ab", "background": "#131313", "on-surface": "#e5e2e1", "tertiary-container": "#e4e2e1" }, "borderRadius": { "DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "full": "9999px" }, "spacing": { "base": "8px", "card-padding": "24px", "section-gap": "40px", "container-margin": "20px", "gutter": "16px" }, "fontFamily": { "body-md": ["Inter"], "headline-md": ["Montserrat"], "display-metrics": ["Montserrat"], "label-caps": ["Inter"], "headline-lg-mobile": ["Montserrat"], "body-lg": ["Inter"], "headline-lg": ["Montserrat"] }, "fontSize": { "body-md": ["16px", { "lineHeight": "24px", "fontWeight": "400" }], "headline-md": ["24px", { "lineHeight": "30px", "fontWeight": "700" }], "display-metrics": ["48px", { "lineHeight": "48px", "letterSpacing": "-0.02em", "fontWeight": "800" }], "label-caps": ["12px", { "lineHeight": "16px", "letterSpacing": "0.1em", "fontWeight": "700" }], "headline-lg-mobile": ["28px", { "lineHeight": "34px", "fontWeight": "700" }], "body-lg": ["18px", { "lineHeight": "28px", "fontWeight": "500" }], "headline-lg": ["32px", { "lineHeight": "40px", "fontWeight": "700" }] } } } };</script><style>@layer base { body { -webkit-tap-highlight-color: transparent; } .pb-safe { padding-bottom: env(safe-area-inset-bottom); } .pt-safe { padding-top: env(safe-area-inset-top); } }</style><style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head><body class="dark bg-background text-on-surface min-h-screen flex flex-col font-body-md"><header class="fixed top-0 w-full z-50 bg-surface/80 backdrop-blur-xl pt-safe"><div class="h-16 px-container-margin flex items-center gap-gutter"><button class="w-12 h-12 flex items-center justify-center text-on-surface hover:bg-surface-variant/20 rounded-full transition-colors" onclick="history.back()"><span class="material-symbols-outlined">arrow_back</span></button><h1 class="font-headline-md text-headline-md text-on-surface uppercase">Workout Details</h1></div></header><main class="flex-1 pt-16 bg-background"><div class="flex flex-col w-full pb-safe">
+<div class="px-container-margin py-base flex items-center justify-between">
+<div>
+<h2 class="font-headline-lg-mobile text-headline-lg-mobile text-on-surface">Deadlift</h2>
+<p class="font-body-md text-body-md text-on-surface-variant mt-1">Barbell • Lower Body</p>
+</div>
+<div class="w-16 h-16 rounded-full bg-surface-container flex items-center justify-center">
+<span class="material-symbols-outlined text-primary-fixed text-[32px]">fitness_center</span>
+</div>
+</div>
+<div class="px-container-margin mt-section-gap">
+<div class="bg-surface-container rounded-[32px] p-card-padding shadow-[0px_4px_20px_rgba(0,0,0,0.2)]">
+<div class="flex justify-between items-end mb-8">
+<div>
+<p class="font-label-caps text-label-caps text-on-surface-variant mb-2 tracking-widest">1RM ESTIMATE</p>
+<div class="flex items-baseline gap-2">
+<span class="font-display-metrics text-display-metrics text-primary-fixed drop-shadow-[0px_0px_12px_rgba(195,244,0,0.3)]">415</span>
+<span class="font-body-lg text-body-lg text-on-surface-variant">lbs</span>
+</div>
+</div>
+<div class="flex items-center gap-2 bg-on-primary-fixed-variant px-3 py-1.5 rounded-full">
+<span class="material-symbols-outlined text-primary-fixed text-sm">trending_up</span>
+<span class="font-label-caps text-label-caps text-primary-fixed">+12 lbs</span>
+</div>
+</div>
+<div class="w-full h-48 relative mt-4">
+<svg class="w-full h-full overflow-visible" preserveaspectratio="none" viewbox="0 0 300 150">
+<path class="drop-shadow-[0_4px_12px_rgba(195,244,0,0.1)]" d="M0,130 C40,120 80,140 120,90 C160,40 200,80 240,60 C270,45 290,20 300,10" fill="none" stroke="rgba(195, 244, 0, 0.2)" stroke-linecap="round" stroke-linejoin="round" stroke-width="4"></path>
+<path class="drop-shadow-[0_0px_8px_rgba(195,244,0,0.5)]" d="M0,130 C40,120 80,140 120,90 C160,40 200,80 240,60 C270,45 290,20 300,10" fill="none" stroke="#c3f400" stroke-dasharray="1000" stroke-dashoffset="1000" stroke-linecap="round" stroke-linejoin="round" stroke-width="4" style="animation: dash 1.5s ease-out forwards;"></path>
+<style>
+            @keyframes dash {
+              to { stroke-dashoffset: 0; }
+            }
+          </style>
+<circle cx="120" cy="90" fill="#131313" r="4" stroke="#c3f400" stroke-width="2"></circle>
+<circle cx="240" cy="60" fill="#131313" r="4" stroke="#c3f400" stroke-width="2"></circle>
+<circle class="drop-shadow-[0_0_10px_rgba(195,244,0,0.8)]" cx="300" cy="10" fill="#c3f400" r="6"></circle>
+<text fill="#e5e2e1" font-family="Inter" font-size="12" font-weight="700" text-anchor="end" x="290" y="-5">PR</text>
+</svg>
+</div>
+<div class="flex justify-between mt-4 font-label-caps text-label-caps text-on-surface-variant">
+<span>OCT 1</span>
+<span>NOV 1</span>
+<span>DEC 1</span>
+<span>TODAY</span>
+</div>
+</div>
+</div>
+<div class="px-container-margin mt-section-gap mb-32">
+<h3 class="font-headline-md text-headline-md text-on-surface mb-6">Recent Sets</h3>
+<div class="flex flex-col gap-4">
+<div class="bg-surface-container rounded-2xl p-4 flex items-center justify-between">
+<div class="flex items-center gap-4">
+<div class="w-12 h-12 rounded-full bg-surface-variant flex items-center justify-center font-headline-md text-headline-md text-on-surface">1</div>
+<div>
+<p class="font-body-lg text-body-lg text-on-surface">315 lbs x 5</p>
+<p class="font-body-md text-body-md text-on-surface-variant">Warmup</p>
+</div>
+</div>
+<span class="material-symbols-outlined text-primary-fixed">check_circle</span>
+</div>
+<div class="bg-surface-container rounded-2xl p-4 flex items-center justify-between border border-primary-fixed/30 bg-primary-fixed/5">
+<div class="flex items-center gap-4">
+<div class="w-12 h-12 rounded-full bg-primary-fixed text-on-primary-fixed flex items-center justify-center font-headline-md text-headline-md shadow-[0_0_15px_rgba(195,244,0,0.4)]">2</div>
+<div>
+<p class="font-body-lg text-body-lg text-on-surface">405 lbs x 3</p>
+<p class="font-body-md text-body-md text-primary-fixed drop-shadow-[0_0_4px_rgba(195,244,0,0.5)]">Working Set</p>
+</div>
+</div>
+<span class="material-symbols-outlined text-primary-fixed">check_circle</span>
+</div>
+<div class="bg-surface-container rounded-2xl p-4 flex items-center justify-between opacity-50">
+<div class="flex items-center gap-4">
+<div class="w-12 h-12 rounded-full border-2 border-surface-variant text-on-surface-variant flex items-center justify-center font-headline-md text-headline-md">3</div>
+<div>
+<p class="font-body-lg text-body-lg text-on-surface">415 lbs x 1</p>
+<p class="font-body-md text-body-md text-on-surface-variant">Target PR</p>
+</div>
+</div>
+<button class="w-8 h-8 rounded-full border-2 border-outline flex items-center justify-center text-outline">
+<span class="material-symbols-outlined text-sm">play_arrow</span>
+</button>
+</div>
+</div>
+</div>
+<div class="fixed bottom-0 left-0 right-0 p-container-margin pb-safe bg-surface/80 backdrop-blur-xl border-t border-surface-variant z-40">
+<button class="w-full h-14 bg-primary-fixed text-on-primary-fixed font-headline-md text-[18px] uppercase tracking-wide rounded-full flex items-center justify-center gap-2 shadow-[0_4px_20px_rgba(195,244,0,0.3)] transition-transform active:scale-95">
+<span class="material-symbols-outlined font-bold">add</span>
+      Log Set
+    </button>
+</div>
+</div></main></body></html>
