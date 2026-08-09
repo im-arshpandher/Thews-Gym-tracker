@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+
 import '../../../core/database/app_database.dart';
 import '../../../core/presentation/widgets/interactive_body_map.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_typography.dart';
+import '../../settings/domain/app_settings.dart';
 import '../../settings/presentation/settings_provider.dart';
 import 'dashboard_provider.dart';
 import 'muscle_visualization_provider.dart';
@@ -67,6 +69,7 @@ class DashboardScreen extends ConsumerWidget {
 
     return Scaffold(
       appBar: AppBar(
+        titleSpacing: 20,
         title: Row(
           children: [
             ClipRRect(
@@ -79,18 +82,17 @@ class DashboardScreen extends ConsumerWidget {
                 height: 32,
               ),
             ),
-            const SizedBox(width: 10),
+            const SizedBox(width: 12),
             Text(
               'THEWS',
               style: AppTypography.headlineMd(
                 color: isDark
                     ? AppColors.darkTextPrimary
                     : AppColors.lightTextPrimary,
-              ).copyWith(letterSpacing: 1.2),
+              ).copyWith(letterSpacing: 1.5, fontWeight: FontWeight.w900),
             ),
           ],
         ),
-        // Req 2: Remove the theme change icon on top (theme change only through settings)
       ),
       body: RefreshIndicator(
         onRefresh: () async {
@@ -99,40 +101,92 @@ class DashboardScreen extends ConsumerWidget {
         color: isDark ? AppColors.primaryVolt : AppColors.lightPrimary,
         child: SingleChildScrollView(
           physics: const AlwaysScrollableScrollPhysics(),
-          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Welcome Header
-              Text(
-                'Welcome Back',
-                style: AppTypography.headlineLg(
-                  color: isDark
-                      ? AppColors.darkTextPrimary
-                      : AppColors.lightTextPrimary,
-                ),
+              // Welcome Header & Unique Streak Pill
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Welcome Back',
+                          style: AppTypography.headlineLg(
+                            color: isDark
+                                ? AppColors.darkTextPrimary
+                                : AppColors.lightTextPrimary,
+                          ),
+                        ),
+                        const SizedBox(height: 2),
+                        Text(
+                          _formatDate(now),
+                          style: AppTypography.labelCaps(
+                            color: isDark
+                                ? AppColors.darkTextSecondary
+                                : AppColors.lightTextSecondary,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  statsAsync.maybeWhen(
+                    data: (stats) => Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 6,
+                      ),
+                      decoration: BoxDecoration(
+                        color: (isDark
+                                ? AppColors.primaryVolt
+                                : AppColors.lightPrimary)
+                            .withValues(alpha: 0.15),
+                        borderRadius: BorderRadius.circular(20),
+                        border: Border.all(
+                          color: (isDark
+                                  ? AppColors.primaryVolt
+                                  : AppColors.lightPrimary)
+                              .withValues(alpha: 0.4),
+                        ),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          const FireGradientIcon(size: 18),
+                          const SizedBox(width: 4),
+                          Text(
+                            '${stats.streakDays} STREAK',
+                            style: AppTypography.labelCaps(
+                              color: isDark
+                                  ? AppColors.primaryVolt
+                                  : AppColors.lightPrimary,
+                            ).copyWith(fontWeight: FontWeight.bold),
+                            maxLines: 1,
+                            softWrap: false,
+                          ),
+                        ],
+                      ),
+                    ),
+                    orElse: () => const SizedBox(),
+                  ),
+                ],
               ),
-              const SizedBox(height: 4),
-              Text(
-                _formatDate(now),
-                style: AppTypography.labelCaps(
-                  color: isDark
-                      ? AppColors.darkTextSecondary
-                      : AppColors.lightTextSecondary,
-                ),
-              ),
-              const SizedBox(height: 24),
+              const SizedBox(height: 20),
 
-              // Start Workout Primary Action Button
+              // Hero Primary Action Button: START WORKOUT LOG
               Container(
                 width: double.infinity,
                 decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(30),
+                  borderRadius: BorderRadius.circular(16),
                   boxShadow: const [
                     BoxShadow(
                       color: AppColors.primaryGlow,
-                      blurRadius: 16,
-                      offset: Offset(0, 4),
+                      blurRadius: 20,
+                      offset: Offset(0, 6),
                     ),
                   ],
                 ),
@@ -141,70 +195,93 @@ class DashboardScreen extends ConsumerWidget {
                   style: ElevatedButton.styleFrom(
                     backgroundColor: AppColors.primaryVolt,
                     foregroundColor: AppColors.primaryVoltOn,
-                    padding: const EdgeInsets.symmetric(vertical: 12),
-                    shape: const StadiumBorder(),
+                    padding: const EdgeInsets.symmetric(vertical: 16),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                    elevation: 4,
                   ),
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
                       const Icon(
                         Icons.bolt,
-                        size: 20,
+                        size: 24,
                         color: AppColors.primaryVoltOn,
                       ),
-                      const SizedBox(width: 6),
+                      const SizedBox(width: 8),
                       Text(
-                        'LOG WORKOUT',
+                        'START WORKOUT LOG',
                         style: TextStyle(
-                          fontSize: 15,
-                          fontWeight: FontWeight.bold,
+                          fontSize: 16,
+                          fontWeight: FontWeight.w900,
                           color: AppColors.primaryVoltOn,
-                          letterSpacing: 0.5,
+                          letterSpacing: 0.8,
                         ),
+                        maxLines: 1,
+                        softWrap: false,
                       ),
                     ],
                   ),
                 ),
               ),
-              const SizedBox(height: 12),
+              const SizedBox(height: 16),
 
-              // Routine Templates Shortcut (Phase 2 & 3)
-              OutlinedButton.icon(
-                onPressed: () => context.push('/routines'),
-                icon: Icon(
-                  Icons.assignment_outlined,
-                  color: isDark
-                      ? AppColors.primaryVolt
-                      : AppColors.lightPrimary,
-                ),
-                label: Text(
-                  'VIEW WORKOUT ROUTINES & TEMPLATES',
-                  style: AppTypography.labelCaps(
-                    color: isDark
-                        ? AppColors.primaryVolt
-                        : AppColors.lightPrimary,
+              // Quick Access Grid (2x2 Unique Shortcuts)
+              Row(
+                children: [
+                  Expanded(
+                    child: _buildQuickActionCard(
+                      context,
+                      icon: Icons.assignment_outlined,
+                      title: 'ROUTINES',
+                      subtitle: 'Workout Templates',
+                      onTap: () => context.push('/routines'),
+                    ),
                   ),
-                ),
-                style: OutlinedButton.styleFrom(
-                  padding: const EdgeInsets.symmetric(vertical: 14),
-                  minimumSize: const Size(double.infinity, 44),
-                  side: BorderSide(
-                    color:
-                        (isDark
-                                ? AppColors.primaryVolt
-                                : AppColors.lightPrimary)
-                            .withValues(alpha: 0.5),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: _buildQuickActionCard(
+                      context,
+                      icon: Icons.fitness_center_outlined,
+                      title: 'EXERCISES',
+                      subtitle: 'Library & Custom',
+                      onTap: () => context.go('/exercises'),
+                    ),
                   ),
-                  shape: const StadiumBorder(),
-                ),
+                ],
+              ),
+              const SizedBox(height: 12),
+              Row(
+                children: [
+                  Expanded(
+                    child: _buildQuickActionCard(
+                      context,
+                      icon: Icons.directions_run_outlined,
+                      title: 'GPS RUN',
+                      subtitle: 'Outdoor Tracking',
+                      onTap: () => context.push('/running'),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: _buildQuickActionCard(
+                      context,
+                      icon: Icons.map_outlined,
+                      title: 'GPX LOGS',
+                      subtitle: 'Saved GPS Runs',
+                      onTap: () => context.push('/running/history'),
+                    ),
+                  ),
+                ],
               ),
               const SizedBox(height: 24),
 
-              // Live Quick Stats Bento Grid (Req 5, Req 6, Req 7)
+              // Distinct Live Stats Bento Grid
               statsAsync.when(
                 loading: () => const Center(
                   child: Padding(
-                    padding: EdgeInsets.all(24.0),
+                    padding: EdgeInsets.all(32.0),
                     child: CircularProgressIndicator(
                       color: AppColors.primaryVolt,
                     ),
@@ -221,74 +298,83 @@ class DashboardScreen extends ConsumerWidget {
                       .clamp(0.0, 1.0);
 
                   return Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Row(
-                        children: [
-                          Expanded(
-                            child: _buildBentoCard(
-                              context,
-                              title: 'WORKOUTS THIS WEEK',
-                              icon: Icons.fitness_center,
-                              valueWidget: Row(
-                                crossAxisAlignment: CrossAxisAlignment.baseline,
-                                textBaseline: TextBaseline.alphabetic,
-                                children: [
-                                  Text(
-                                    '${stats.workoutsThisWeek}',
-                                    style: AppTypography.displayMetrics(
-                                      color: isDark
-                                          ? AppColors.darkTextPrimary
-                                          : AppColors.lightTextPrimary,
-                                    ),
-                                  ),
-                                  const SizedBox(width: 4),
-                                  Text(
-                                    '/ ${stats.weeklyGoal}',
-                                    style: AppTypography.headlineMd(
-                                      color: isDark
-                                          ? AppColors.darkTextSecondary
-                                          : AppColors.lightTextSecondary,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                              bottomWidget: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  ClipRRect(
-                                    borderRadius: BorderRadius.circular(4),
-                                    child: LinearProgressIndicator(
-                                      value: progress,
-                                      minHeight: 8,
-                                      backgroundColor: isDark
-                                          ? AppColors
-                                                .darkSurfaceContainerHighest
-                                          : AppColors.lightSurfaceContainerHigh,
-                                      color: isDark
-                                          ? AppColors.primaryVolt
-                                          : AppColors.lightPrimary,
-                                    ),
-                                  ),
-                                  const SizedBox(height: 6),
-                                  Text(
-                                    '${(progress * 100).toInt()}% of weekly target (${settings.weeklyGoal} workouts)',
-                                    style:
-                                        AppTypography.bodySm(
-                                          color: isDark
-                                              ? AppColors.darkTextSecondary
-                                              : AppColors.lightTextSecondary,
-                                        ).copyWith(
-                                          fontSize: 11,
-                                          fontWeight: FontWeight.w500,
-                                        ),
-                                  ),
-                                ],
+                      // Weekly Target Bento Card
+                      _buildBentoCard(
+                        context,
+                        title: 'WEEKLY WORKOUT TARGET',
+                        icon: Icons.flag_outlined,
+                        valueWidget: Row(
+                          crossAxisAlignment: CrossAxisAlignment.baseline,
+                          textBaseline: TextBaseline.alphabetic,
+                          children: [
+                            Text(
+                              '${stats.workoutsThisWeek}',
+                              style: AppTypography.displayMetrics(
+                                color: isDark
+                                    ? AppColors.darkTextPrimary
+                                    : AppColors.lightTextPrimary,
                               ),
                             ),
-                          ),
-                        ],
+                            const SizedBox(width: 4),
+                            Text(
+                              '/ ${stats.weeklyGoal} workouts',
+                              style: AppTypography.headlineMd(
+                                color: isDark
+                                    ? AppColors.darkTextSecondary
+                                    : AppColors.lightTextSecondary,
+                              ),
+                            ),
+                          ],
+                        ),
+                        bottomWidget: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            ClipRRect(
+                              borderRadius: BorderRadius.circular(6),
+                              child: LinearProgressIndicator(
+                                value: progress,
+                                minHeight: 10,
+                                backgroundColor: isDark
+                                    ? AppColors.darkSurfaceContainerHighest
+                                    : AppColors.lightSurfaceContainerHigh,
+                                color: isDark
+                                    ? AppColors.primaryVolt
+                                    : AppColors.lightPrimary,
+                              ),
+                            ),
+                            const SizedBox(height: 8),
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                Text(
+                                  '${(progress * 100).toInt()}% completed',
+                                  style: AppTypography.bodySm(
+                                    color: isDark
+                                        ? AppColors.primaryVolt
+                                        : AppColors.lightPrimary,
+                                  ).copyWith(fontWeight: FontWeight.bold),
+                                ),
+                                Text(
+                                  settings.dailyCountingMode ==
+                                          DailyWorkoutCountingMode.groupedByDay
+                                      ? 'Mode: 1 per day'
+                                      : 'Mode: Individual',
+                                  style: AppTypography.bodySm(
+                                    color: isDark
+                                        ? AppColors.darkTextSecondary
+                                        : AppColors.lightTextSecondary,
+                                  ).copyWith(fontSize: 11),
+                                ),
+                              ],
+                            ),
+                          ],
+                        ),
                       ),
                       const SizedBox(height: 12),
+
+                      // Volume & Workout Time Bento Cards (Distinct non-redundant metrics)
                       Row(
                         children: [
                           Expanded(
@@ -310,6 +396,15 @@ class DashboardScreen extends ConsumerWidget {
                                           : AppColors.lightTextPrimary,
                                     ),
                                   ),
+                                  const SizedBox(height: 2),
+                                  Text(
+                                    'Lifetime lifted',
+                                    style: AppTypography.bodySm(
+                                      color: isDark
+                                          ? AppColors.darkTextSecondary
+                                          : AppColors.lightTextSecondary,
+                                    ),
+                                  ),
                                 ],
                               ),
                             ),
@@ -318,24 +413,23 @@ class DashboardScreen extends ConsumerWidget {
                           Expanded(
                             child: _buildBentoCard(
                               context,
-                              title: 'STREAK',
-                              icon: Icons.local_fire_department,
-                              valueWidget: Row(
-                                crossAxisAlignment: CrossAxisAlignment.baseline,
-                                textBaseline: TextBaseline.alphabetic,
+                              title: 'WORKOUT TIME',
+                              icon: Icons.timer_outlined,
+                              valueWidget: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
                                   Text(
-                                    '${stats.streakDays}',
+                                    _formatDuration(stats.totalTimeSeconds),
                                     style: AppTypography.headlineLg(
                                       color: isDark
-                                          ? AppColors.primaryVoltDim
-                                          : AppColors.lightPrimary,
+                                          ? AppColors.darkTextPrimary
+                                          : AppColors.lightTextPrimary,
                                     ),
                                   ),
-                                  const SizedBox(width: 4),
+                                  const SizedBox(height: 2),
                                   Text(
-                                    'Days',
-                                    style: AppTypography.bodyMd(
+                                    '${stats.totalWorkoutsCount} sessions logged',
+                                    style: AppTypography.bodySm(
                                       color: isDark
                                           ? AppColors.darkTextSecondary
                                           : AppColors.lightTextSecondary,
@@ -347,9 +441,9 @@ class DashboardScreen extends ConsumerWidget {
                           ),
                         ],
                       ),
-                      const SizedBox(height: 20),
+                      const SizedBox(height: 24),
 
-                      // Interactive Muscle Target Visualizer (Phase 3.4)
+                      // Single Muscle Target Heatmap Card
                       InteractiveBodyMap(
                         onSelectMuscleGroup: (group) {
                           ref
@@ -362,10 +456,9 @@ class DashboardScreen extends ConsumerWidget {
                           context.push('/visualizer');
                         },
                       ),
-
                       const SizedBox(height: 28),
 
-                      // Recent Activity Section with Live Local Workouts
+                      // Recent Activity Section
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
@@ -386,6 +479,8 @@ class DashboardScreen extends ConsumerWidget {
                                     ? AppColors.primaryVoltDim
                                     : AppColors.lightPrimary,
                               ),
+                              maxLines: 1,
+                              softWrap: false,
                             ),
                           ),
                         ],
@@ -401,13 +496,19 @@ class DashboardScreen extends ConsumerWidget {
                                 ? AppColors.darkSurfaceContainer
                                 : AppColors.lightSurfaceContainerLowest,
                             borderRadius: BorderRadius.circular(16),
+                            border: Border.all(
+                              color: isDark
+                                  ? AppColors.darkOutline.withValues(alpha: 0.2)
+                                  : AppColors.lightOutline
+                                      .withValues(alpha: 0.2),
+                            ),
                           ),
                           child: Center(
                             child: Column(
                               children: [
                                 Icon(
                                   Icons.history_toggle_off,
-                                  size: 36,
+                                  size: 40,
                                   color: isDark
                                       ? AppColors.darkTextSecondary
                                       : AppColors.lightTextSecondary,
@@ -423,12 +524,13 @@ class DashboardScreen extends ConsumerWidget {
                                 ),
                                 const SizedBox(height: 4),
                                 Text(
-                                  'Tap Log Workout above to start your first session!',
+                                  'Tap START WORKOUT LOG above to log your first session!',
                                   style: AppTypography.bodySm(
                                     color: isDark
                                         ? AppColors.darkTextSecondary
                                         : AppColors.lightTextSecondary,
                                   ),
+                                  textAlign: TextAlign.center,
                                 ),
                               ],
                             ),
@@ -447,6 +549,84 @@ class DashboardScreen extends ConsumerWidget {
                     ],
                   );
                 },
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildQuickActionCard(
+    BuildContext context, {
+    required IconData icon,
+    required String title,
+    required String subtitle,
+    required VoidCallback onTap,
+  }) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    return Card(
+      margin: EdgeInsets.zero,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(16),
+        child: Padding(
+          padding: const EdgeInsets.all(14.0),
+          child: Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: (isDark
+                          ? AppColors.primaryVolt
+                          : AppColors.lightPrimary)
+                      .withValues(alpha: 0.12),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Icon(
+                  icon,
+                  color: isDark
+                      ? AppColors.primaryVolt
+                      : AppColors.lightPrimary,
+                  size: 20,
+                ),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      title,
+                      style: AppTypography.labelCaps(
+                        color: isDark
+                            ? AppColors.darkTextPrimary
+                            : AppColors.lightTextPrimary,
+                      ).copyWith(fontSize: 11, fontWeight: FontWeight.bold),
+                      maxLines: 1,
+                      softWrap: false,
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      subtitle,
+                      style: AppTypography.bodySm(
+                        color: isDark
+                            ? AppColors.darkTextSecondary
+                            : AppColors.lightTextSecondary,
+                      ).copyWith(fontSize: 10),
+                      maxLines: 1,
+                      softWrap: false,
+                    ),
+                  ],
+                ),
+              ),
+              Icon(
+                Icons.chevron_right,
+                size: 18,
+                color: isDark
+                    ? AppColors.darkTextSecondary
+                    : AppColors.lightTextSecondary,
               ),
             ],
           ),
@@ -492,15 +672,19 @@ class DashboardScreen extends ConsumerWidget {
                         ? AppColors.darkTextSecondary
                         : AppColors.lightTextSecondary,
                   ).copyWith(fontSize: 11),
+                  maxLines: 1,
+                  softWrap: false,
                 ),
               ),
-              Icon(
-                icon,
-                color: isDark
-                    ? AppColors.primaryVoltDim
-                    : AppColors.lightPrimary,
-                size: 20,
-              ),
+              icon == Icons.local_fire_department
+                  ? const FireGradientIcon(size: 20)
+                  : Icon(
+                      icon,
+                      color: isDark
+                          ? AppColors.primaryVoltDim
+                          : AppColors.lightPrimary,
+                      size: 20,
+                    ),
             ],
           ),
           const SizedBox(height: 14),
@@ -520,11 +704,13 @@ class DashboardScreen extends ConsumerWidget {
   }) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final formattedDate = _formatDate(workout.date);
-    final durationStr = _formatDuration(workout.durationSeconds);
+    final durationStr =
+        _formatDuration((workout.durationSeconds as int?) ?? 0);
 
     return Card(
       child: ListTile(
-        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+        contentPadding:
+            const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
         leading: Container(
           width: 44,
           height: 44,
@@ -537,8 +723,8 @@ class DashboardScreen extends ConsumerWidget {
           child: Icon(
             Icons.fitness_center,
             color: isDark
-                ? AppColors.darkTextPrimary
-                : AppColors.lightTextPrimary,
+                ? AppColors.primaryVolt
+                : AppColors.lightPrimary,
           ),
         ),
         title: Text(
@@ -548,6 +734,8 @@ class DashboardScreen extends ConsumerWidget {
                 ? AppColors.darkTextPrimary
                 : AppColors.lightTextPrimary,
           ),
+          maxLines: 1,
+          softWrap: false,
         ),
         subtitle: Text(
           '$formattedDate • $durationStr',
@@ -556,12 +744,42 @@ class DashboardScreen extends ConsumerWidget {
                 ? AppColors.darkTextSecondary
                 : AppColors.lightTextSecondary,
           ),
+          maxLines: 1,
+          softWrap: false,
         ),
         trailing: const Icon(
           Icons.chevron_right,
           color: AppColors.darkOutlineVariant,
         ),
         onTap: () => context.go('/history'),
+      ),
+    );
+  }
+}
+
+class FireGradientIcon extends StatelessWidget {
+  final double size;
+
+  const FireGradientIcon({super.key, this.size = 20});
+
+  @override
+  Widget build(BuildContext context) {
+    return ShaderMask(
+      shaderCallback: (Rect bounds) {
+        return const LinearGradient(
+          begin: Alignment.bottomCenter,
+          end: Alignment.topCenter,
+          colors: [
+            Color(0xFFFF3D00), // Deep Fire Orange / Red
+            Color(0xFFFF9100), // Fiery Orange
+            Color(0xFFFFD600), // Glowing Yellow Flame Top
+          ],
+        ).createShader(bounds);
+      },
+      child: Icon(
+        Icons.local_fire_department,
+        size: size,
+        color: Colors.white,
       ),
     );
   }

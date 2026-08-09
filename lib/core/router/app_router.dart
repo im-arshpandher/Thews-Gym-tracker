@@ -3,6 +3,10 @@ import 'package:go_router/go_router.dart';
 
 import '../../features/exercises/presentation/exercise_list_screen.dart';
 import '../../features/history/presentation/history_screen.dart';
+import '../../features/history/presentation/workout_session_detail_screen.dart';
+import '../../features/running/presentation/run_history_screen.dart';
+import '../../features/running/presentation/run_summary_screen.dart';
+import '../../features/running/presentation/run_tracker_screen.dart';
 import '../../features/settings/presentation/settings_screen.dart';
 import '../../features/workouts/presentation/active_session_screen.dart';
 import '../../features/workouts/presentation/dashboard_screen.dart';
@@ -67,6 +71,17 @@ final appRouter = GoRouter(
             GoRoute(
               path: '/history',
               builder: (context, state) => const HistoryScreen(),
+              routes: [
+                GoRoute(
+                  path: 'workout/:id',
+                  parentNavigatorKey: _rootNavigatorKey,
+                  builder: (context, state) {
+                    final idStr = state.pathParameters['id'] ?? '0';
+                    final workoutId = int.tryParse(idStr) ?? 0;
+                    return WorkoutSessionDetailScreen(workoutId: workoutId);
+                  },
+                ),
+              ],
             ),
           ],
         ),
@@ -90,6 +105,27 @@ final appRouter = GoRouter(
       path: '/visualizer',
       parentNavigatorKey: _rootNavigatorKey,
       builder: (context, state) => const MuscleVisualizationScreen(),
+    ),
+    GoRoute(
+      path: '/running',
+      parentNavigatorKey: _rootNavigatorKey,
+      builder: (context, state) => const RunTrackerScreen(),
+      routes: [
+        GoRoute(
+          path: 'history',
+          parentNavigatorKey: _rootNavigatorKey,
+          builder: (context, state) => const RunHistoryScreen(),
+        ),
+        GoRoute(
+          path: 'summary/:id',
+          parentNavigatorKey: _rootNavigatorKey,
+          builder: (context, state) {
+            final idStr = state.pathParameters['id'] ?? '0';
+            final activityId = int.tryParse(idStr) ?? 0;
+            return RunSummaryScreen(activityId: activityId);
+          },
+        ),
+      ],
     ),
   ],
 );

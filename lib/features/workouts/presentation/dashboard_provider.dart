@@ -9,6 +9,8 @@ class DashboardStats {
   final int weeklyGoal;
   final double totalVolume;
   final int streakDays;
+  final int totalWorkoutsCount;
+  final int totalTimeSeconds;
   final List<WorkoutData> recentWorkouts;
 
   const DashboardStats({
@@ -16,6 +18,8 @@ class DashboardStats {
     required this.weeklyGoal,
     required this.totalVolume,
     required this.streakDays,
+    required this.totalWorkoutsCount,
+    required this.totalTimeSeconds,
     required this.recentWorkouts,
   });
 }
@@ -81,6 +85,10 @@ final dashboardStatsProvider = Provider<AsyncValue<DashboardStats>>((ref) {
 
   // Compute streak
   final streak = _calculateStreak(workouts, settings.dailyCountingMode);
+  final totalTime = workouts.fold<int>(
+    0,
+    (sum, w) => sum + ((w.durationSeconds as int?) ?? 0),
+  );
 
   return AsyncValue.data(
     DashboardStats(
@@ -88,6 +96,8 @@ final dashboardStatsProvider = Provider<AsyncValue<DashboardStats>>((ref) {
       weeklyGoal: settings.weeklyGoal,
       totalVolume: totalVolume,
       streakDays: streak,
+      totalWorkoutsCount: workouts.length,
+      totalTimeSeconds: totalTime,
       recentWorkouts: workouts.take(4).toList(),
     ),
   );
@@ -110,11 +120,7 @@ int _calculateStreak(
   final workoutDates =
       workouts
           .map((w) => DateTime(w.date.year, w.date.month, w.date.day))
-          .toSet()
-          .toList()
-        ..sort((a, b) => b.compareTo(a));
-
-  if (workoutDates.isEmpty) return 0;
+          .toSet();
 
   int streak = 0;
   DateTime checkDate = today;
@@ -122,9 +128,6 @@ int _calculateStreak(
   // If no workout today, check if yesterday had a workout to maintain streak
   if (!workoutDates.contains(today)) {
     checkDate = today.subtract(const Duration(days: 1));
-    if (!workoutDates.contains(checkDate)) {
-      return 0;
-    }
   }
 
   while (workoutDates.contains(checkDate)) {

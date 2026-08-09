@@ -16,6 +16,7 @@ part 'app_database.g.dart';
     SetEntries,
     Routines,
     RoutineExercises,
+    RunActivities,
   ],
 )
 class AppDatabase extends _$AppDatabase {
@@ -23,11 +24,11 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase.forTesting(super.e);
 
   @override
-  int get schemaVersion => 5;
+  int get schemaVersion => 6;
 
   @override
   MigrationStrategy get migration {
-        return MigrationStrategy(
+    return MigrationStrategy(
       onCreate: (m) async {
         await m.createAll();
         await seedDefaultExercises();
@@ -41,6 +42,9 @@ class AppDatabase extends _$AppDatabase {
           await m.addColumn(setEntries, setEntries.type);
           await m.createTable(routines);
           await m.createTable(routineExercises);
+        }
+        if (from < 6) {
+          await m.createTable(runActivities);
         }
       },
       beforeOpen: (details) async {
@@ -80,6 +84,11 @@ class AppDatabase extends _$AppDatabase {
             "ALTER TABLE exercises ADD COLUMN is_deleted INTEGER NOT NULL DEFAULT 0;",
           );
         } catch (_) {}
+        try {
+          await customStatement(
+            "CREATE TABLE IF NOT EXISTS run_activities (id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT, workout_id INTEGER REFERENCES workouts (id) ON DELETE CASCADE, activity_type TEXT NOT NULL DEFAULT 'run', start_time INTEGER NOT NULL DEFAULT (UNIXEPOCH()), distance_meters REAL NOT NULL DEFAULT 0.0, duration_seconds INTEGER NOT NULL DEFAULT 0, avg_pace_seconds_per_km REAL NOT NULL DEFAULT 0.0, elevation_gain_meters REAL NOT NULL DEFAULT 0.0, gpx_data TEXT);",
+          );
+        } catch (_) {}
       },
     );
   }
@@ -116,11 +125,17 @@ class AppDatabase extends _$AppDatabase {
       (select(workouts)..orderBy([(t) => OrderingTerm.desc(t.date)])).get();
   Stream<List<WorkoutData>> watchAllWorkouts() =>
       (select(workouts)..orderBy([(t) => OrderingTerm.desc(t.date)])).watch();
+  Stream<WorkoutData?> watchWorkoutById(int id) =>
+      (select(workouts)..where((t) => t.id.equals(id))).watchSingleOrNull();
 
   Future<int> insertWorkout(WorkoutsCompanion workout) =>
       into(workouts).insert(workout);
   Future<bool> updateWorkout(WorkoutData workout) =>
       update(workouts).replace(workout);
+  Future<int> updateWorkoutNotes(int id, String notes) =>
+      (update(workouts)..where((t) => t.id.equals(id))).write(
+        WorkoutsCompanion(notes: Value(notes)),
+      );
   Future<int> deleteWorkout(int id) =>
       (delete(workouts)..where((t) => t.id.equals(id))).go();
 
@@ -257,6 +272,22 @@ class AppDatabase extends _$AppDatabase {
       update(routines).replace(routine);
   Future<int> deleteRoutine(int id) =>
       (delete(routines)..where((t) => t.id.equals(id))).go();
+
+  // --- Run Activities Queries ---
+  Future<int> insertRunActivity(RunActivitiesCompanion entry) =>
+      into(runActivities).insert(entry);
+
+  Future<List<RunActivityData>> getAllRunActivities() =>
+      (select(runActivities)..orderBy([(t) => OrderingTerm.desc(t.startTime)])).get();
+
+  Stream<List<RunActivityData>> watchAllRunActivities() =>
+      (select(runActivities)..orderBy([(t) => OrderingTerm.desc(t.startTime)])).watch();
+
+  Stream<RunActivityData?> watchRunActivityById(int id) =>
+      (select(runActivities)..where((t) => t.id.equals(id))).watchSingleOrNull();
+
+  Future<int> deleteRunActivity(int id) =>
+      (delete(runActivities)..where((t) => t.id.equals(id))).go();
 
   Future<int> insertRoutineExercise(RoutineExercisesCompanion re) =>
       into(routineExercises).insert(re);

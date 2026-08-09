@@ -79,3 +79,20 @@ class RoutineExercises extends Table {
   RealColumn get targetIncline => real().nullable()();
   IntColumn get sortOrder => integer().withDefault(const Constant(0))();
 }
+
+@DataClassName('RunActivityData')
+class RunActivities extends Table {
+  IntColumn get id => integer().autoIncrement()();
+  IntColumn get workoutId =>
+      integer().nullable().references(Workouts, #id, onDelete: KeyAction.cascade)();
+  TextColumn get activityType =>
+      text().withDefault(const Constant('run'))(); // 'run' | 'walk' | 'cycle'
+  DateTimeColumn get startTime => dateTime().withDefault(currentDateAndTime)();
+  RealColumn get distanceMeters => real().withDefault(const Constant(0.0))();
+  IntColumn get durationSeconds => integer().withDefault(const Constant(0))();
+  RealColumn get avgPaceSecondsPerKm =>
+      real().withDefault(const Constant(0.0))();
+  RealColumn get elevationGainMeters =>
+      real().withDefault(const Constant(0.0))();
+  TextColumn get gpxData => text().nullable()();
+}

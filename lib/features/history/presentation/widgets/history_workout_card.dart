@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import '../../../../core/database/app_database.dart';
 import '../../../../core/database/database_provider.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_typography.dart';
-import 'workout_details_sheet.dart';
 
 /// Card displaying a logged workout entry in the history list.
 class HistoryWorkoutCard extends ConsumerWidget {
@@ -27,7 +27,7 @@ class HistoryWorkoutCard extends ConsumerWidget {
       margin: const EdgeInsets.only(bottom: 12),
       clipBehavior: Clip.antiAlias,
       child: InkWell(
-        onTap: () => WorkoutDetailsSheet.show(context, workout),
+        onTap: () => context.push('/history/workout/${workout.id}'),
         child: Padding(
           padding: const EdgeInsets.all(16),
           child: Row(
@@ -87,13 +87,15 @@ class HistoryWorkoutCard extends ConsumerWidget {
                       actions: [
                         TextButton(
                           onPressed: () => Navigator.pop(ctx, false),
-                          child: const Text('CANCEL'),
+                          child: const Text('CANCEL', maxLines: 1, softWrap: false),
                         ),
                         TextButton(
                           onPressed: () => Navigator.pop(ctx, true),
                           child: const Text(
                             'DELETE',
                             style: TextStyle(color: AppColors.error),
+                            maxLines: 1,
+                            softWrap: false,
                           ),
                         ),
                       ],

@@ -45,45 +45,35 @@ class InteractiveBodyMap extends StatelessWidget {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Expanded(
-                child: InkWell(
-                  onTap: () => context.push('/visualizer'),
-                  borderRadius: BorderRadius.circular(8),
-                  child: Row(
-                    children: [
-                      Icon(
-                        Icons.accessibility_new,
-                        color: isDark
-                            ? AppColors.primaryVolt
-                            : AppColors.lightPrimary,
-                        size: 20,
-                      ),
-                      const SizedBox(width: 8),
-                      Expanded(
-                        child: Text(
-                          'MUSCLE TARGET VISUALIZER',
-                          maxLines: 1,
-                          softWrap: false,
-                          overflow: TextOverflow.ellipsis,
-                          style: AppTypography.labelCaps(
-                            color: isDark
-                                ? AppColors.darkTextPrimary
-                                : AppColors.lightTextPrimary,
-                          ).copyWith(fontWeight: FontWeight.bold),
-                        ),
-                      ),
-                    ],
+              Row(
+                children: [
+                  Icon(
+                    Icons.accessibility_new,
+                    color: isDark
+                        ? AppColors.primaryVolt
+                        : AppColors.lightPrimary,
+                    size: 20,
                   ),
-                ),
+                  const SizedBox(width: 8),
+                  Text(
+                    'MUSCLE TARGET HEATMAP',
+                    maxLines: 1,
+                    softWrap: false,
+                    style: AppTypography.labelCaps(
+                      color: isDark
+                          ? AppColors.darkTextPrimary
+                          : AppColors.lightTextPrimary,
+                    ).copyWith(fontWeight: FontWeight.bold),
+                  ),
+                ],
               ),
-              const SizedBox(width: 8),
               InkWell(
                 onTap: () => context.push('/visualizer'),
                 borderRadius: BorderRadius.circular(8),
                 child: Padding(
                   padding: const EdgeInsets.symmetric(
                     horizontal: 6,
-                    vertical: 2,
+                    vertical: 4,
                   ),
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
@@ -100,7 +90,7 @@ class InteractiveBodyMap extends StatelessWidget {
                               : AppColors.lightPrimary,
                         ),
                       ),
-                      const SizedBox(width: 2),
+                      const SizedBox(width: 4),
                       Icon(
                         Icons.open_in_new,
                         size: 14,

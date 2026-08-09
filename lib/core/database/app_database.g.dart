@@ -2845,6 +2845,585 @@ class RoutineExercisesCompanion extends UpdateCompanion<RoutineExerciseData> {
   }
 }
 
+class $RunActivitiesTable extends RunActivities
+    with TableInfo<$RunActivitiesTable, RunActivityData> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $RunActivitiesTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<int> id = GeneratedColumn<int>(
+    'id',
+    aliasedName,
+    false,
+    hasAutoIncrement: true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'PRIMARY KEY AUTOINCREMENT',
+    ),
+  );
+  static const VerificationMeta _workoutIdMeta = const VerificationMeta(
+    'workoutId',
+  );
+  @override
+  late final GeneratedColumn<int> workoutId = GeneratedColumn<int>(
+    'workout_id',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'REFERENCES workouts (id) ON DELETE CASCADE',
+    ),
+  );
+  static const VerificationMeta _activityTypeMeta = const VerificationMeta(
+    'activityType',
+  );
+  @override
+  late final GeneratedColumn<String> activityType = GeneratedColumn<String>(
+    'activity_type',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant('run'),
+  );
+  static const VerificationMeta _startTimeMeta = const VerificationMeta(
+    'startTime',
+  );
+  @override
+  late final GeneratedColumn<DateTime> startTime = GeneratedColumn<DateTime>(
+    'start_time',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: false,
+    defaultValue: currentDateAndTime,
+  );
+  static const VerificationMeta _distanceMetersMeta = const VerificationMeta(
+    'distanceMeters',
+  );
+  @override
+  late final GeneratedColumn<double> distanceMeters = GeneratedColumn<double>(
+    'distance_meters',
+    aliasedName,
+    false,
+    type: DriftSqlType.double,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(0.0),
+  );
+  static const VerificationMeta _durationSecondsMeta = const VerificationMeta(
+    'durationSeconds',
+  );
+  @override
+  late final GeneratedColumn<int> durationSeconds = GeneratedColumn<int>(
+    'duration_seconds',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(0),
+  );
+  static const VerificationMeta _avgPaceSecondsPerKmMeta =
+      const VerificationMeta('avgPaceSecondsPerKm');
+  @override
+  late final GeneratedColumn<double> avgPaceSecondsPerKm =
+      GeneratedColumn<double>(
+        'avg_pace_seconds_per_km',
+        aliasedName,
+        false,
+        type: DriftSqlType.double,
+        requiredDuringInsert: false,
+        defaultValue: const Constant(0.0),
+      );
+  static const VerificationMeta _elevationGainMetersMeta =
+      const VerificationMeta('elevationGainMeters');
+  @override
+  late final GeneratedColumn<double> elevationGainMeters =
+      GeneratedColumn<double>(
+        'elevation_gain_meters',
+        aliasedName,
+        false,
+        type: DriftSqlType.double,
+        requiredDuringInsert: false,
+        defaultValue: const Constant(0.0),
+      );
+  static const VerificationMeta _gpxDataMeta = const VerificationMeta(
+    'gpxData',
+  );
+  @override
+  late final GeneratedColumn<String> gpxData = GeneratedColumn<String>(
+    'gpx_data',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    workoutId,
+    activityType,
+    startTime,
+    distanceMeters,
+    durationSeconds,
+    avgPaceSecondsPerKm,
+    elevationGainMeters,
+    gpxData,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'run_activities';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<RunActivityData> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    }
+    if (data.containsKey('workout_id')) {
+      context.handle(
+        _workoutIdMeta,
+        workoutId.isAcceptableOrUnknown(data['workout_id']!, _workoutIdMeta),
+      );
+    }
+    if (data.containsKey('activity_type')) {
+      context.handle(
+        _activityTypeMeta,
+        activityType.isAcceptableOrUnknown(
+          data['activity_type']!,
+          _activityTypeMeta,
+        ),
+      );
+    }
+    if (data.containsKey('start_time')) {
+      context.handle(
+        _startTimeMeta,
+        startTime.isAcceptableOrUnknown(data['start_time']!, _startTimeMeta),
+      );
+    }
+    if (data.containsKey('distance_meters')) {
+      context.handle(
+        _distanceMetersMeta,
+        distanceMeters.isAcceptableOrUnknown(
+          data['distance_meters']!,
+          _distanceMetersMeta,
+        ),
+      );
+    }
+    if (data.containsKey('duration_seconds')) {
+      context.handle(
+        _durationSecondsMeta,
+        durationSeconds.isAcceptableOrUnknown(
+          data['duration_seconds']!,
+          _durationSecondsMeta,
+        ),
+      );
+    }
+    if (data.containsKey('avg_pace_seconds_per_km')) {
+      context.handle(
+        _avgPaceSecondsPerKmMeta,
+        avgPaceSecondsPerKm.isAcceptableOrUnknown(
+          data['avg_pace_seconds_per_km']!,
+          _avgPaceSecondsPerKmMeta,
+        ),
+      );
+    }
+    if (data.containsKey('elevation_gain_meters')) {
+      context.handle(
+        _elevationGainMetersMeta,
+        elevationGainMeters.isAcceptableOrUnknown(
+          data['elevation_gain_meters']!,
+          _elevationGainMetersMeta,
+        ),
+      );
+    }
+    if (data.containsKey('gpx_data')) {
+      context.handle(
+        _gpxDataMeta,
+        gpxData.isAcceptableOrUnknown(data['gpx_data']!, _gpxDataMeta),
+      );
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  RunActivityData map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return RunActivityData(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}id'],
+      )!,
+      workoutId: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}workout_id'],
+      ),
+      activityType: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}activity_type'],
+      )!,
+      startTime: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}start_time'],
+      )!,
+      distanceMeters: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}distance_meters'],
+      )!,
+      durationSeconds: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}duration_seconds'],
+      )!,
+      avgPaceSecondsPerKm: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}avg_pace_seconds_per_km'],
+      )!,
+      elevationGainMeters: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}elevation_gain_meters'],
+      )!,
+      gpxData: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}gpx_data'],
+      ),
+    );
+  }
+
+  @override
+  $RunActivitiesTable createAlias(String alias) {
+    return $RunActivitiesTable(attachedDatabase, alias);
+  }
+}
+
+class RunActivityData extends DataClass implements Insertable<RunActivityData> {
+  final int id;
+  final int? workoutId;
+  final String activityType;
+  final DateTime startTime;
+  final double distanceMeters;
+  final int durationSeconds;
+  final double avgPaceSecondsPerKm;
+  final double elevationGainMeters;
+  final String? gpxData;
+  const RunActivityData({
+    required this.id,
+    this.workoutId,
+    required this.activityType,
+    required this.startTime,
+    required this.distanceMeters,
+    required this.durationSeconds,
+    required this.avgPaceSecondsPerKm,
+    required this.elevationGainMeters,
+    this.gpxData,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<int>(id);
+    if (!nullToAbsent || workoutId != null) {
+      map['workout_id'] = Variable<int>(workoutId);
+    }
+    map['activity_type'] = Variable<String>(activityType);
+    map['start_time'] = Variable<DateTime>(startTime);
+    map['distance_meters'] = Variable<double>(distanceMeters);
+    map['duration_seconds'] = Variable<int>(durationSeconds);
+    map['avg_pace_seconds_per_km'] = Variable<double>(avgPaceSecondsPerKm);
+    map['elevation_gain_meters'] = Variable<double>(elevationGainMeters);
+    if (!nullToAbsent || gpxData != null) {
+      map['gpx_data'] = Variable<String>(gpxData);
+    }
+    return map;
+  }
+
+  RunActivitiesCompanion toCompanion(bool nullToAbsent) {
+    return RunActivitiesCompanion(
+      id: Value(id),
+      workoutId: workoutId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(workoutId),
+      activityType: Value(activityType),
+      startTime: Value(startTime),
+      distanceMeters: Value(distanceMeters),
+      durationSeconds: Value(durationSeconds),
+      avgPaceSecondsPerKm: Value(avgPaceSecondsPerKm),
+      elevationGainMeters: Value(elevationGainMeters),
+      gpxData: gpxData == null && nullToAbsent
+          ? const Value.absent()
+          : Value(gpxData),
+    );
+  }
+
+  factory RunActivityData.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return RunActivityData(
+      id: serializer.fromJson<int>(json['id']),
+      workoutId: serializer.fromJson<int?>(json['workoutId']),
+      activityType: serializer.fromJson<String>(json['activityType']),
+      startTime: serializer.fromJson<DateTime>(json['startTime']),
+      distanceMeters: serializer.fromJson<double>(json['distanceMeters']),
+      durationSeconds: serializer.fromJson<int>(json['durationSeconds']),
+      avgPaceSecondsPerKm: serializer.fromJson<double>(
+        json['avgPaceSecondsPerKm'],
+      ),
+      elevationGainMeters: serializer.fromJson<double>(
+        json['elevationGainMeters'],
+      ),
+      gpxData: serializer.fromJson<String?>(json['gpxData']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<int>(id),
+      'workoutId': serializer.toJson<int?>(workoutId),
+      'activityType': serializer.toJson<String>(activityType),
+      'startTime': serializer.toJson<DateTime>(startTime),
+      'distanceMeters': serializer.toJson<double>(distanceMeters),
+      'durationSeconds': serializer.toJson<int>(durationSeconds),
+      'avgPaceSecondsPerKm': serializer.toJson<double>(avgPaceSecondsPerKm),
+      'elevationGainMeters': serializer.toJson<double>(elevationGainMeters),
+      'gpxData': serializer.toJson<String?>(gpxData),
+    };
+  }
+
+  RunActivityData copyWith({
+    int? id,
+    Value<int?> workoutId = const Value.absent(),
+    String? activityType,
+    DateTime? startTime,
+    double? distanceMeters,
+    int? durationSeconds,
+    double? avgPaceSecondsPerKm,
+    double? elevationGainMeters,
+    Value<String?> gpxData = const Value.absent(),
+  }) => RunActivityData(
+    id: id ?? this.id,
+    workoutId: workoutId.present ? workoutId.value : this.workoutId,
+    activityType: activityType ?? this.activityType,
+    startTime: startTime ?? this.startTime,
+    distanceMeters: distanceMeters ?? this.distanceMeters,
+    durationSeconds: durationSeconds ?? this.durationSeconds,
+    avgPaceSecondsPerKm: avgPaceSecondsPerKm ?? this.avgPaceSecondsPerKm,
+    elevationGainMeters: elevationGainMeters ?? this.elevationGainMeters,
+    gpxData: gpxData.present ? gpxData.value : this.gpxData,
+  );
+  RunActivityData copyWithCompanion(RunActivitiesCompanion data) {
+    return RunActivityData(
+      id: data.id.present ? data.id.value : this.id,
+      workoutId: data.workoutId.present ? data.workoutId.value : this.workoutId,
+      activityType: data.activityType.present
+          ? data.activityType.value
+          : this.activityType,
+      startTime: data.startTime.present ? data.startTime.value : this.startTime,
+      distanceMeters: data.distanceMeters.present
+          ? data.distanceMeters.value
+          : this.distanceMeters,
+      durationSeconds: data.durationSeconds.present
+          ? data.durationSeconds.value
+          : this.durationSeconds,
+      avgPaceSecondsPerKm: data.avgPaceSecondsPerKm.present
+          ? data.avgPaceSecondsPerKm.value
+          : this.avgPaceSecondsPerKm,
+      elevationGainMeters: data.elevationGainMeters.present
+          ? data.elevationGainMeters.value
+          : this.elevationGainMeters,
+      gpxData: data.gpxData.present ? data.gpxData.value : this.gpxData,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('RunActivityData(')
+          ..write('id: $id, ')
+          ..write('workoutId: $workoutId, ')
+          ..write('activityType: $activityType, ')
+          ..write('startTime: $startTime, ')
+          ..write('distanceMeters: $distanceMeters, ')
+          ..write('durationSeconds: $durationSeconds, ')
+          ..write('avgPaceSecondsPerKm: $avgPaceSecondsPerKm, ')
+          ..write('elevationGainMeters: $elevationGainMeters, ')
+          ..write('gpxData: $gpxData')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(
+    id,
+    workoutId,
+    activityType,
+    startTime,
+    distanceMeters,
+    durationSeconds,
+    avgPaceSecondsPerKm,
+    elevationGainMeters,
+    gpxData,
+  );
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is RunActivityData &&
+          other.id == this.id &&
+          other.workoutId == this.workoutId &&
+          other.activityType == this.activityType &&
+          other.startTime == this.startTime &&
+          other.distanceMeters == this.distanceMeters &&
+          other.durationSeconds == this.durationSeconds &&
+          other.avgPaceSecondsPerKm == this.avgPaceSecondsPerKm &&
+          other.elevationGainMeters == this.elevationGainMeters &&
+          other.gpxData == this.gpxData);
+}
+
+class RunActivitiesCompanion extends UpdateCompanion<RunActivityData> {
+  final Value<int> id;
+  final Value<int?> workoutId;
+  final Value<String> activityType;
+  final Value<DateTime> startTime;
+  final Value<double> distanceMeters;
+  final Value<int> durationSeconds;
+  final Value<double> avgPaceSecondsPerKm;
+  final Value<double> elevationGainMeters;
+  final Value<String?> gpxData;
+  const RunActivitiesCompanion({
+    this.id = const Value.absent(),
+    this.workoutId = const Value.absent(),
+    this.activityType = const Value.absent(),
+    this.startTime = const Value.absent(),
+    this.distanceMeters = const Value.absent(),
+    this.durationSeconds = const Value.absent(),
+    this.avgPaceSecondsPerKm = const Value.absent(),
+    this.elevationGainMeters = const Value.absent(),
+    this.gpxData = const Value.absent(),
+  });
+  RunActivitiesCompanion.insert({
+    this.id = const Value.absent(),
+    this.workoutId = const Value.absent(),
+    this.activityType = const Value.absent(),
+    this.startTime = const Value.absent(),
+    this.distanceMeters = const Value.absent(),
+    this.durationSeconds = const Value.absent(),
+    this.avgPaceSecondsPerKm = const Value.absent(),
+    this.elevationGainMeters = const Value.absent(),
+    this.gpxData = const Value.absent(),
+  });
+  static Insertable<RunActivityData> custom({
+    Expression<int>? id,
+    Expression<int>? workoutId,
+    Expression<String>? activityType,
+    Expression<DateTime>? startTime,
+    Expression<double>? distanceMeters,
+    Expression<int>? durationSeconds,
+    Expression<double>? avgPaceSecondsPerKm,
+    Expression<double>? elevationGainMeters,
+    Expression<String>? gpxData,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (workoutId != null) 'workout_id': workoutId,
+      if (activityType != null) 'activity_type': activityType,
+      if (startTime != null) 'start_time': startTime,
+      if (distanceMeters != null) 'distance_meters': distanceMeters,
+      if (durationSeconds != null) 'duration_seconds': durationSeconds,
+      if (avgPaceSecondsPerKm != null)
+        'avg_pace_seconds_per_km': avgPaceSecondsPerKm,
+      if (elevationGainMeters != null)
+        'elevation_gain_meters': elevationGainMeters,
+      if (gpxData != null) 'gpx_data': gpxData,
+    });
+  }
+
+  RunActivitiesCompanion copyWith({
+    Value<int>? id,
+    Value<int?>? workoutId,
+    Value<String>? activityType,
+    Value<DateTime>? startTime,
+    Value<double>? distanceMeters,
+    Value<int>? durationSeconds,
+    Value<double>? avgPaceSecondsPerKm,
+    Value<double>? elevationGainMeters,
+    Value<String?>? gpxData,
+  }) {
+    return RunActivitiesCompanion(
+      id: id ?? this.id,
+      workoutId: workoutId ?? this.workoutId,
+      activityType: activityType ?? this.activityType,
+      startTime: startTime ?? this.startTime,
+      distanceMeters: distanceMeters ?? this.distanceMeters,
+      durationSeconds: durationSeconds ?? this.durationSeconds,
+      avgPaceSecondsPerKm: avgPaceSecondsPerKm ?? this.avgPaceSecondsPerKm,
+      elevationGainMeters: elevationGainMeters ?? this.elevationGainMeters,
+      gpxData: gpxData ?? this.gpxData,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<int>(id.value);
+    }
+    if (workoutId.present) {
+      map['workout_id'] = Variable<int>(workoutId.value);
+    }
+    if (activityType.present) {
+      map['activity_type'] = Variable<String>(activityType.value);
+    }
+    if (startTime.present) {
+      map['start_time'] = Variable<DateTime>(startTime.value);
+    }
+    if (distanceMeters.present) {
+      map['distance_meters'] = Variable<double>(distanceMeters.value);
+    }
+    if (durationSeconds.present) {
+      map['duration_seconds'] = Variable<int>(durationSeconds.value);
+    }
+    if (avgPaceSecondsPerKm.present) {
+      map['avg_pace_seconds_per_km'] = Variable<double>(
+        avgPaceSecondsPerKm.value,
+      );
+    }
+    if (elevationGainMeters.present) {
+      map['elevation_gain_meters'] = Variable<double>(
+        elevationGainMeters.value,
+      );
+    }
+    if (gpxData.present) {
+      map['gpx_data'] = Variable<String>(gpxData.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('RunActivitiesCompanion(')
+          ..write('id: $id, ')
+          ..write('workoutId: $workoutId, ')
+          ..write('activityType: $activityType, ')
+          ..write('startTime: $startTime, ')
+          ..write('distanceMeters: $distanceMeters, ')
+          ..write('durationSeconds: $durationSeconds, ')
+          ..write('avgPaceSecondsPerKm: $avgPaceSecondsPerKm, ')
+          ..write('elevationGainMeters: $elevationGainMeters, ')
+          ..write('gpxData: $gpxData')
+          ..write(')'))
+        .toString();
+  }
+}
+
 abstract class _$AppDatabase extends GeneratedDatabase {
   _$AppDatabase(QueryExecutor e) : super(e);
   $AppDatabaseManager get managers => $AppDatabaseManager(this);
@@ -2858,6 +3437,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   late final $RoutineExercisesTable routineExercises = $RoutineExercisesTable(
     this,
   );
+  late final $RunActivitiesTable runActivities = $RunActivitiesTable(this);
   @override
   Iterable<TableInfo<Table, Object?>> get allTables =>
       allSchemaEntities.whereType<TableInfo<Table, Object?>>();
@@ -2869,6 +3449,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     setEntries,
     routines,
     routineExercises,
+    runActivities,
   ];
   @override
   StreamQueryUpdateRules get streamUpdateRules => const StreamQueryUpdateRules([
@@ -2906,6 +3487,13 @@ abstract class _$AppDatabase extends GeneratedDatabase {
         limitUpdateKind: UpdateKind.delete,
       ),
       result: [TableUpdate('routine_exercises', kind: UpdateKind.delete)],
+    ),
+    WritePropagation(
+      on: TableUpdateQuery.onTableName(
+        'workouts',
+        limitUpdateKind: UpdateKind.delete,
+      ),
+      result: [TableUpdate('run_activities', kind: UpdateKind.delete)],
     ),
   ]);
 }
@@ -3430,6 +4018,24 @@ final class $$WorkoutsTableReferences
       manager.$state.copyWith(prefetchedData: cache),
     );
   }
+
+  static MultiTypedResultKey<$RunActivitiesTable, List<RunActivityData>>
+  _runActivitiesRefsTable(_$AppDatabase db) => MultiTypedResultKey.fromTable(
+    db.runActivities,
+    aliasName: 'workouts__id__run_activities__workout_id',
+  );
+
+  $$RunActivitiesTableProcessedTableManager get runActivitiesRefs {
+    final manager = $$RunActivitiesTableTableManager(
+      $_db,
+      $_db.runActivities,
+    ).filter((f) => f.workoutId.id.sqlEquals($_itemColumn<int>('id')!));
+
+    final cache = $_typedResult.readTableOrNull(_runActivitiesRefsTable($_db));
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
+    );
+  }
 }
 
 class $$WorkoutsTableFilterComposer
@@ -3477,6 +4083,31 @@ class $$WorkoutsTableFilterComposer
           }) => $$WorkoutExercisesTableFilterComposer(
             $db: $db,
             $table: $db.workoutExercises,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+
+  Expression<bool> runActivitiesRefs(
+    Expression<bool> Function($$RunActivitiesTableFilterComposer f) f,
+  ) {
+    final $$RunActivitiesTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.runActivities,
+      getReferencedColumn: (t) => t.workoutId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$RunActivitiesTableFilterComposer(
+            $db: $db,
+            $table: $db.runActivities,
             $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
             joinBuilder: joinBuilder,
             $removeJoinBuilderFromRootComposer:
@@ -3564,6 +4195,31 @@ class $$WorkoutsTableAnnotationComposer
     );
     return f(composer);
   }
+
+  Expression<T> runActivitiesRefs<T extends Object>(
+    Expression<T> Function($$RunActivitiesTableAnnotationComposer a) f,
+  ) {
+    final $$RunActivitiesTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.runActivities,
+      getReferencedColumn: (t) => t.workoutId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$RunActivitiesTableAnnotationComposer(
+            $db: $db,
+            $table: $db.runActivities,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
 }
 
 class $$WorkoutsTableTableManager
@@ -3579,7 +4235,10 @@ class $$WorkoutsTableTableManager
           $$WorkoutsTableUpdateCompanionBuilder,
           (WorkoutData, $$WorkoutsTableReferences),
           WorkoutData,
-          PrefetchHooks Function({bool workoutExercisesRefs})
+          PrefetchHooks Function({
+            bool workoutExercisesRefs,
+            bool runActivitiesRefs,
+          })
         > {
   $$WorkoutsTableTableManager(_$AppDatabase db, $WorkoutsTable table)
     : super(
@@ -3624,37 +4283,63 @@ class $$WorkoutsTableTableManager
                 ),
               )
               .toList(),
-          prefetchHooksCallback: ({workoutExercisesRefs = false}) {
-            return PrefetchHooks(
-              db: db,
-              explicitlyWatchedTables: [
-                if (workoutExercisesRefs) db.workoutExercises,
-              ],
-              addJoins: null,
-              getPrefetchedDataCallback: (items) async {
-                return [
-                  if (workoutExercisesRefs)
-                    await $_getPrefetchedData<
-                      WorkoutData,
-                      $WorkoutsTable,
-                      WorkoutExerciseData
-                    >(
-                      currentTable: table,
-                      referencedTable: $$WorkoutsTableReferences
-                          ._workoutExercisesRefsTable(db),
-                      managerFromTypedResult: (p0) => $$WorkoutsTableReferences(
-                        db,
-                        table,
-                        p0,
-                      ).workoutExercisesRefs,
-                      referencedItemsForCurrentItem: (item, referencedItems) =>
-                          referencedItems.where((e) => e.workoutId == item.id),
-                      typedResults: items,
-                    ),
-                ];
+          prefetchHooksCallback:
+              ({workoutExercisesRefs = false, runActivitiesRefs = false}) {
+                return PrefetchHooks(
+                  db: db,
+                  explicitlyWatchedTables: [
+                    if (workoutExercisesRefs) db.workoutExercises,
+                    if (runActivitiesRefs) db.runActivities,
+                  ],
+                  addJoins: null,
+                  getPrefetchedDataCallback: (items) async {
+                    return [
+                      if (workoutExercisesRefs)
+                        await $_getPrefetchedData<
+                          WorkoutData,
+                          $WorkoutsTable,
+                          WorkoutExerciseData
+                        >(
+                          currentTable: table,
+                          referencedTable: $$WorkoutsTableReferences
+                              ._workoutExercisesRefsTable(db),
+                          managerFromTypedResult: (p0) =>
+                              $$WorkoutsTableReferences(
+                                db,
+                                table,
+                                p0,
+                              ).workoutExercisesRefs,
+                          referencedItemsForCurrentItem:
+                              (item, referencedItems) => referencedItems.where(
+                                (e) => e.workoutId == item.id,
+                              ),
+                          typedResults: items,
+                        ),
+                      if (runActivitiesRefs)
+                        await $_getPrefetchedData<
+                          WorkoutData,
+                          $WorkoutsTable,
+                          RunActivityData
+                        >(
+                          currentTable: table,
+                          referencedTable: $$WorkoutsTableReferences
+                              ._runActivitiesRefsTable(db),
+                          managerFromTypedResult: (p0) =>
+                              $$WorkoutsTableReferences(
+                                db,
+                                table,
+                                p0,
+                              ).runActivitiesRefs,
+                          referencedItemsForCurrentItem:
+                              (item, referencedItems) => referencedItems.where(
+                                (e) => e.workoutId == item.id,
+                              ),
+                          typedResults: items,
+                        ),
+                    ];
+                  },
+                );
               },
-            );
-          },
         ),
       );
 }
@@ -3671,7 +4356,10 @@ typedef $$WorkoutsTableProcessedTableManager =
       $$WorkoutsTableUpdateCompanionBuilder,
       (WorkoutData, $$WorkoutsTableReferences),
       WorkoutData,
-      PrefetchHooks Function({bool workoutExercisesRefs})
+      PrefetchHooks Function({
+        bool workoutExercisesRefs,
+        bool runActivitiesRefs,
+      })
     >;
 typedef $$WorkoutExercisesTableCreateCompanionBuilder =
     WorkoutExercisesCompanion Function({
@@ -5418,6 +6106,408 @@ typedef $$RoutineExercisesTableProcessedTableManager =
       RoutineExerciseData,
       PrefetchHooks Function({bool routineId, bool exerciseId})
     >;
+typedef $$RunActivitiesTableCreateCompanionBuilder =
+    RunActivitiesCompanion Function({
+      Value<int> id,
+      Value<int?> workoutId,
+      Value<String> activityType,
+      Value<DateTime> startTime,
+      Value<double> distanceMeters,
+      Value<int> durationSeconds,
+      Value<double> avgPaceSecondsPerKm,
+      Value<double> elevationGainMeters,
+      Value<String?> gpxData,
+    });
+typedef $$RunActivitiesTableUpdateCompanionBuilder =
+    RunActivitiesCompanion Function({
+      Value<int> id,
+      Value<int?> workoutId,
+      Value<String> activityType,
+      Value<DateTime> startTime,
+      Value<double> distanceMeters,
+      Value<int> durationSeconds,
+      Value<double> avgPaceSecondsPerKm,
+      Value<double> elevationGainMeters,
+      Value<String?> gpxData,
+    });
+
+final class $$RunActivitiesTableReferences
+    extends
+        BaseReferences<_$AppDatabase, $RunActivitiesTable, RunActivityData> {
+  $$RunActivitiesTableReferences(
+    super.$_db,
+    super.$_table,
+    super.$_typedResult,
+  );
+
+  static $WorkoutsTable _workoutIdTable(_$AppDatabase db) =>
+      db.workouts.createAlias('run_activities__workout_id__workouts__id');
+
+  $$WorkoutsTableProcessedTableManager? get workoutId {
+    final $_column = $_itemColumn<int>('workout_id');
+    if ($_column == null) return null;
+    final manager = $$WorkoutsTableTableManager(
+      $_db,
+      $_db.workouts,
+    ).filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_workoutIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+}
+
+class $$RunActivitiesTableFilterComposer
+    extends Composer<_$AppDatabase, $RunActivitiesTable> {
+  $$RunActivitiesTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<int> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get activityType => $composableBuilder(
+    column: $table.activityType,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get startTime => $composableBuilder(
+    column: $table.startTime,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get distanceMeters => $composableBuilder(
+    column: $table.distanceMeters,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get durationSeconds => $composableBuilder(
+    column: $table.durationSeconds,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get avgPaceSecondsPerKm => $composableBuilder(
+    column: $table.avgPaceSecondsPerKm,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get elevationGainMeters => $composableBuilder(
+    column: $table.elevationGainMeters,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get gpxData => $composableBuilder(
+    column: $table.gpxData,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  $$WorkoutsTableFilterComposer get workoutId {
+    final $$WorkoutsTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.workoutId,
+      referencedTable: $db.workouts,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$WorkoutsTableFilterComposer(
+            $db: $db,
+            $table: $db.workouts,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$RunActivitiesTableOrderingComposer
+    extends Composer<_$AppDatabase, $RunActivitiesTable> {
+  $$RunActivitiesTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<int> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get activityType => $composableBuilder(
+    column: $table.activityType,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get startTime => $composableBuilder(
+    column: $table.startTime,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get distanceMeters => $composableBuilder(
+    column: $table.distanceMeters,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get durationSeconds => $composableBuilder(
+    column: $table.durationSeconds,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get avgPaceSecondsPerKm => $composableBuilder(
+    column: $table.avgPaceSecondsPerKm,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get elevationGainMeters => $composableBuilder(
+    column: $table.elevationGainMeters,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get gpxData => $composableBuilder(
+    column: $table.gpxData,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  $$WorkoutsTableOrderingComposer get workoutId {
+    final $$WorkoutsTableOrderingComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.workoutId,
+      referencedTable: $db.workouts,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$WorkoutsTableOrderingComposer(
+            $db: $db,
+            $table: $db.workouts,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$RunActivitiesTableAnnotationComposer
+    extends Composer<_$AppDatabase, $RunActivitiesTable> {
+  $$RunActivitiesTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<int> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get activityType => $composableBuilder(
+    column: $table.activityType,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<DateTime> get startTime =>
+      $composableBuilder(column: $table.startTime, builder: (column) => column);
+
+  GeneratedColumn<double> get distanceMeters => $composableBuilder(
+    column: $table.distanceMeters,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get durationSeconds => $composableBuilder(
+    column: $table.durationSeconds,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<double> get avgPaceSecondsPerKm => $composableBuilder(
+    column: $table.avgPaceSecondsPerKm,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<double> get elevationGainMeters => $composableBuilder(
+    column: $table.elevationGainMeters,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get gpxData =>
+      $composableBuilder(column: $table.gpxData, builder: (column) => column);
+
+  $$WorkoutsTableAnnotationComposer get workoutId {
+    final $$WorkoutsTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.workoutId,
+      referencedTable: $db.workouts,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$WorkoutsTableAnnotationComposer(
+            $db: $db,
+            $table: $db.workouts,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$RunActivitiesTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $RunActivitiesTable,
+          RunActivityData,
+          $$RunActivitiesTableFilterComposer,
+          $$RunActivitiesTableOrderingComposer,
+          $$RunActivitiesTableAnnotationComposer,
+          $$RunActivitiesTableCreateCompanionBuilder,
+          $$RunActivitiesTableUpdateCompanionBuilder,
+          (RunActivityData, $$RunActivitiesTableReferences),
+          RunActivityData,
+          PrefetchHooks Function({bool workoutId})
+        > {
+  $$RunActivitiesTableTableManager(_$AppDatabase db, $RunActivitiesTable table)
+    : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$RunActivitiesTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$RunActivitiesTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$RunActivitiesTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<int> id = const Value.absent(),
+                Value<int?> workoutId = const Value.absent(),
+                Value<String> activityType = const Value.absent(),
+                Value<DateTime> startTime = const Value.absent(),
+                Value<double> distanceMeters = const Value.absent(),
+                Value<int> durationSeconds = const Value.absent(),
+                Value<double> avgPaceSecondsPerKm = const Value.absent(),
+                Value<double> elevationGainMeters = const Value.absent(),
+                Value<String?> gpxData = const Value.absent(),
+              }) => RunActivitiesCompanion(
+                id: id,
+                workoutId: workoutId,
+                activityType: activityType,
+                startTime: startTime,
+                distanceMeters: distanceMeters,
+                durationSeconds: durationSeconds,
+                avgPaceSecondsPerKm: avgPaceSecondsPerKm,
+                elevationGainMeters: elevationGainMeters,
+                gpxData: gpxData,
+              ),
+          createCompanionCallback:
+              ({
+                Value<int> id = const Value.absent(),
+                Value<int?> workoutId = const Value.absent(),
+                Value<String> activityType = const Value.absent(),
+                Value<DateTime> startTime = const Value.absent(),
+                Value<double> distanceMeters = const Value.absent(),
+                Value<int> durationSeconds = const Value.absent(),
+                Value<double> avgPaceSecondsPerKm = const Value.absent(),
+                Value<double> elevationGainMeters = const Value.absent(),
+                Value<String?> gpxData = const Value.absent(),
+              }) => RunActivitiesCompanion.insert(
+                id: id,
+                workoutId: workoutId,
+                activityType: activityType,
+                startTime: startTime,
+                distanceMeters: distanceMeters,
+                durationSeconds: durationSeconds,
+                avgPaceSecondsPerKm: avgPaceSecondsPerKm,
+                elevationGainMeters: elevationGainMeters,
+                gpxData: gpxData,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable(table),
+                  $$RunActivitiesTableReferences(db, table, e),
+                ),
+              )
+              .toList(),
+          prefetchHooksCallback: ({workoutId = false}) {
+            return PrefetchHooks(
+              db: db,
+              explicitlyWatchedTables: [],
+              addJoins:
+                  <
+                    T extends TableManagerState<
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic
+                    >
+                  >(state) {
+                    if (workoutId) {
+                      state =
+                          state.withJoin(
+                                currentTable: table,
+                                currentColumn: table.workoutId,
+                                referencedTable: $$RunActivitiesTableReferences
+                                    ._workoutIdTable(db),
+                                referencedColumn: $$RunActivitiesTableReferences
+                                    ._workoutIdTable(db)
+                                    .id,
+                              )
+                              as T;
+                    }
+
+                    return state;
+                  },
+              getPrefetchedDataCallback: (items) async {
+                return [];
+              },
+            );
+          },
+        ),
+      );
+}
+
+typedef $$RunActivitiesTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $RunActivitiesTable,
+      RunActivityData,
+      $$RunActivitiesTableFilterComposer,
+      $$RunActivitiesTableOrderingComposer,
+      $$RunActivitiesTableAnnotationComposer,
+      $$RunActivitiesTableCreateCompanionBuilder,
+      $$RunActivitiesTableUpdateCompanionBuilder,
+      (RunActivityData, $$RunActivitiesTableReferences),
+      RunActivityData,
+      PrefetchHooks Function({bool workoutId})
+    >;
 
 class $AppDatabaseManager {
   final _$AppDatabase _db;
@@ -5434,4 +6524,6 @@ class $AppDatabaseManager {
       $$RoutinesTableTableManager(_db, _db.routines);
   $$RoutineExercisesTableTableManager get routineExercises =>
       $$RoutineExercisesTableTableManager(_db, _db.routineExercises);
+  $$RunActivitiesTableTableManager get runActivities =>
+      $$RunActivitiesTableTableManager(_db, _db.runActivities);
 }
