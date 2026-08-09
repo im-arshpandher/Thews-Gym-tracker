@@ -3,6 +3,7 @@ import 'package:drift/drift.dart';
 import 'package:drift/native.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:path/path.dart' as p;
+import '../utils/volume_calculator.dart';
 import 'tables.dart';
 
 part 'app_database.g.dart';
@@ -22,177 +23,15 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase.forTesting(super.e);
 
   @override
-  int get schemaVersion => 3;
+  int get schemaVersion => 5;
 
   @override
   MigrationStrategy get migration {
-    return MigrationStrategy(
+        return MigrationStrategy(
       onCreate: (m) async {
         await m.createAll();
-        // Seed default exercise library
-        await batch((b) {
-          b.insertAll(exercises, [
-            ExercisesCompanion.insert(
-              name: 'Barbell Bench Press',
-              muscleGroup: 'Chest',
-              secondaryMuscleGroups: const Value('Shoulders, Arms'),
-            ),
-            ExercisesCompanion.insert(
-              name: 'Incline Dumbbell Press',
-              muscleGroup: 'Chest',
-              secondaryMuscleGroups: const Value('Shoulders, Arms'),
-            ),
-            ExercisesCompanion.insert(
-              name: 'Chest Fly',
-              muscleGroup: 'Chest',
-              secondaryMuscleGroups: const Value('Shoulders'),
-            ),
-            ExercisesCompanion.insert(
-              name: 'Barbell Squat',
-              muscleGroup: 'Legs',
-              secondaryMuscleGroups: const Value('Core'),
-            ),
-            ExercisesCompanion.insert(name: 'Leg Press', muscleGroup: 'Legs'),
-            ExercisesCompanion.insert(
-              name: 'Romanian Deadlift',
-              muscleGroup: 'Legs',
-              secondaryMuscleGroups: const Value('Back'),
-            ),
-            ExercisesCompanion.insert(
-              name: 'Conventional Deadlift',
-              muscleGroup: 'Back',
-              secondaryMuscleGroups: const Value('Legs, Core'),
-            ),
-            ExercisesCompanion.insert(
-              name: 'Lat Pulldown',
-              muscleGroup: 'Back',
-              secondaryMuscleGroups: const Value('Arms'),
-            ),
-            ExercisesCompanion.insert(
-              name: 'Bent Over Row',
-              muscleGroup: 'Back',
-              secondaryMuscleGroups: const Value('Arms'),
-            ),
-            ExercisesCompanion.insert(
-              name: 'Overhead Shoulder Press',
-              muscleGroup: 'Shoulders',
-              secondaryMuscleGroups: const Value('Arms, Core'),
-            ),
-            ExercisesCompanion.insert(
-              name: 'Lateral Raise',
-              muscleGroup: 'Shoulders',
-            ),
-            ExercisesCompanion.insert(
-              name: 'Bicep Barbell Curl',
-              muscleGroup: 'Arms',
-            ),
-            ExercisesCompanion.insert(
-              name: 'Tricep Rope Pushdown',
-              muscleGroup: 'Arms',
-            ),
-            ExercisesCompanion.insert(
-              name: 'Hanging Leg Raise',
-              muscleGroup: 'Core',
-            ),
-            ExercisesCompanion.insert(
-              name: 'Ab Wheel Rollout',
-              muscleGroup: 'Core',
-              secondaryMuscleGroups: const Value('Arms'),
-            ),
-            ExercisesCompanion.insert(
-              name: 'Treadmill Run',
-              muscleGroup: 'Cardio',
-              secondaryMuscleGroups: const Value('Legs'),
-            ),
-          ]);
-        });
-
-        // Seed initial sample routines
-        final pushId = await into(routines).insert(
-          RoutinesCompanion.insert(
-            name: 'Push Hypertrophy',
-            description: Value('Chest, Shoulders & Triceps focus routine'),
-          ),
-        );
-        await into(routineExercises).insert(
-          RoutineExercisesCompanion.insert(
-            routineId: pushId,
-            exerciseId: 1,
-            targetSets: const Value(3),
-            targetReps: const Value(10),
-            sortOrder: const Value(0),
-          ),
-        );
-        await into(routineExercises).insert(
-          RoutineExercisesCompanion.insert(
-            routineId: pushId,
-            exerciseId: 2,
-            targetSets: const Value(3),
-            targetReps: const Value(12),
-            sortOrder: const Value(1),
-          ),
-        );
-        await into(routineExercises).insert(
-          RoutineExercisesCompanion.insert(
-            routineId: pushId,
-            exerciseId: 10,
-            targetSets: const Value(3),
-            targetReps: const Value(10),
-            sortOrder: const Value(2),
-          ),
-        );
-        await into(routineExercises).insert(
-          RoutineExercisesCompanion.insert(
-            routineId: pushId,
-            exerciseId: 13,
-            targetSets: const Value(3),
-            targetReps: const Value(12),
-            sortOrder: const Value(3),
-          ),
-        );
-
-        final pullId = await into(routines).insert(
-          RoutinesCompanion.insert(
-            name: 'Pull Power',
-            description: Value('Back & Biceps workout routine'),
-          ),
-        );
-        await into(routineExercises).insert(
-          RoutineExercisesCompanion.insert(
-            routineId: pullId,
-            exerciseId: 7,
-            targetSets: const Value(3),
-            targetReps: const Value(8),
-            sortOrder: const Value(0),
-          ),
-        );
-        await into(routineExercises).insert(
-          RoutineExercisesCompanion.insert(
-            routineId: pullId,
-            exerciseId: 8,
-            targetSets: const Value(3),
-            targetReps: const Value(10),
-            sortOrder: const Value(1),
-          ),
-        );
-        await into(routineExercises).insert(
-          RoutineExercisesCompanion.insert(
-            routineId: pullId,
-            exerciseId: 9,
-            targetSets: const Value(3),
-            targetReps: const Value(10),
-            sortOrder: const Value(2),
-          ),
-        );
-        await into(routineExercises).insert(
-          RoutineExercisesCompanion.insert(
-            routineId: pullId,
-            exerciseId: 12,
-            targetSets: const Value(3),
-            targetReps: const Value(12),
-            sortOrder: const Value(3),
-          ),
-        );
+        await seedDefaultExercises();
+        await seedDefaultRoutines();
       },
       onUpgrade: (m, from, to) async {
         if (from < 2) {
@@ -236,13 +75,21 @@ class AppDatabase extends _$AppDatabase {
             "ALTER TABLE exercises ADD COLUMN secondary_muscle_groups TEXT;",
           );
         } catch (_) {}
+        try {
+          await customStatement(
+            "ALTER TABLE exercises ADD COLUMN is_deleted INTEGER NOT NULL DEFAULT 0;",
+          );
+        } catch (_) {}
       },
     );
   }
 
   // --- Exercises Queries ---
-  Future<List<ExerciseData>> getAllExercises() => select(exercises).get();
-  Stream<List<ExerciseData>> watchAllExercises() => select(exercises).watch();
+  Future<List<ExerciseData>> getAllExercises() =>
+      (select(exercises)..where((t) => t.isDeleted.equals(false))).get();
+
+  Stream<List<ExerciseData>> watchAllExercises() =>
+      (select(exercises)..where((t) => t.isDeleted.equals(false))).watch();
 
   Stream<List<ExerciseData>> watchExercisesByMuscleGroup(String muscleGroup) {
     if (muscleGroup.toLowerCase() == 'all') {
@@ -250,7 +97,9 @@ class AppDatabase extends _$AppDatabase {
     }
     return (select(
       exercises,
-    )..where((t) => t.muscleGroup.equals(muscleGroup))).watch();
+    )..where(
+      (t) => t.muscleGroup.equals(muscleGroup) & t.isDeleted.equals(false),
+    )).watch();
   }
 
   Future<int> insertExercise(ExercisesCompanion exercise) =>
@@ -258,7 +107,9 @@ class AppDatabase extends _$AppDatabase {
   Future<bool> updateExercise(ExerciseData exercise) =>
       update(exercises).replace(exercise);
   Future<int> deleteExercise(int id) =>
-      (delete(exercises)..where((t) => t.id.equals(id))).go();
+      (update(exercises)..where((t) => t.id.equals(id))).write(
+        const ExercisesCompanion(isDeleted: Value(true)),
+      );
 
   // --- Workouts Queries ---
   Future<List<WorkoutData>> getAllWorkouts() =>
@@ -331,9 +182,12 @@ class AppDatabase extends _$AppDatabase {
           if (s.weight > maxWeight) maxWeight = s.weight;
           final e1rm = s.weight * (1 + s.reps / 30.0);
           if (e1rm > max1RM) max1RM = e1rm;
-          if (s.type != 'warmup') {
-            totalVolume += (s.weight * s.reps);
-          }
+          totalVolume += VolumeCalculator.calculateSetVolume(
+            weight: s.weight,
+            reps: s.reps,
+            type: s.type,
+            unit: s.unit,
+          );
         }
 
         points.add(
@@ -352,13 +206,11 @@ class AppDatabase extends _$AppDatabase {
 
   Stream<double> watchTotalVolume() {
     return select(setEntries).watch().map((sets) {
-      double total = 0;
-      for (final s in sets) {
-        if (s.type != 'warmup') {
-          total += (s.weight * s.reps);
-        }
+      try {
+        return VolumeCalculator.calculateTotalVolume(sets);
+      } catch (_) {
+        return 0.0;
       }
-      return total;
     });
   }
 
@@ -444,6 +296,540 @@ class AppDatabase extends _$AppDatabase {
       return details;
     });
   }
+
+  /// Deletes all existing workout history and populates fresh tuned sessions for this week.
+  Future<void> clearAndSeedThisWeekWorkouts() async {
+    await delete(setEntries).go();
+    await delete(workoutExercises).go();
+    await delete(workouts).go();
+
+    final allEx = await getAllExercises();
+    if (allEx.isEmpty) return;
+
+    ExerciseData findEx(String name) {
+      return allEx.firstWhere(
+        (e) => e.name.toLowerCase() == name.toLowerCase(),
+        orElse: () => allEx.first,
+      );
+    }
+
+    final now = DateTime.now();
+
+    // 1. Heavy Push Session (2 days ago)
+    final pushWorkoutId = await insertWorkout(
+      WorkoutsCompanion.insert(
+        date: Value(now.subtract(const Duration(days: 2))),
+        notes: const Value('Heavy Push Hypertrophy Session - Great bench press progress'),
+        durationSeconds: const Value(3600),
+      ),
+    );
+
+    final benchEx = findEx('Barbell Bench Press');
+    final benchWeId = await insertWorkoutExercise(
+      WorkoutExercisesCompanion.insert(
+        workoutId: pushWorkoutId,
+        exerciseId: benchEx.id,
+        sortOrder: const Value(0),
+      ),
+    );
+    await insertSetEntry(SetEntriesCompanion.insert(workoutExerciseId: benchWeId, setNumber: 1, weight: 60, reps: 12, type: const Value('warmup')));
+    await insertSetEntry(SetEntriesCompanion.insert(workoutExerciseId: benchWeId, setNumber: 2, weight: 85, reps: 10, type: const Value('normal')));
+    await insertSetEntry(SetEntriesCompanion.insert(workoutExerciseId: benchWeId, setNumber: 3, weight: 95, reps: 8, type: const Value('normal')));
+    await insertSetEntry(SetEntriesCompanion.insert(workoutExerciseId: benchWeId, setNumber: 4, weight: 105, reps: 6, type: const Value('normal')));
+    await insertSetEntry(SetEntriesCompanion.insert(workoutExerciseId: benchWeId, setNumber: 5, weight: 75, reps: 12, type: const Value('drop')));
+
+    final ohpEx = findEx('Overhead Shoulder Press');
+    final ohpWeId = await insertWorkoutExercise(
+      WorkoutExercisesCompanion.insert(
+        workoutId: pushWorkoutId,
+        exerciseId: ohpEx.id,
+        sortOrder: const Value(1),
+      ),
+    );
+    await insertSetEntry(SetEntriesCompanion.insert(workoutExerciseId: ohpWeId, setNumber: 1, weight: 50, reps: 10, type: const Value('normal')));
+    await insertSetEntry(SetEntriesCompanion.insert(workoutExerciseId: ohpWeId, setNumber: 2, weight: 60, reps: 8, type: const Value('normal')));
+    await insertSetEntry(SetEntriesCompanion.insert(workoutExerciseId: ohpWeId, setNumber: 3, weight: 65, reps: 6, type: const Value('normal')));
+
+    final tricepEx = findEx('Tricep Rope Pushdown');
+    final tricepWeId = await insertWorkoutExercise(
+      WorkoutExercisesCompanion.insert(
+        workoutId: pushWorkoutId,
+        exerciseId: tricepEx.id,
+        sortOrder: const Value(2),
+      ),
+    );
+    await insertSetEntry(SetEntriesCompanion.insert(workoutExerciseId: tricepWeId, setNumber: 1, weight: 30, reps: 12, type: const Value('normal')));
+    await insertSetEntry(SetEntriesCompanion.insert(workoutExerciseId: tricepWeId, setNumber: 2, weight: 35, reps: 10, type: const Value('normal')));
+    await insertSetEntry(SetEntriesCompanion.insert(workoutExerciseId: tricepWeId, setNumber: 3, weight: 40, reps: 8, type: const Value('failure')));
+
+    // 2. Pull & Back Power Session (1 day ago)
+    final pullWorkoutId = await insertWorkout(
+      WorkoutsCompanion.insert(
+        date: Value(now.subtract(const Duration(days: 1))),
+        notes: const Value('Pull & Back Power Session - Deadlift volume'),
+        durationSeconds: const Value(3300),
+      ),
+    );
+
+    final deadliftEx = findEx('Conventional Deadlift');
+    final deadliftWeId = await insertWorkoutExercise(
+      WorkoutExercisesCompanion.insert(
+        workoutId: pullWorkoutId,
+        exerciseId: deadliftEx.id,
+        sortOrder: const Value(0),
+      ),
+    );
+    await insertSetEntry(SetEntriesCompanion.insert(workoutExerciseId: deadliftWeId, setNumber: 1, weight: 70, reps: 10, type: const Value('warmup')));
+    await insertSetEntry(SetEntriesCompanion.insert(workoutExerciseId: deadliftWeId, setNumber: 2, weight: 120, reps: 8, type: const Value('normal')));
+    await insertSetEntry(SetEntriesCompanion.insert(workoutExerciseId: deadliftWeId, setNumber: 3, weight: 140, reps: 5, type: const Value('normal')));
+    await insertSetEntry(SetEntriesCompanion.insert(workoutExerciseId: deadliftWeId, setNumber: 4, weight: 160, reps: 3, type: const Value('normal')));
+
+    final latEx = findEx('Lat Pulldown');
+    final latWeId = await insertWorkoutExercise(
+      WorkoutExercisesCompanion.insert(
+        workoutId: pullWorkoutId,
+        exerciseId: latEx.id,
+        sortOrder: const Value(1),
+      ),
+    );
+    await insertSetEntry(SetEntriesCompanion.insert(workoutExerciseId: latWeId, setNumber: 1, weight: 65, reps: 12, type: const Value('normal')));
+    await insertSetEntry(SetEntriesCompanion.insert(workoutExerciseId: latWeId, setNumber: 2, weight: 75, reps: 10, type: const Value('normal')));
+    await insertSetEntry(SetEntriesCompanion.insert(workoutExerciseId: latWeId, setNumber: 3, weight: 85, reps: 8, type: const Value('normal')));
+
+    final curlEx = findEx('Bicep Barbell Curl');
+    final curlWeId = await insertWorkoutExercise(
+      WorkoutExercisesCompanion.insert(
+        workoutId: pullWorkoutId,
+        exerciseId: curlEx.id,
+        sortOrder: const Value(2),
+      ),
+    );
+    await insertSetEntry(SetEntriesCompanion.insert(workoutExerciseId: curlWeId, setNumber: 1, weight: 30, reps: 12, type: const Value('normal')));
+    await insertSetEntry(SetEntriesCompanion.insert(workoutExerciseId: curlWeId, setNumber: 2, weight: 35, reps: 10, type: const Value('normal')));
+
+    // 3. Legs & Lower Body (Today)
+    final legWorkoutId = await insertWorkout(
+      WorkoutsCompanion.insert(
+        date: Value(now.subtract(const Duration(hours: 4))),
+        notes: const Value('Legs & Quads Session - Squat volume PR'),
+        durationSeconds: const Value(3900),
+      ),
+    );
+
+    final squatEx = findEx('Barbell Squat');
+    final squatWeId = await insertWorkoutExercise(
+      WorkoutExercisesCompanion.insert(
+        workoutId: legWorkoutId,
+        exerciseId: squatEx.id,
+        sortOrder: const Value(0),
+      ),
+    );
+    await insertSetEntry(SetEntriesCompanion.insert(workoutExerciseId: squatWeId, setNumber: 1, weight: 60, reps: 10, type: const Value('warmup')));
+    await insertSetEntry(SetEntriesCompanion.insert(workoutExerciseId: squatWeId, setNumber: 2, weight: 100, reps: 10, type: const Value('normal')));
+    await insertSetEntry(SetEntriesCompanion.insert(workoutExerciseId: squatWeId, setNumber: 3, weight: 120, reps: 8, type: const Value('normal')));
+    await insertSetEntry(SetEntriesCompanion.insert(workoutExerciseId: squatWeId, setNumber: 4, weight: 130, reps: 6, type: const Value('normal')));
+
+    final rdlEx = findEx('Romanian Deadlift');
+    final rdlWeId = await insertWorkoutExercise(
+      WorkoutExercisesCompanion.insert(
+        workoutId: legWorkoutId,
+        exerciseId: rdlEx.id,
+        sortOrder: const Value(1),
+      ),
+    );
+    await insertSetEntry(SetEntriesCompanion.insert(workoutExerciseId: rdlWeId, setNumber: 1, weight: 80, reps: 10, type: const Value('normal')));
+    await insertSetEntry(SetEntriesCompanion.insert(workoutExerciseId: rdlWeId, setNumber: 2, weight: 100, reps: 8, type: const Value('normal')));
+
+    // 4. Treadmill Run (Today)
+    final cardioWorkoutId = await insertWorkout(
+      WorkoutsCompanion.insert(
+        date: Value(now.subtract(const Duration(hours: 1))),
+        notes: const Value('Endurance & Speed Interval Treadmill Run'),
+        durationSeconds: const Value(1800),
+      ),
+    );
+
+    final runEx = findEx('Treadmill Run');
+    final runWeId = await insertWorkoutExercise(
+      WorkoutExercisesCompanion.insert(
+        workoutId: cardioWorkoutId,
+        exerciseId: runEx.id,
+        sortOrder: const Value(0),
+      ),
+    );
+    await insertSetEntry(SetEntriesCompanion.insert(
+      workoutExerciseId: runWeId,
+      setNumber: 1,
+      weight: 0,
+      reps: 0,
+      distance: const Value(2.5),
+      durationSeconds: const Value(720),
+      incline: const Value(1.0),
+      speed: const Value(11.5),
+    ));
+    await insertSetEntry(SetEntriesCompanion.insert(
+      workoutExerciseId: runWeId,
+      setNumber: 2,
+      weight: 0,
+      reps: 0,
+      distance: const Value(2.5),
+      durationSeconds: const Value(690),
+      incline: const Value(2.0),
+      speed: const Value(13.0),
+    ));
+  }
+
+  /// Clears all existing exercises, routines, and workout logs, and re-seeds the fresh exercise library.
+  Future<void> resetAndSeedExerciseLibrary() async {
+    await transaction(() async {
+      await delete(setEntries).go();
+      await delete(workoutExercises).go();
+      await delete(routineExercises).go();
+      await delete(routines).go();
+      await delete(workouts).go();
+      await delete(exercises).go();
+
+      await seedDefaultExercises();
+      await seedDefaultRoutines();
+    });
+  }
+
+  /// Seeds default exercises with updated configs across all muscle groups and metric types.
+  Future<void> seedDefaultExercises() async {
+    await batch((b) {
+      b.insertAll(exercises, [
+        // CHEST
+        ExercisesCompanion.insert(
+          name: 'Barbell Bench Press',
+          muscleGroup: 'Chest',
+          secondaryMuscleGroups: const Value('Shoulders, Arms'),
+          category: const Value('weight_reps'),
+          enabledMetrics: const Value('weight,reps'),
+        ),
+        ExercisesCompanion.insert(
+          name: 'Incline Dumbbell Press',
+          muscleGroup: 'Chest',
+          secondaryMuscleGroups: const Value('Shoulders, Arms'),
+          category: const Value('weight_reps'),
+          enabledMetrics: const Value('weight,reps'),
+        ),
+        ExercisesCompanion.insert(
+          name: 'Chest Fly',
+          muscleGroup: 'Chest',
+          secondaryMuscleGroups: const Value('Shoulders'),
+          category: const Value('weight_reps'),
+          enabledMetrics: const Value('weight,reps'),
+        ),
+        ExercisesCompanion.insert(
+          name: 'Push-ups',
+          muscleGroup: 'Chest',
+          secondaryMuscleGroups: const Value('Arms, Core'),
+          category: const Value('reps_only'),
+          enabledMetrics: const Value('reps'),
+        ),
+        ExercisesCompanion.insert(
+          name: 'Bodyweight Dips',
+          muscleGroup: 'Chest',
+          secondaryMuscleGroups: const Value('Arms, Shoulders'),
+          category: const Value('reps_only'),
+          enabledMetrics: const Value('reps'),
+        ),
+
+        // BACK
+        ExercisesCompanion.insert(
+          name: 'Conventional Deadlift',
+          muscleGroup: 'Back',
+          secondaryMuscleGroups: const Value('Legs, Core'),
+          category: const Value('weight_reps'),
+          enabledMetrics: const Value('weight,reps'),
+        ),
+        ExercisesCompanion.insert(
+          name: 'Lat Pulldown',
+          muscleGroup: 'Back',
+          secondaryMuscleGroups: const Value('Arms'),
+          category: const Value('weight_reps'),
+          enabledMetrics: const Value('weight,reps'),
+        ),
+        ExercisesCompanion.insert(
+          name: 'Bent Over Barbell Row',
+          muscleGroup: 'Back',
+          secondaryMuscleGroups: const Value('Arms'),
+          category: const Value('weight_reps'),
+          enabledMetrics: const Value('weight,reps'),
+        ),
+        ExercisesCompanion.insert(
+          name: 'Single-Arm Dumbbell Row',
+          muscleGroup: 'Back',
+          secondaryMuscleGroups: const Value('Arms'),
+          category: const Value('weight_reps'),
+          enabledMetrics: const Value('weight,reps'),
+        ),
+        ExercisesCompanion.insert(
+          name: 'Pull-ups',
+          muscleGroup: 'Back',
+          secondaryMuscleGroups: const Value('Arms'),
+          category: const Value('reps_only'),
+          enabledMetrics: const Value('reps'),
+        ),
+        ExercisesCompanion.insert(
+          name: 'Chin-ups',
+          muscleGroup: 'Back',
+          secondaryMuscleGroups: const Value('Arms'),
+          category: const Value('reps_only'),
+          enabledMetrics: const Value('reps'),
+        ),
+
+        // SHOULDERS
+        ExercisesCompanion.insert(
+          name: 'Overhead Shoulder Press',
+          muscleGroup: 'Shoulders',
+          secondaryMuscleGroups: const Value('Arms, Core'),
+          category: const Value('weight_reps'),
+          enabledMetrics: const Value('weight,reps'),
+        ),
+        ExercisesCompanion.insert(
+          name: 'Dumbbell Lateral Raise',
+          muscleGroup: 'Shoulders',
+          category: const Value('weight_reps'),
+          enabledMetrics: const Value('weight,reps'),
+        ),
+        ExercisesCompanion.insert(
+          name: 'Face Pull',
+          muscleGroup: 'Shoulders',
+          secondaryMuscleGroups: const Value('Back'),
+          category: const Value('weight_reps'),
+          enabledMetrics: const Value('weight,reps'),
+        ),
+        ExercisesCompanion.insert(
+          name: 'Rear Delt Fly',
+          muscleGroup: 'Shoulders',
+          category: const Value('weight_reps'),
+          enabledMetrics: const Value('weight,reps'),
+        ),
+
+        // LEGS
+        ExercisesCompanion.insert(
+          name: 'Barbell Back Squat',
+          muscleGroup: 'Legs',
+          secondaryMuscleGroups: const Value('Core'),
+          category: const Value('weight_reps'),
+          enabledMetrics: const Value('weight,reps'),
+        ),
+        ExercisesCompanion.insert(
+          name: 'Leg Press',
+          muscleGroup: 'Legs',
+          category: const Value('weight_reps'),
+          enabledMetrics: const Value('weight,reps'),
+        ),
+        ExercisesCompanion.insert(
+          name: 'Romanian Deadlift',
+          muscleGroup: 'Legs',
+          secondaryMuscleGroups: const Value('Back'),
+          category: const Value('weight_reps'),
+          enabledMetrics: const Value('weight,reps'),
+        ),
+        ExercisesCompanion.insert(
+          name: 'Leg Extension',
+          muscleGroup: 'Legs',
+          category: const Value('weight_reps'),
+          enabledMetrics: const Value('weight,reps'),
+        ),
+        ExercisesCompanion.insert(
+          name: 'Seated Leg Curl',
+          muscleGroup: 'Legs',
+          category: const Value('weight_reps'),
+          enabledMetrics: const Value('weight,reps'),
+        ),
+        ExercisesCompanion.insert(
+          name: 'Standing Calf Raise',
+          muscleGroup: 'Legs',
+          category: const Value('weight_reps'),
+          enabledMetrics: const Value('weight,reps'),
+        ),
+
+        // ARMS
+        ExercisesCompanion.insert(
+          name: 'Bicep Barbell Curl',
+          muscleGroup: 'Arms',
+          category: const Value('weight_reps'),
+          enabledMetrics: const Value('weight,reps'),
+        ),
+        ExercisesCompanion.insert(
+          name: 'Hammer Curls',
+          muscleGroup: 'Arms',
+          category: const Value('weight_reps'),
+          enabledMetrics: const Value('weight,reps'),
+        ),
+        ExercisesCompanion.insert(
+          name: 'Tricep Rope Pushdown',
+          muscleGroup: 'Arms',
+          category: const Value('weight_reps'),
+          enabledMetrics: const Value('weight,reps'),
+        ),
+        ExercisesCompanion.insert(
+          name: 'Skull Crushers',
+          muscleGroup: 'Arms',
+          category: const Value('weight_reps'),
+          enabledMetrics: const Value('weight,reps'),
+        ),
+
+        // CORE
+        ExercisesCompanion.insert(
+          name: 'Hanging Leg Raise',
+          muscleGroup: 'Core',
+          category: const Value('reps_only'),
+          enabledMetrics: const Value('reps'),
+        ),
+        ExercisesCompanion.insert(
+          name: 'Ab Wheel Rollout',
+          muscleGroup: 'Core',
+          secondaryMuscleGroups: const Value('Arms'),
+          category: const Value('duration_time'),
+          enabledMetrics: const Value('time'),
+        ),
+        ExercisesCompanion.insert(
+          name: 'Plank',
+          muscleGroup: 'Core',
+          category: const Value('duration_time'),
+          enabledMetrics: const Value('time'),
+        ),
+        ExercisesCompanion.insert(
+          name: 'Side Plank',
+          muscleGroup: 'Core',
+          category: const Value('duration_time'),
+          enabledMetrics: const Value('time'),
+        ),
+
+        // CARDIO & ENDURANCE
+        ExercisesCompanion.insert(
+          name: 'Treadmill Run',
+          muscleGroup: 'Cardio',
+          secondaryMuscleGroups: const Value('Legs'),
+          category: const Value('cardio_distance'),
+          enabledMetrics: const Value('distance,time,incline,speed'),
+        ),
+        ExercisesCompanion.insert(
+          name: 'Outdoor Running',
+          muscleGroup: 'Cardio',
+          secondaryMuscleGroups: const Value('Legs'),
+          category: const Value('cardio_distance'),
+          enabledMetrics: const Value('distance,time'),
+        ),
+        ExercisesCompanion.insert(
+          name: 'Rowing Machine',
+          muscleGroup: 'Cardio',
+          secondaryMuscleGroups: const Value('Back, Arms'),
+          category: const Value('cardio_distance'),
+          enabledMetrics: const Value('distance,time'),
+        ),
+        ExercisesCompanion.insert(
+          name: 'Stationary Cycling',
+          muscleGroup: 'Cardio',
+          secondaryMuscleGroups: const Value('Legs'),
+          category: const Value('cardio_distance'),
+          enabledMetrics: const Value('distance,time,speed'),
+        ),
+      ]);
+    });
+  }
+
+  /// Seeds default starter routine templates matching the newly configured exercise library.
+  Future<void> seedDefaultRoutines() async {
+    final allEx = await getAllExercises();
+    if (allEx.isEmpty) return;
+
+    ExerciseData findEx(String name) {
+      return allEx.firstWhere(
+        (e) => e.name.toLowerCase() == name.toLowerCase(),
+        orElse: () => allEx.first,
+      );
+    }
+
+    final pushId = await into(routines).insert(
+      RoutinesCompanion.insert(
+        name: 'Push Hypertrophy',
+        description: const Value('Chest, Shoulders & Triceps focus routine'),
+      ),
+    );
+    await into(routineExercises).insert(
+      RoutineExercisesCompanion.insert(
+        routineId: pushId,
+        exerciseId: findEx('Barbell Bench Press').id,
+        targetSets: const Value(3),
+        targetReps: const Value(10),
+        sortOrder: const Value(0),
+      ),
+    );
+    await into(routineExercises).insert(
+      RoutineExercisesCompanion.insert(
+        routineId: pushId,
+        exerciseId: findEx('Incline Dumbbell Press').id,
+        targetSets: const Value(3),
+        targetReps: const Value(12),
+        sortOrder: const Value(1),
+      ),
+    );
+    await into(routineExercises).insert(
+      RoutineExercisesCompanion.insert(
+        routineId: pushId,
+        exerciseId: findEx('Overhead Shoulder Press').id,
+        targetSets: const Value(3),
+        targetReps: const Value(10),
+        sortOrder: const Value(2),
+      ),
+    );
+    await into(routineExercises).insert(
+      RoutineExercisesCompanion.insert(
+        routineId: pushId,
+        exerciseId: findEx('Tricep Rope Pushdown').id,
+        targetSets: const Value(3),
+        targetReps: const Value(12),
+        sortOrder: const Value(3),
+      ),
+    );
+
+    final pullId = await into(routines).insert(
+      RoutinesCompanion.insert(
+        name: 'Pull Power',
+        description: const Value('Back & Biceps workout routine'),
+      ),
+    );
+    await into(routineExercises).insert(
+      RoutineExercisesCompanion.insert(
+        routineId: pullId,
+        exerciseId: findEx('Conventional Deadlift').id,
+        targetSets: const Value(3),
+        targetReps: const Value(8),
+        sortOrder: const Value(0),
+      ),
+    );
+    await into(routineExercises).insert(
+      RoutineExercisesCompanion.insert(
+        routineId: pullId,
+        exerciseId: findEx('Lat Pulldown').id,
+        targetSets: const Value(3),
+        targetReps: const Value(10),
+        sortOrder: const Value(1),
+      ),
+    );
+    await into(routineExercises).insert(
+      RoutineExercisesCompanion.insert(
+        routineId: pullId,
+        exerciseId: findEx('Bicep Barbell Curl').id,
+        targetSets: const Value(3),
+        targetReps: const Value(12),
+        sortOrder: const Value(2),
+      ),
+    );
+  }
+}
+
+LazyDatabase _openConnection() {
+  return LazyDatabase(() async {
+    final dbFolder = await getApplicationDocumentsDirectory();
+    final file = File(p.join(dbFolder.path, 'thews_workout.sqlite'));
+    return NativeDatabase.createInBackground(file);
+  });
 }
 
 class WorkoutExerciseDetail {
@@ -479,10 +865,3 @@ class ExerciseProgressPoint {
   });
 }
 
-LazyDatabase _openConnection() {
-  return LazyDatabase(() async {
-    final dbFolder = await getApplicationDocumentsDirectory();
-    final file = File(p.join(dbFolder.path, 'thews_workout.sqlite'));
-    return NativeDatabase.createInBackground(file);
-  });
-}

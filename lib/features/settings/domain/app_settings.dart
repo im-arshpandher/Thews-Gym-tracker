@@ -29,12 +29,16 @@ class AppSettings {
   final WeightUnit weightUnit;
   final int weeklyGoal;
   final DailyWorkoutCountingMode dailyCountingMode;
+  final bool autoStartRestTimer;
+  final int defaultRestDuration;
 
   const AppSettings({
     this.themeMode = ThemeMode.dark,
     this.weightUnit = WeightUnit.kg,
     this.weeklyGoal = 4,
     this.dailyCountingMode = DailyWorkoutCountingMode.individually,
+    this.autoStartRestTimer = true,
+    this.defaultRestDuration = 90,
   });
 
   AppSettings copyWith({
@@ -42,12 +46,16 @@ class AppSettings {
     WeightUnit? weightUnit,
     int? weeklyGoal,
     DailyWorkoutCountingMode? dailyCountingMode,
+    bool? autoStartRestTimer,
+    int? defaultRestDuration,
   }) {
     return AppSettings(
       themeMode: themeMode ?? this.themeMode,
       weightUnit: weightUnit ?? this.weightUnit,
       weeklyGoal: weeklyGoal ?? this.weeklyGoal,
       dailyCountingMode: dailyCountingMode ?? this.dailyCountingMode,
+      autoStartRestTimer: autoStartRestTimer ?? this.autoStartRestTimer,
+      defaultRestDuration: defaultRestDuration ?? this.defaultRestDuration,
     );
   }
 }

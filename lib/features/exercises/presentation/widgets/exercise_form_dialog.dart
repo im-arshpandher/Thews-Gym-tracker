@@ -4,10 +4,12 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../core/database/app_database.dart';
 import '../../../../core/database/database_provider.dart';
+import '../../../../core/models/exercise_metric.dart';
 import '../../../../core/models/muscle_group.dart';
 import '../../../../core/presentation/widgets/muscle_group_icon.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_typography.dart';
+import '../exercises_provider.dart';
 
 // ponytail: shrink - Single unified dialog replaces separate Create and Edit dialogs.
 class ExerciseFormDialog extends ConsumerStatefulWidget {
@@ -35,6 +37,7 @@ class _ExerciseFormDialogState extends ConsumerState<ExerciseFormDialog> {
   late final TextEditingController _videoUrlController;
   late MuscleGroup _selectedGroup;
   late Set<String> _selectedSecondaryGroups;
+  late Set<ExerciseMetric> _selectedMetrics;
   bool _isSubmitting = false;
 
   bool get _isEditing => widget.exercise != null;
@@ -60,6 +63,10 @@ class _ExerciseFormDialogState extends ConsumerState<ExerciseFormDialog> {
     } else {
       _selectedSecondaryGroups = {};
     }
+
+    _selectedMetrics = ExerciseMetric.parseMetrics(
+      widget.exercise?.enabledMetrics,
+    ).toSet();
   }
 
   @override
@@ -72,6 +79,10 @@ class _ExerciseFormDialogState extends ConsumerState<ExerciseFormDialog> {
   Future<void> _submit() async {
     if (!_formKey.currentState!.validate()) return;
 
+    if (_selectedMetrics.isEmpty) {
+      _selectedMetrics = {ExerciseMetric.weight, ExerciseMetric.reps};
+    }
+
     setState(() => _isSubmitting = true);
 
     try {
@@ -83,6 +94,13 @@ class _ExerciseFormDialogState extends ConsumerState<ExerciseFormDialog> {
           : _selectedSecondaryGroups.join(', ');
       final videoUrl = _videoUrlController.text.trim();
       final valUrl = videoUrl.isNotEmpty ? videoUrl : null;
+      final metricsStr = ExerciseMetric.serializeMetrics(_selectedMetrics);
+      final category = _selectedMetrics.contains(ExerciseMetric.distance)
+          ? 'cardio_distance'
+          : (_selectedMetrics.contains(ExerciseMetric.time) &&
+                    !_selectedMetrics.contains(ExerciseMetric.weight)
+                ? 'duration_time'
+                : 'weight_reps');
 
       if (_isEditing) {
         await (db.update(
@@ -93,6 +111,8 @@ class _ExerciseFormDialogState extends ConsumerState<ExerciseFormDialog> {
             muscleGroup: Value(muscleGroup),
             secondaryMuscleGroups: Value(secondaryStr),
             videoUrl: Value(valUrl),
+            enabledMetrics: Value(metricsStr),
+            category: Value(category),
           ),
         );
       } else {
@@ -103,8 +123,12 @@ class _ExerciseFormDialogState extends ConsumerState<ExerciseFormDialog> {
             secondaryMuscleGroups: Value(secondaryStr),
             isCustom: const Value(true),
             videoUrl: Value(valUrl),
+            enabledMetrics: Value(metricsStr),
+            category: Value(category),
           ),
         );
+        ref.read(selectedMuscleGroupFilterProvider.notifier).state = 'All';
+        ref.read(searchQueryProvider.notifier).state = '';
       }
 
       if (mounted) {
@@ -332,6 +356,125 @@ class _ExerciseFormDialogState extends ConsumerState<ExerciseFormDialog> {
                             );
                           })
                           .toList(),
+                    ),
+                    const SizedBox(height: 16),
+                    Text(
+                      'METRICS TO TRACK',
+                      style: AppTypography.labelCaps(
+                        color: isDark
+                            ? AppColors.darkTextSecondary
+                            : AppColors.lightTextSecondary,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    // Quick Preset Buttons Row
+                    SingleChildScrollView(
+                      scrollDirection: Axis.horizontal,
+                      child: Row(
+                        children: [
+                          ActionChip(
+                            avatar: const Icon(Icons.bolt, size: 14),
+                            label: const Text('Strength'),
+                            onPressed: () {
+                              setState(() {
+                                _selectedMetrics = {
+                                  ExerciseMetric.weight,
+                                  ExerciseMetric.reps,
+                                };
+                              });
+                            },
+                          ),
+                          const SizedBox(width: 6),
+                          ActionChip(
+                            avatar: const Icon(Icons.directions_run, size: 14),
+                            label: const Text('Cardio'),
+                            onPressed: () {
+                              setState(() {
+                                _selectedMetrics = {
+                                  ExerciseMetric.distance,
+                                  ExerciseMetric.time,
+                                  ExerciseMetric.speed,
+                                  ExerciseMetric.incline,
+                                };
+                              });
+                            },
+                          ),
+                          const SizedBox(width: 6),
+                          ActionChip(
+                            avatar: const Icon(Icons.timer, size: 14),
+                            label: const Text('Duration'),
+                            onPressed: () {
+                              setState(() {
+                                _selectedMetrics = {ExerciseMetric.time};
+                              });
+                            },
+                          ),
+                          const SizedBox(width: 6),
+                          ActionChip(
+                            avatar: const Icon(Icons.accessibility_new, size: 14),
+                            label: const Text('Bodyweight'),
+                            onPressed: () {
+                              setState(() {
+                                _selectedMetrics = {ExerciseMetric.reps};
+                              });
+                            },
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    // Checkbox FilterChips for metrics
+                    Wrap(
+                      spacing: 8,
+                      runSpacing: 8,
+                      children: ExerciseMetric.values.map((metric) {
+                        final isSelected = _selectedMetrics.contains(metric);
+                        return FilterChip(
+                          avatar: Icon(
+                            metric.icon,
+                            size: 14,
+                            color: isSelected
+                                ? (isDark
+                                      ? AppColors.primaryVolt
+                                      : AppColors.lightPrimary)
+                                : (isDark
+                                      ? AppColors.darkTextSecondary
+                                      : AppColors.lightTextSecondary),
+                          ),
+                          label: Text(metric.label),
+                          selected: isSelected,
+                          onSelected: (selected) {
+                            setState(() {
+                              if (selected) {
+                                _selectedMetrics.add(metric);
+                              } else {
+                                if (_selectedMetrics.length > 1) {
+                                  _selectedMetrics.remove(metric);
+                                }
+                              }
+                            });
+                          },
+                          selectedColor: isDark
+                              ? AppColors.primaryVolt.withValues(alpha: 0.3)
+                              : AppColors.lightPrimaryContainer,
+                          checkmarkColor: isDark
+                              ? AppColors.primaryVolt
+                              : AppColors.lightPrimary,
+                          labelStyle: TextStyle(
+                            fontSize: 12,
+                            fontWeight: isSelected
+                                ? FontWeight.bold
+                                : FontWeight.normal,
+                            color: isSelected
+                                ? (isDark
+                                      ? AppColors.primaryVolt
+                                      : AppColors.lightPrimary)
+                                : (isDark
+                                      ? AppColors.darkTextSecondary
+                                      : AppColors.lightTextSecondary),
+                          ),
+                        );
+                      }).toList(),
                     ),
                     const SizedBox(height: 16),
                     Text(

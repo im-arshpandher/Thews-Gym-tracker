@@ -4,9 +4,11 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../core/database/app_database.dart';
 import '../../../../core/database/database_provider.dart';
-import '../../../../core/presentation/widgets/muscle_group_icon.dart';
+
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_typography.dart';
+import 'workout_exercise_tile.dart';
+import '../../../../core/utils/volume_calculator.dart';
 
 final workoutDetailsStreamProvider =
     StreamProvider.family<List<WorkoutExerciseDetail>, int>((ref, workoutId) {
@@ -219,7 +221,12 @@ class WorkoutDetailsSheet extends ConsumerWidget {
 
                       for (final d in details) {
                         for (final s in d.sets) {
-                          totalVolume += (s.weight * s.reps);
+                          totalVolume += VolumeCalculator.calculateSetVolume(
+                            weight: s.weight,
+                            reps: s.reps,
+                            type: s.type,
+                            unit: s.unit,
+                          );
                           totalSets++;
                         }
                       }
@@ -308,8 +315,10 @@ class WorkoutDetailsSheet extends ConsumerWidget {
                             )
                           else
                             ...details.map(
-                              (d) =>
-                                  _buildExerciseRecordCard(context, d, isDark),
+                              (d) => WorkoutExerciseTile(
+                                detail: d,
+                                isDark: isDark,
+                              ),
                             ),
                         ],
                       );
@@ -409,230 +418,7 @@ class WorkoutDetailsSheet extends ConsumerWidget {
     );
   }
 
-  Widget _buildExerciseRecordCard(
-    BuildContext context,
-    WorkoutExerciseDetail detail,
-    bool isDark,
-  ) {
-    final cardBg = isDark
-        ? AppColors.darkSurfaceContainer
-        : AppColors.lightSurfaceContainerLowest;
-    final textPrimary = isDark
-        ? AppColors.darkTextPrimary
-        : AppColors.lightTextPrimary;
-    final textSecondary = isDark
-        ? AppColors.darkTextSecondary
-        : AppColors.lightTextSecondary;
-    final volumeGreen = isDark
-        ? const Color(0xFF66BB6A)
-        : const Color(0xFF2E7D32);
 
-    return Container(
-      margin: const EdgeInsets.only(bottom: 14),
-      decoration: BoxDecoration(
-        color: cardBg,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: isDark
-              ? AppColors.darkOutline.withValues(alpha: 0.5)
-              : AppColors.lightOutline.withValues(alpha: 0.25),
-        ),
-      ),
-      padding: const EdgeInsets.all(16),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Exercise Header
-          Row(
-            children: [
-              MuscleGroupIcon(
-                muscleGroup: detail.exercise.muscleGroup,
-                size: 40,
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      detail.exercise.name,
-                      style: TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                        color: textPrimary,
-                      ),
-                    ),
-                    const SizedBox(height: 4),
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 8,
-                        vertical: 2,
-                      ),
-                      decoration: BoxDecoration(
-                        color: AppColors.getMuscleGroupBgColor(
-                          detail.exercise.muscleGroup,
-                          isDark,
-                        ),
-                        borderRadius: BorderRadius.circular(4),
-                      ),
-                      child: Text(
-                        detail.exercise.muscleGroup.toUpperCase(),
-                        style: TextStyle(
-                          color: AppColors.getMuscleGroupTextColor(
-                            detail.exercise.muscleGroup,
-                            isDark,
-                          ),
-                          fontSize: 10,
-                          fontWeight: FontWeight.bold,
-                          letterSpacing: 0.6,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 12),
-          Divider(
-            height: 1,
-            thickness: 1,
-            color: isDark
-                ? AppColors.darkOutline.withValues(alpha: 0.4)
-                : AppColors.lightOutline.withValues(alpha: 0.25),
-          ),
-          const SizedBox(height: 12),
-
-          // Sets Table Header
-          Padding(
-            padding: const EdgeInsets.only(bottom: 6),
-            child: Row(
-              children: [
-                SizedBox(
-                  width: 44,
-                  child: Text(
-                    'SET',
-                    style: TextStyle(
-                      fontSize: 11,
-                      fontWeight: FontWeight.bold,
-                      color: textSecondary,
-                      letterSpacing: 0.8,
-                    ),
-                  ),
-                ),
-                Expanded(
-                  child: Text(
-                    'WEIGHT',
-                    style: TextStyle(
-                      fontSize: 11,
-                      fontWeight: FontWeight.bold,
-                      color: textSecondary,
-                      letterSpacing: 0.8,
-                    ),
-                  ),
-                ),
-                Expanded(
-                  child: Text(
-                    'REPS',
-                    style: TextStyle(
-                      fontSize: 11,
-                      fontWeight: FontWeight.bold,
-                      color: textSecondary,
-                      letterSpacing: 0.8,
-                    ),
-                  ),
-                ),
-                SizedBox(
-                  width: 80,
-                  child: Text(
-                    'VOLUME',
-                    textAlign: TextAlign.right,
-                    style: TextStyle(
-                      fontSize: 11,
-                      fontWeight: FontWeight.bold,
-                      color: textSecondary,
-                      letterSpacing: 0.8,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-
-          // Sets List Rows
-          ...detail.sets.map((set) {
-            final vol = set.weight * set.reps;
-            final weightStr = set.weight % 1 == 0
-                ? set.weight.toInt().toString()
-                : set.weight.toString();
-            return Padding(
-              padding: const EdgeInsets.symmetric(vertical: 4),
-              child: Row(
-                children: [
-                  SizedBox(
-                    width: 44,
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 8,
-                        vertical: 4,
-                      ),
-                      decoration: BoxDecoration(
-                        color: isDark
-                            ? AppColors.darkSurfaceContainerHigh
-                            : AppColors.lightSurfaceContainerHigh,
-                        borderRadius: BorderRadius.circular(6),
-                      ),
-                      child: Text(
-                        '${set.setNumber}',
-                        textAlign: TextAlign.center,
-                        style: TextStyle(
-                          fontWeight: FontWeight.bold,
-                          fontSize: 12,
-                          color: textPrimary,
-                        ),
-                      ),
-                    ),
-                  ),
-                  Expanded(
-                    child: Text(
-                      '$weightStr ${set.unit}',
-                      style: TextStyle(
-                        fontSize: 15,
-                        fontWeight: FontWeight.w400,
-                        color: textPrimary,
-                      ),
-                    ),
-                  ),
-                  Expanded(
-                    child: Text(
-                      '${set.reps} reps',
-                      style: TextStyle(
-                        fontSize: 15,
-                        fontWeight: FontWeight.w400,
-                        color: textPrimary,
-                      ),
-                    ),
-                  ),
-                  SizedBox(
-                    width: 80,
-                    child: Text(
-                      '${vol % 1 == 0 ? vol.toInt() : vol.toStringAsFixed(1)} kg',
-                      textAlign: TextAlign.right,
-                      style: TextStyle(
-                        fontSize: 15,
-                        fontWeight: FontWeight.bold,
-                        color: volumeGreen,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            );
-          }),
-        ],
-      ),
-    );
-  }
 
   void _showEditWorkoutDialog(BuildContext context, WidgetRef ref) {
     final isDark = Theme.of(context).brightness == Brightness.dark;

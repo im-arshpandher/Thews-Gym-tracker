@@ -15,6 +15,8 @@ class SettingsNotifier extends StateNotifier<AppSettings> {
   static const String _keyWeightUnit = 'weight_unit';
   static const String _keyWeeklyGoal = 'weekly_goal';
   static const String _keyDailyCountingMode = 'daily_counting_mode';
+  static const String _keyAutoStartRestTimer = 'auto_start_rest_timer';
+  static const String _keyDefaultRestDuration = 'default_rest_duration';
 
   SettingsNotifier(this._prefs) : super(const AppSettings()) {
     _loadSettings();
@@ -34,11 +36,37 @@ class SettingsNotifier extends StateNotifier<AppSettings> {
         ? DailyWorkoutCountingMode.groupedByDay
         : DailyWorkoutCountingMode.individually;
 
+    bool autoStart = true;
+    try {
+      final rawAutoStart = _prefs.get(_keyAutoStartRestTimer);
+      if (rawAutoStart is bool) {
+        autoStart = rawAutoStart;
+      } else if (rawAutoStart is String) {
+        autoStart = rawAutoStart.toLowerCase() == 'true';
+      }
+    } catch (_) {
+      autoStart = true;
+    }
+
+    int restDuration = 90;
+    try {
+      final rawDuration = _prefs.get(_keyDefaultRestDuration);
+      if (rawDuration is int) {
+        restDuration = rawDuration;
+      } else if (rawDuration is String) {
+        restDuration = int.tryParse(rawDuration) ?? 90;
+      }
+    } catch (_) {
+      restDuration = 90;
+    }
+
     state = AppSettings(
       themeMode: themeMode,
       weightUnit: weightUnit,
       weeklyGoal: weeklyGoal,
       dailyCountingMode: dailyCountingMode,
+      autoStartRestTimer: autoStart,
+      defaultRestDuration: restDuration,
     );
   }
 
@@ -91,6 +119,16 @@ class SettingsNotifier extends StateNotifier<AppSettings> {
   Future<void> setDailyCountingMode(DailyWorkoutCountingMode mode) async {
     state = state.copyWith(dailyCountingMode: mode);
     await _prefs.setString(_keyDailyCountingMode, mode.name);
+  }
+
+  Future<void> setAutoStartRestTimer(bool enabled) async {
+    state = state.copyWith(autoStartRestTimer: enabled);
+    await _prefs.setBool(_keyAutoStartRestTimer, enabled);
+  }
+
+  Future<void> setDefaultRestDuration(int seconds) async {
+    state = state.copyWith(defaultRestDuration: seconds);
+    await _prefs.setInt(_keyDefaultRestDuration, seconds);
   }
 }
 

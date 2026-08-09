@@ -74,12 +74,22 @@ class BackupExportService {
   Future<int> restoreBackupJson(String jsonString) async {
     final Map<String, dynamic> data = jsonDecode(jsonString);
     final workoutsList = data['workouts'] as List? ?? [];
+    final existingWorkouts = await db.getAllWorkouts();
 
     int restoredWorkouts = 0;
     for (final w in workoutsList) {
       final date = DateTime.tryParse(w['date'] ?? '') ?? DateTime.now();
       final notes = w['notes'] as String?;
       final duration = (w['durationSeconds'] as num?)?.toInt() ?? 0;
+
+      // Skip duplicate workouts if matching date (within 1 sec) and notes exist
+      final isDuplicate = existingWorkouts.any(
+        (ew) =>
+            ew.date.difference(date).inSeconds.abs() < 2 &&
+            ew.notes == notes &&
+            ew.durationSeconds == duration,
+      );
+      if (isDuplicate) continue;
 
       final workoutId = await db.insertWorkout(
         WorkoutsCompanion.insert(
@@ -155,6 +165,7 @@ class BackupExportService {
       '${tempDir.path}/thews_backup_${DateTime.now().millisecondsSinceEpoch}.json',
     );
     await file.writeAsString(jsonStr);
+    // ignore: deprecated_member_use
     await Share.shareXFiles([
       XFile(file.path),
     ], text: 'Thews Gym Tracker Database Backup (JSON)');
@@ -168,6 +179,7 @@ class BackupExportService {
       '${tempDir.path}/thews_workout_history_${DateTime.now().millisecondsSinceEpoch}.csv',
     );
     await file.writeAsString(csvStr);
+    // ignore: deprecated_member_use
     await Share.shareXFiles([
       XFile(file.path),
     ], text: 'Thews Gym Workout History Export (CSV)');

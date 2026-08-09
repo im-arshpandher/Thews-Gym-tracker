@@ -34,8 +34,18 @@ final dashboardStatsProvider = Provider<AsyncValue<DashboardStats>>((ref) {
     return const AsyncValue.loading();
   }
 
-  if (workoutsAsync is AsyncError) {
-    return AsyncValue.error(workoutsAsync.error!, workoutsAsync.stackTrace!);
+  if (workoutsAsync.hasError) {
+    return AsyncValue.error(
+      workoutsAsync.error!,
+      workoutsAsync.stackTrace ?? StackTrace.current,
+    );
+  }
+
+  if (volumeAsync.hasError) {
+    return AsyncValue.error(
+      volumeAsync.error!,
+      volumeAsync.stackTrace ?? StackTrace.current,
+    );
   }
 
   final workouts = workoutsAsync.value ?? [];

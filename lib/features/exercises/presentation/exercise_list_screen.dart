@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/database/app_database.dart';
 import '../../../core/database/database_provider.dart';
+import '../../../core/models/exercise_metric.dart';
 import '../../../core/models/muscle_group.dart';
 import '../../../core/presentation/widgets/muscle_group_icon.dart';
 import '../../../core/theme/app_colors.dart';
@@ -203,7 +204,12 @@ class ExerciseListScreen extends ConsumerWidget {
             ElevatedButton.icon(
               onPressed: () => ExerciseFormDialog.show(context),
               icon: const Icon(Icons.add),
-              label: const Text('CREATE EXERCISE'),
+              label: const Text(
+                'CREATE EXERCISE',
+                maxLines: 1,
+                softWrap: false,
+                overflow: TextOverflow.ellipsis,
+              ),
             ),
           ],
         ),
@@ -261,6 +267,25 @@ class _ExerciseCard extends ConsumerWidget {
                       isDark,
                     ),
                   ).copyWith(fontSize: 10, fontWeight: FontWeight.bold),
+                ),
+              ),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                decoration: BoxDecoration(
+                  color: isDark
+                      ? AppColors.darkSurfaceContainerHigh
+                      : AppColors.lightSurfaceContainerLow,
+                  borderRadius: BorderRadius.circular(6),
+                ),
+                child: Text(
+                  ExerciseMetric.parseMetrics(exercise.enabledMetrics)
+                      .map((m) => m.shortLabel)
+                      .join(' • '),
+                  style: AppTypography.labelCaps(
+                    color: isDark
+                        ? AppColors.darkTextSecondary
+                        : AppColors.lightTextSecondary,
+                  ).copyWith(fontSize: 9, fontWeight: FontWeight.w600),
                 ),
               ),
               if (exercise.isCustom)

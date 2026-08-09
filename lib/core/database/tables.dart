@@ -8,6 +8,11 @@ class Exercises extends Table {
   TextColumn get secondaryMuscleGroups => text().nullable()();
   BoolColumn get isCustom => boolean().withDefault(const Constant(false))();
   TextColumn get videoUrl => text().nullable()();
+  BoolColumn get isDeleted => boolean().withDefault(const Constant(false))();
+  TextColumn get category =>
+      text().nullable().withDefault(const Constant('weight_reps'))();
+  TextColumn get enabledMetrics =>
+      text().nullable().withDefault(const Constant('weight,reps'))();
 }
 
 @DataClassName('WorkoutData')
@@ -43,6 +48,12 @@ class SetEntries extends Table {
   TextColumn get type => text().withDefault(
     const Constant('normal'),
   )(); // 'warmup' | 'normal' | 'drop' | 'failure'
+  RealColumn get distance => real().nullable()();
+  TextColumn get distanceUnit =>
+      text().nullable().withDefault(const Constant('km'))();
+  IntColumn get durationSeconds => integer().nullable()();
+  RealColumn get incline => real().nullable()();
+  RealColumn get speed => real().nullable()();
 }
 
 @DataClassName('RoutineData')
@@ -63,5 +74,8 @@ class RoutineExercises extends Table {
   IntColumn get targetSets => integer().withDefault(const Constant(3))();
   IntColumn get targetReps => integer().withDefault(const Constant(10))();
   RealColumn get targetWeight => real().withDefault(const Constant(0.0))();
+  RealColumn get targetDistance => real().nullable()();
+  IntColumn get targetDurationSeconds => integer().nullable()();
+  RealColumn get targetIncline => real().nullable()();
   IntColumn get sortOrder => integer().withDefault(const Constant(0))();
 }

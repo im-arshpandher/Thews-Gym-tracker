@@ -6,7 +6,8 @@ import '../../../core/database/database_provider.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_typography.dart';
 import 'history_settings_provider.dart';
-import 'widgets/workout_details_sheet.dart';
+import 'pr_history_screen.dart';
+import 'widgets/history_workout_card.dart';
 
 enum HistoryViewMode {
   list,
@@ -127,6 +128,18 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
           ),
         ),
         actions: [
+          IconButton(
+            icon: const Icon(Icons.emoji_events_outlined, color: Colors.amber),
+            tooltip: 'Personal Records Leaderboard',
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => const PRHistoryScreen(),
+                ),
+              );
+            },
+          ),
           Padding(
             padding: const EdgeInsets.only(right: 12),
             child: PopupMenuButton<HistoryMenuOption>(
@@ -352,98 +365,11 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
   }
 
   Widget _buildWorkoutCard(WorkoutData workout, bool isDark) {
-    return Card(
-      margin: const EdgeInsets.only(bottom: 12),
-      clipBehavior: Clip.antiAlias,
-      child: InkWell(
-        onTap: () => WorkoutDetailsSheet.show(context, workout),
-        child: Padding(
-          padding: const EdgeInsets.all(16),
-          child: Row(
-            children: [
-              Container(
-                width: 48,
-                height: 48,
-                decoration: BoxDecoration(
-                  color: isDark
-                      ? AppColors.primaryVolt.withValues(alpha: 0.15)
-                      : AppColors.lightPrimary.withValues(alpha: 0.12),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Icon(
-                  Icons.fitness_center,
-                  color: isDark
-                      ? AppColors.primaryVoltDim
-                      : AppColors.lightPrimary,
-                ),
-              ),
-              const SizedBox(width: 16),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      workout.notes ?? 'Workout Session',
-                      style: AppTypography.bodyLg(
-                        color: isDark
-                            ? AppColors.darkTextPrimary
-                            : AppColors.lightTextPrimary,
-                      ),
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      '${_formatDate(workout.date)} • ${_formatDuration(workout.durationSeconds)}',
-                      style: AppTypography.bodySm(
-                        color: isDark
-                            ? AppColors.darkTextSecondary
-                            : AppColors.lightTextSecondary,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              IconButton(
-                icon: const Icon(Icons.delete_outline, color: AppColors.error),
-                tooltip: 'Delete Workout',
-                onPressed: () async {
-                  final confirm = await showDialog<bool>(
-                    context: context,
-                    builder: (ctx) => AlertDialog(
-                      title: const Text('Delete Workout?'),
-                      content: const Text(
-                        'This workout entry will be permanently removed.',
-                      ),
-                      actions: [
-                        TextButton(
-                          onPressed: () => Navigator.pop(ctx, false),
-                          child: const Text('CANCEL'),
-                        ),
-                        TextButton(
-                          onPressed: () => Navigator.pop(ctx, true),
-                          child: const Text(
-                            'DELETE',
-                            style: TextStyle(color: AppColors.error),
-                          ),
-                        ),
-                      ],
-                    ),
-                  );
-                  if (confirm == true) {
-                    final db = ref.read(databaseProvider);
-                    await db.deleteWorkout(workout.id);
-                  }
-                },
-              ),
-              Icon(
-                Icons.chevron_right,
-                color: isDark
-                    ? AppColors.darkOutlineVariant
-                    : AppColors.lightOutlineVariant,
-              ),
-            ],
-          ),
-        ),
-      ),
+    return HistoryWorkoutCard(
+      workout: workout,
+      isDark: isDark,
+      formattedDate: _formatDate(workout.date),
+      formattedDuration: _formatDuration(workout.durationSeconds),
     );
   }
 

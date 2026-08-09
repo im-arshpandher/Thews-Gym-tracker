@@ -1,5 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/database/database_provider.dart';
+import '../../../core/utils/volume_calculator.dart';
 
 enum MuscleTimeframe { week, month, all }
 
@@ -99,7 +100,12 @@ final muscleVisualizationProvider =
           double exVol = 0.0;
           double exMaxWeight = 0.0;
           for (final s in setList) {
-            exVol += (s.weight * s.reps);
+            exVol += VolumeCalculator.calculateSetVolume(
+              weight: s.weight,
+              reps: s.reps,
+              type: s.type,
+              unit: s.unit,
+            );
             if (s.weight > exMaxWeight) exMaxWeight = s.weight;
           }
 

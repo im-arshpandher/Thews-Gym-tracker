@@ -27,6 +27,19 @@ void main() {
     expect(exercises.any((e) => e.name == 'Barbell Bench Press'), true);
   });
 
+  test('resetAndSeedExerciseLibrary clears old data and re-seeds fresh exercise library', () async {
+    await db.resetAndSeedExerciseLibrary();
+    final exercises = await db.getAllExercises();
+    expect(exercises.length, greaterThanOrEqualTo(25));
+    expect(exercises.any((e) => e.name == 'Treadmill Run'), true);
+    expect(exercises.any((e) => e.name == 'Conventional Deadlift'), true);
+    expect(exercises.any((e) => e.name == 'Outdoor Running'), true);
+    expect(exercises.any((e) => e.name == 'Plank'), true);
+
+    final routines = await db.watchAllRoutines().first;
+    expect(routines.isNotEmpty, true);
+  });
+
   test('Workout and Set Entries logging with Set Types', () async {
     final workoutId = await db.insertWorkout(
       WorkoutsCompanion.insert(
@@ -110,6 +123,44 @@ void main() {
     expect(previousSets.length, 1);
     expect(previousSets.first.weight, 100.0);
     expect(previousSets.first.reps, 5);
+  });
+
+  test('clearAndSeedThisWeekWorkouts creates tuned workout sessions', () async {
+    await db.insertExercise(
+      ExercisesCompanion.insert(name: 'Barbell Bench Press', muscleGroup: 'Chest'),
+    );
+    await db.insertExercise(
+      ExercisesCompanion.insert(name: 'Overhead Shoulder Press', muscleGroup: 'Shoulders'),
+    );
+    await db.insertExercise(
+      ExercisesCompanion.insert(name: 'Tricep Rope Pushdown', muscleGroup: 'Arms'),
+    );
+    await db.insertExercise(
+      ExercisesCompanion.insert(name: 'Conventional Deadlift', muscleGroup: 'Back'),
+    );
+    await db.insertExercise(
+      ExercisesCompanion.insert(name: 'Lat Pulldown', muscleGroup: 'Back'),
+    );
+    await db.insertExercise(
+      ExercisesCompanion.insert(name: 'Bicep Barbell Curl', muscleGroup: 'Arms'),
+    );
+    await db.insertExercise(
+      ExercisesCompanion.insert(name: 'Barbell Squat', muscleGroup: 'Legs'),
+    );
+    await db.insertExercise(
+      ExercisesCompanion.insert(name: 'Romanian Deadlift', muscleGroup: 'Legs'),
+    );
+    await db.insertExercise(
+      ExercisesCompanion.insert(name: 'Treadmill Run', muscleGroup: 'Cardio'),
+    );
+
+    await db.clearAndSeedThisWeekWorkouts();
+
+    final workouts = await db.getAllWorkouts();
+    expect(workouts.length, 4);
+
+    final details = await db.watchWorkoutDetails(workouts.first.id).first;
+    expect(details.isNotEmpty, true);
   });
 
   test('Routines creation and details stream', () async {

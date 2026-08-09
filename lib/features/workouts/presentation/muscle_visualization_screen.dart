@@ -38,7 +38,12 @@ class MuscleVisualizationScreen extends ConsumerWidget {
         color: isDark ? AppColors.primaryVolt : AppColors.lightPrimary,
         child: SingleChildScrollView(
           physics: const AlwaysScrollableScrollPhysics(),
-          padding: const EdgeInsets.all(AppSpacing.base),
+          padding: EdgeInsets.only(
+            left: AppSpacing.base,
+            right: AppSpacing.base,
+            top: AppSpacing.base,
+            bottom: MediaQuery.of(context).padding.bottom + 32,
+          ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [

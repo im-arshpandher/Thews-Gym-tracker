@@ -30,7 +30,7 @@ class NotificationService {
     );
 
     try {
-      await _notificationsPlugin.initialize(initSettings);
+      await _notificationsPlugin.initialize(settings: initSettings);
       _isInitialized = true;
       debugPrint('NotificationService initialized successfully');
     } catch (e) {
@@ -58,10 +58,10 @@ class NotificationService {
 
     try {
       await _notificationsPlugin.show(
-        1001,
-        'Rest Complete!',
-        'Your rest timer has expired. Ready for your next set!',
-        details,
+        id: 1001,
+        title: 'Rest Complete!',
+        body: 'Your rest timer has expired. Ready for your next set!',
+        notificationDetails: details,
       );
     } catch (e) {
       debugPrint('Error showing rest timer notification: $e');
@@ -97,10 +97,10 @@ class NotificationService {
 
     try {
       await _notificationsPlugin.show(
-        1002,
-        'Workout In Progress',
-        'Elapsed time: $formattedTime',
-        details,
+        id: 1002,
+        title: 'Workout In Progress',
+        body: 'Elapsed time: $formattedTime',
+        notificationDetails: details,
       );
     } catch (e) {
       debugPrint('Error showing active workout notification: $e');
@@ -118,7 +118,7 @@ class NotificationService {
 
   Future<void> cancelWorkoutNotification() async {
     try {
-      await _notificationsPlugin.cancel(1002);
+      await _notificationsPlugin.cancel(id: 1002);
     } catch (e) {
       debugPrint('Error canceling workout notification: $e');
     }

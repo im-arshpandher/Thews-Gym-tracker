@@ -1,17 +1,19 @@
-import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:url_launcher/url_launcher.dart';
-import 'package:webview_flutter/webview_flutter.dart';
 
 import '../../../../core/database/app_database.dart';
 import '../../../../core/database/database_provider.dart';
+import '../../../../core/presentation/widgets/anatomical_body_painter.dart';
 import '../../../../core/presentation/widgets/muscle_group_icon.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_typography.dart';
 import '../exercises_provider.dart';
 import 'exercise_form_dialog.dart';
+import 'gif_player_widget.dart';
+import 'progress_analytics_card.dart';
+import 'youtube_inline_player.dart';
 
 class ExerciseDetailsSheet extends ConsumerStatefulWidget {
   final ExerciseData exercise;
@@ -35,7 +37,6 @@ class ExerciseDetailsSheet extends ConsumerStatefulWidget {
 
 class _ExerciseDetailsSheetState extends ConsumerState<ExerciseDetailsSheet> {
   bool _isGifPaused = false;
-  String _selectedMetric = '1RM'; // '1RM' | 'Max Weight' | 'Volume'
 
   String? _extractYouTubeId(String url) {
     final uri = Uri.tryParse(url.trim());
@@ -167,7 +168,10 @@ class _ExerciseDetailsSheetState extends ConsumerState<ExerciseDetailsSheet> {
                               ),
                             ),
                             const SizedBox(height: 4),
-                            Row(
+                            Wrap(
+                              spacing: 6,
+                              runSpacing: 4,
+                              crossAxisAlignment: WrapCrossAlignment.center,
                               children: [
                                 Container(
                                   padding: const EdgeInsets.symmetric(
@@ -201,8 +205,7 @@ class _ExerciseDetailsSheetState extends ConsumerState<ExerciseDetailsSheet> {
                                     widget
                                         .exercise
                                         .secondaryMuscleGroups!
-                                        .isNotEmpty) ...[
-                                  const SizedBox(width: 6),
+                                        .isNotEmpty)
                                   Container(
                                     padding: const EdgeInsets.symmetric(
                                       horizontal: 8,
@@ -227,9 +230,7 @@ class _ExerciseDetailsSheetState extends ConsumerState<ExerciseDetailsSheet> {
                                           ),
                                     ),
                                   ),
-                                ],
-                                if (widget.exercise.isCustom) ...[
-                                  const SizedBox(width: 8),
+                                if (widget.exercise.isCustom)
                                   Container(
                                     padding: const EdgeInsets.symmetric(
                                       horizontal: 8,
@@ -257,7 +258,6 @@ class _ExerciseDetailsSheetState extends ConsumerState<ExerciseDetailsSheet> {
                                           ),
                                     ),
                                   ),
-                                ],
                               ],
                             ),
                           ],
@@ -318,33 +318,15 @@ class _ExerciseDetailsSheetState extends ConsumerState<ExerciseDetailsSheet> {
                       ),
                     ],
                   ),
-                  const SizedBox(height: 20),
+                  const SizedBox(height: 16),
 
-                  // Progress & Analytics Section (Phase 3.1 fl_chart Integration)
-                  progressAsync.when(
-                    data: (points) {
-                      return _buildProgressAnalyticsCard(
-                        context,
-                        points,
-                        isDark,
-                      );
-                    },
-                    loading: () => const Center(
-                      child: Padding(
-                        padding: EdgeInsets.all(16),
-                        child: CircularProgressIndicator(
-                          color: AppColors.primaryVolt,
-                        ),
-                      ),
-                    ),
-                    error: (e, s) => const SizedBox.shrink(),
-                  ),
+                  // 1. Targeted Muscle Visualization Card (Top)
+                  _buildTargetedMuscleCard(context, isDark),
+                  const SizedBox(height: 16),
 
-                  const SizedBox(height: 20),
-
-                  // Muted Auto-Looping YouTube Player / GIF
+                  // 2. Muted Auto-Looping YouTube Player / GIF / Image
                   if (isYoutube) ...[
-                    _YouTubeInlinePlayer(videoId: youtubeId),
+                    YouTubeInlinePlayer(videoId: youtubeId),
                     const SizedBox(height: 8),
                     Center(
                       child: Text(
@@ -371,59 +353,11 @@ class _ExerciseDetailsSheetState extends ConsumerState<ExerciseDetailsSheet> {
                               color: isDark
                                   ? AppColors.darkSurfaceContainer
                                   : AppColors.lightSurfaceContainerLow,
-                              child: _isGifPaused
-                                  ? Image.network(
-                                      url,
-                                      fit: BoxFit.contain,
-                                      gaplessPlayback: true,
-                                    )
-                                  : Image.network(
-                                      url,
-                                      fit: BoxFit.contain,
-                                      loadingBuilder:
-                                          (context, child, progress) {
-                                            if (progress == null) return child;
-                                            return SizedBox(
-                                              height: 180,
-                                              child: Center(
-                                                child:
-                                                    CircularProgressIndicator(
-                                                      color: isDark
-                                                          ? AppColors
-                                                                .primaryVolt
-                                                          : AppColors
-                                                                .lightPrimary,
-                                                    ),
-                                              ),
-                                            );
-                                          },
-                                      errorBuilder:
-                                          (
-                                            context,
-                                            error,
-                                            stackTrace,
-                                          ) => Container(
-                                            padding: const EdgeInsets.all(24),
-                                            child: Column(
-                                              mainAxisAlignment:
-                                                  MainAxisAlignment.center,
-                                              children: [
-                                                const Icon(
-                                                  Icons.broken_image,
-                                                  size: 48,
-                                                  color: AppColors.error,
-                                                ),
-                                                const SizedBox(height: 8),
-                                                Text(
-                                                  'Unable to load demo GIF',
-                                                  style: AppTypography.bodySm(
-                                                    color: AppColors.error,
-                                                  ),
-                                                ),
-                                              ],
-                                            ),
-                                          ),
-                                    ),
+                              child: GifPlayerWidget(
+                                url: url,
+                                isPaused: _isGifPaused,
+                                isDark: isDark,
+                              ),
                             ),
 
                             if (_isGifPaused)
@@ -582,7 +516,12 @@ class _ExerciseDetailsSheetState extends ConsumerState<ExerciseDetailsSheet> {
                               }
                             },
                             icon: const Icon(Icons.open_in_new, size: 18),
-                            label: const Text('OPEN LINK'),
+                            label: const Text(
+                              'OPEN LINK',
+                              maxLines: 1,
+                              softWrap: false,
+                              overflow: TextOverflow.ellipsis,
+                            ),
                             style: ElevatedButton.styleFrom(
                               backgroundColor: AppColors.primaryVolt,
                               foregroundColor: AppColors.primaryVoltOn,
@@ -591,27 +530,34 @@ class _ExerciseDetailsSheetState extends ConsumerState<ExerciseDetailsSheet> {
                           ),
                         ),
                         const SizedBox(width: 12),
-                        OutlinedButton.icon(
-                          onPressed: () {
-                            Clipboard.setData(ClipboardData(text: url));
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(
-                                content: const Text(
-                                  'Demo link copied to clipboard!',
+                        Expanded(
+                          child: OutlinedButton.icon(
+                            onPressed: () {
+                              Clipboard.setData(ClipboardData(text: url));
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  content: const Text(
+                                    'Demo link copied to clipboard!',
+                                  ),
+                                  duration: const Duration(seconds: 2),
+                                  backgroundColor: isDark
+                                      ? AppColors.darkSurfaceContainerHigh
+                                      : AppColors.lightPrimary,
                                 ),
-                                duration: const Duration(seconds: 2),
-                                backgroundColor: isDark
-                                    ? AppColors.darkSurfaceContainerHigh
-                                    : AppColors.lightPrimary,
+                              );
+                            },
+                            icon: const Icon(Icons.copy, size: 18),
+                            label: const Text(
+                              'COPY LINK',
+                              maxLines: 1,
+                              softWrap: false,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                            style: OutlinedButton.styleFrom(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 12,
+                                vertical: 14,
                               ),
-                            );
-                          },
-                          icon: const Icon(Icons.copy, size: 18),
-                          label: const Text('COPY LINK'),
-                          style: OutlinedButton.styleFrom(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 16,
-                              vertical: 14,
                             ),
                           ),
                         ),
@@ -619,6 +565,20 @@ class _ExerciseDetailsSheetState extends ConsumerState<ExerciseDetailsSheet> {
                     ),
                     const SizedBox(height: 16),
                   ],
+
+                  // 3. Workout History & Progress Analytics Chart Section (Bottom)
+                  progressAsync.when(
+                    data: (points) => ProgressAnalyticsCard(points: points),
+                    loading: () => const Center(
+                      child: Padding(
+                        padding: EdgeInsets.all(16),
+                        child: CircularProgressIndicator(
+                          color: AppColors.primaryVolt,
+                        ),
+                      ),
+                    ),
+                    error: (e, s) => const SizedBox.shrink(),
+                  ),
 
                   if (widget.exercise.isCustom)
                     SizedBox(
@@ -650,65 +610,33 @@ class _ExerciseDetailsSheetState extends ConsumerState<ExerciseDetailsSheet> {
     );
   }
 
-  Widget _buildProgressAnalyticsCard(
-    BuildContext context,
-    List<ExerciseProgressPoint> points,
-    bool isDark,
-  ) {
-    if (points.isEmpty) {
-      return Container(
-        padding: const EdgeInsets.all(20),
-        decoration: BoxDecoration(
-          color: isDark
-              ? AppColors.darkSurfaceContainer
-              : AppColors.lightSurfaceContainerLow,
-          borderRadius: BorderRadius.circular(16),
-        ),
-        child: Center(
-          child: Column(
-            children: [
-              Icon(
-                Icons.show_chart,
-                size: 36,
-                color: isDark
-                    ? AppColors.darkOutlineVariant
-                    : AppColors.lightOutlineVariant,
-              ),
-              const SizedBox(height: 8),
-              Text(
-                'No workout history recorded yet for this exercise.',
-                textAlign: TextAlign.center,
-                style: AppTypography.bodySm(
-                  color: isDark
-                      ? AppColors.darkTextSecondary
-                      : AppColors.lightTextSecondary,
-                ),
-              ),
-            ],
-          ),
-        ),
-      );
+  Widget _buildTargetedMuscleCard(BuildContext context, bool isDark) {
+    final Map<String, int> targetCounts = {
+      widget.exercise.muscleGroup: 16,
+    };
+
+    if (widget.exercise.secondaryMuscleGroups != null &&
+        widget.exercise.secondaryMuscleGroups!.trim().isNotEmpty) {
+      final secList = widget.exercise.secondaryMuscleGroups!
+          .split(',')
+          .map((s) => s.trim())
+          .where((s) => s.isNotEmpty);
+      for (final sec in secList) {
+        targetCounts[sec] = 8;
+      }
     }
 
-    final max1RM = points.fold<double>(
-      0,
-      (prev, p) => p.estimated1RM > prev ? p.estimated1RM : prev,
-    );
-    final maxWeight = points.fold<double>(
-      0,
-      (prev, p) => p.maxWeight > prev ? p.maxWeight : prev,
-    );
-
     return Container(
-      padding: const EdgeInsets.all(16),
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
       decoration: BoxDecoration(
         color: isDark
             ? AppColors.darkSurfaceContainer
             : AppColors.lightSurfaceContainerLow,
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(16),
         border: Border.all(
           color: isDark
-              ? AppColors.darkOutline.withValues(alpha: 0.3)
+              ? AppColors.darkOutline
               : AppColors.lightOutline.withValues(alpha: 0.3),
         ),
       ),
@@ -716,231 +644,35 @@ class _ExerciseDetailsSheetState extends ConsumerState<ExerciseDetailsSheet> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Row(
-                children: [
-                  Icon(
-                    Icons.insights,
-                    color: isDark
-                        ? AppColors.primaryVolt
-                        : AppColors.lightPrimary,
-                    size: 20,
-                  ),
-                  const SizedBox(width: 8),
-                  Text(
-                    'PROGRESS TRENDS',
-                    style: AppTypography.labelCaps(
-                      color: isDark
-                          ? AppColors.darkTextPrimary
-                          : AppColors.lightTextPrimary,
-                    ).copyWith(fontWeight: FontWeight.bold),
-                  ),
-                ],
+              const Icon(
+                Icons.accessibility_new_rounded,
+                size: 16,
+                color: AppColors.primaryVolt,
               ),
-              Row(
-                children: [
-                  _buildMetricChip('1RM', _selectedMetric == '1RM', isDark),
-                  const SizedBox(width: 4),
-                  _buildMetricChip(
-                    'Max Weight',
-                    _selectedMetric == 'Max Weight',
-                    isDark,
-                  ),
-                  const SizedBox(width: 4),
-                  _buildMetricChip(
-                    'Volume',
-                    _selectedMetric == 'Volume',
-                    isDark,
-                  ),
-                ],
+              const SizedBox(width: 6),
+              Text(
+                'TARGETED MUSCLES',
+                style: AppTypography.labelCaps(
+                  color: isDark
+                      ? AppColors.darkTextPrimary
+                      : AppColors.lightTextPrimary,
+                ).copyWith(fontSize: 11, fontWeight: FontWeight.bold),
               ),
             ],
           ),
-
-          const SizedBox(height: 16),
-
-          // High Level PR Summary Banner
-          Row(
-            children: [
-              Expanded(
-                child: _buildSummaryBox(
-                  'EST. 1RM PR',
-                  '${max1RM.toStringAsFixed(1)} kg',
-                  isDark,
-                ),
-              ),
-              const SizedBox(width: 8),
-              Expanded(
-                child: _buildSummaryBox(
-                  'MAX WEIGHT',
-                  '${maxWeight.toStringAsFixed(1)} kg',
-                  isDark,
-                ),
-              ),
-            ],
-          ),
-
-          const SizedBox(height: 20),
-
-          // Interactive fl_chart LineChart
-          SizedBox(
-            height: 180,
-            child: LineChart(
-              LineChartData(
-                gridData: FlGridData(
-                  show: true,
-                  drawVerticalLine: false,
-                  getDrawingHorizontalLine: (value) => FlLine(
-                    color: isDark ? Colors.white10 : Colors.black12,
-                    strokeWidth: 1,
-                  ),
-                ),
-                titlesData: FlTitlesData(
-                  rightTitles: const AxisTitles(
-                    sideTitles: SideTitles(showTitles: false),
-                  ),
-                  topTitles: const AxisTitles(
-                    sideTitles: SideTitles(showTitles: false),
-                  ),
-                  leftTitles: const AxisTitles(
-                    sideTitles: SideTitles(showTitles: false),
-                  ),
-                  bottomTitles: AxisTitles(
-                    sideTitles: SideTitles(
-                      showTitles: true,
-                      reservedSize: 22,
-                      getTitlesWidget: (value, meta) {
-                        final idx = value.toInt();
-                        if (idx >= 0 && idx < points.length) {
-                          final dt = points[idx].date;
-                          return Padding(
-                            padding: const EdgeInsets.only(top: 6),
-                            child: Text(
-                              '${dt.month}/${dt.day}',
-                              style: TextStyle(
-                                fontSize: 9,
-                                color: isDark ? Colors.white54 : Colors.black54,
-                              ),
-                            ),
-                          );
-                        }
-                        return const SizedBox.shrink();
-                      },
-                    ),
-                  ),
-                ),
-                borderData: FlBorderData(show: false),
-                lineBarsData: [
-                  LineChartBarData(
-                    isCurved: true,
-                    curveSmoothness: 0.35,
-                    color: isDark
-                        ? AppColors.primaryVolt
-                        : AppColors.lightPrimary,
-                    barWidth: 3,
-                    isStrokeCapRound: true,
-                    dotData: FlDotData(
-                      show: true,
-                      getDotPainter: (spot, percent, barData, index) {
-                        return FlDotCirclePainter(
-                          radius: 4,
-                          color: isDark
-                              ? AppColors.primaryVolt
-                              : AppColors.lightPrimary,
-                          strokeWidth: 2,
-                          strokeColor: isDark ? Colors.black : Colors.white,
-                        );
-                      },
-                    ),
-                    belowBarData: BarAreaData(
-                      show: true,
-                      color:
-                          (isDark
-                                  ? AppColors.primaryVolt
-                                  : AppColors.lightPrimary)
-                              .withValues(alpha: 0.18),
-                    ),
-                    spots: points.asMap().entries.map((e) {
-                      final idx = e.key.toDouble();
-                      final p = e.value;
-                      double val = p.estimated1RM;
-                      if (_selectedMetric == 'Max Weight') val = p.maxWeight;
-                      if (_selectedMetric == 'Volume') val = p.totalVolume;
-                      return FlSpot(idx, val);
-                    }).toList(),
-                  ),
-                ],
-              ),
-            ),
+          const SizedBox(height: 4),
+          AnatomicalBodyPainterWidget(
+            muscleSetCounts: targetCounts,
+            selectedMuscleGroup: widget.exercise.muscleGroup,
+            hideViewSelector: true,
+            hideChips: true,
+            figureHeight: 85.0,
           ),
         ],
       ),
     );
   }
-
-  Widget _buildMetricChip(String label, bool isSelected, bool isDark) {
-    return InkWell(
-      onTap: () => setState(() => _selectedMetric = label),
-      borderRadius: BorderRadius.circular(6),
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-        decoration: BoxDecoration(
-          color: isSelected
-              ? (isDark ? AppColors.primaryVolt : AppColors.lightPrimary)
-              : (isDark
-                    ? AppColors.darkSurfaceContainerHigh
-                    : AppColors.lightSurfaceContainerHigh),
-          borderRadius: BorderRadius.circular(6),
-        ),
-        child: Text(
-          label,
-          style: TextStyle(
-            fontSize: 10,
-            fontWeight: FontWeight.bold,
-            color: isSelected
-                ? (isDark ? AppColors.primaryVoltOn : Colors.white)
-                : (isDark
-                      ? AppColors.darkTextSecondary
-                      : AppColors.lightTextSecondary),
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildSummaryBox(String title, String value, bool isDark) {
-    return Container(
-      padding: const EdgeInsets.all(10),
-      decoration: BoxDecoration(
-        color: isDark
-            ? AppColors.darkSurfaceContainerHigh
-            : AppColors.lightSurfaceContainerHighest,
-        borderRadius: BorderRadius.circular(10),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            title,
-            style: AppTypography.labelCaps(
-              color: isDark
-                  ? AppColors.darkTextSecondary
-                  : AppColors.lightTextSecondary,
-            ).copyWith(fontSize: 9),
-          ),
-          const SizedBox(height: 2),
-          Text(
-            value,
-            style: AppTypography.headlineSm(
-              color: isDark ? AppColors.primaryVolt : AppColors.lightPrimary,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
   void _confirmDelete(BuildContext context) {
     showDialog(
       context: context,
@@ -967,54 +699,6 @@ class _ExerciseDetailsSheetState extends ConsumerState<ExerciseDetailsSheet> {
             child: const Text('DELETE'),
           ),
         ],
-      ),
-    );
-  }
-}
-
-class _YouTubeInlinePlayer extends StatefulWidget {
-  final String videoId;
-
-  const _YouTubeInlinePlayer({required this.videoId});
-
-  @override
-  State<_YouTubeInlinePlayer> createState() => _YouTubeInlinePlayerState();
-}
-
-class _YouTubeInlinePlayerState extends State<_YouTubeInlinePlayer> {
-  late final WebViewController _controller;
-
-  @override
-  void initState() {
-    super.initState();
-    _controller = WebViewController()
-      ..setJavaScriptMode(JavaScriptMode.unrestricted)
-      ..loadRequest(
-        Uri.parse(
-          'https://www.youtube.com/embed/${widget.videoId}?autoplay=1&mute=1&loop=1&playlist=${widget.videoId}&controls=0',
-        ),
-      );
-  }
-
-  @override
-  void didUpdateWidget(covariant _YouTubeInlinePlayer oldWidget) {
-    super.didUpdateWidget(oldWidget);
-    if (oldWidget.videoId != widget.videoId) {
-      _controller.loadRequest(
-        Uri.parse(
-          'https://www.youtube.com/embed/${widget.videoId}?autoplay=1&mute=1&loop=1&playlist=${widget.videoId}&controls=0',
-        ),
-      );
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return ClipRRect(
-      borderRadius: BorderRadius.circular(16),
-      child: AspectRatio(
-        aspectRatio: 16 / 9,
-        child: WebViewWidget(controller: _controller),
       ),
     );
   }
