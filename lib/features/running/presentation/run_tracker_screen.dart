@@ -114,14 +114,9 @@ class _RunTrackerScreenState extends ConsumerState<RunTrackerScreen> {
                     showSelectedIcon: false,
                     segments: const [
                       ButtonSegment<String>(
-                        value: 'run',
-                        label: Text('RUN', maxLines: 1, softWrap: false),
+                        value: 'jog',
+                        label: Text('JOG', maxLines: 1, softWrap: false),
                         icon: Icon(Icons.directions_run),
-                      ),
-                      ButtonSegment<String>(
-                        value: 'walk',
-                        label: Text('WALK', maxLines: 1, softWrap: false),
-                        icon: Icon(Icons.directions_walk),
                       ),
                       ButtonSegment<String>(
                         value: 'cycle',
@@ -129,7 +124,11 @@ class _RunTrackerScreenState extends ConsumerState<RunTrackerScreen> {
                         icon: Icon(Icons.directions_bike),
                       ),
                     ],
-                    selected: {runState.activityType},
+                    selected: {
+                      ['jog', 'cycle'].contains(runState.activityType)
+                          ? runState.activityType
+                          : 'jog'
+                    },
                     onSelectionChanged: (selection) {
                       runNotifier.setActivityType(selection.first);
                     },

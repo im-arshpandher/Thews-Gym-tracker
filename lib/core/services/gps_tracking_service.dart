@@ -36,7 +36,7 @@ class RunSplit {
 class RunTrackingState {
   final bool isTracking;
   final bool isPaused;
-  final String activityType; // 'run' | 'walk' | 'cycle'
+  final String activityType; // 'jog' | 'cycle'
   final int durationSeconds;
   final double distanceMeters;
   final double elevationGainMeters;
@@ -45,6 +45,7 @@ class RunTrackingState {
   final double currentSpeedKmH;
   final double headingDegrees;
   final int stepCount;
+  final double? manualStrideLengthMeters;
   final List<GpxPoint> waypoints;
   final List<RunSplit> splits;
   final bool hasLocationPermission;
@@ -53,7 +54,7 @@ class RunTrackingState {
   const RunTrackingState({
     this.isTracking = false,
     this.isPaused = false,
-    this.activityType = 'run',
+    this.activityType = 'jog',
     this.durationSeconds = 0,
     this.distanceMeters = 0.0,
     this.elevationGainMeters = 0.0,
@@ -62,6 +63,7 @@ class RunTrackingState {
     this.currentSpeedKmH = 0.0,
     this.headingDegrees = 0.0,
     this.stepCount = 0,
+    this.manualStrideLengthMeters,
     this.waypoints = const [],
     this.splits = const [],
     this.hasLocationPermission = false,
@@ -80,6 +82,7 @@ class RunTrackingState {
     double? currentSpeedKmH,
     double? headingDegrees,
     int? stepCount,
+    double? manualStrideLengthMeters,
     List<GpxPoint>? waypoints,
     List<RunSplit>? splits,
     bool? hasLocationPermission,
@@ -98,6 +101,8 @@ class RunTrackingState {
       currentSpeedKmH: currentSpeedKmH ?? this.currentSpeedKmH,
       headingDegrees: headingDegrees ?? this.headingDegrees,
       stepCount: stepCount ?? this.stepCount,
+      manualStrideLengthMeters:
+          manualStrideLengthMeters ?? this.manualStrideLengthMeters,
       waypoints: waypoints ?? this.waypoints,
       splits: splits ?? this.splits,
       hasLocationPermission:
@@ -144,12 +149,19 @@ class RunTrackingState {
   }
 
   int get totalSteps {
+    if (activityType == 'cycle') return 0;
     if (stepCount > 0) return stepCount;
-    final strideLength = activityType == 'walk'
-        ? 0.72
-        : (activityType == 'cycle' ? 0.0 : 0.82);
-    if (strideLength == 0) return 0;
-    return (distanceMeters / strideLength).round();
+
+    double effectiveStride;
+    if (manualStrideLengthMeters != null && manualStrideLengthMeters! > 0) {
+      effectiveStride = manualStrideLengthMeters!;
+    } else {
+      // Dynamic stride length based on speed (km/h)
+      effectiveStride = (0.68 + (currentSpeedKmH * 0.026)).clamp(0.65, 1.30);
+    }
+
+    if (effectiveStride <= 0) return 0;
+    return (distanceMeters / effectiveStride).round();
   }
 }
 
@@ -364,6 +376,15 @@ class RunTrackingNotifier extends StateNotifier<RunTrackingState> {
     _sensorStepCount = 0;
     _smoothedSpeedMs = 0.0;
 
+    double? manualStride;
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final rawStride = prefs.getDouble('manual_stride_length');
+      if (rawStride != null && rawStride > 0) {
+        manualStride = rawStride;
+      }
+    } catch (_) {}
+
     state = RunTrackingState(
       isTracking: true,
       isPaused: false,
@@ -376,6 +397,7 @@ class RunTrackingNotifier extends StateNotifier<RunTrackingState> {
       currentSpeedKmH: 0.0,
       headingDegrees: state.headingDegrees,
       stepCount: 0,
+      manualStrideLengthMeters: manualStride,
       waypoints: state.waypoints.isNotEmpty ? [state.waypoints.last] : [],
       splits: [],
       hasLocationPermission: state.hasLocationPermission,

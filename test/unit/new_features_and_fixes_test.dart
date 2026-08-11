@@ -2,6 +2,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:thews/core/utils/gpx_parser.dart';
 import 'package:thews/core/services/tile_cache_service.dart';
+import 'package:thews/core/services/gps_tracking_service.dart';
 
 void main() {
   group('Enhanced GPX Parser Tests', () {
@@ -71,6 +72,44 @@ void main() {
       expect(darkImageProvider.tileKey, startsWith('dark_'));
       expect(lightImageProvider.tileKey, startsWith('light_'));
       expect(darkImageProvider.tileKey, isNot(equals(lightImageProvider.tileKey)));
+    });
+  });
+
+  group('Stride Length and Telemetry Tests', () {
+    test('dynamic stride length expands with speed in jog mode', () {
+      const stateSlow = RunTrackingState(
+        activityType: 'jog',
+        distanceMeters: 1000,
+        currentSpeedKmH: 4.0,
+      );
+      const stateFast = RunTrackingState(
+        activityType: 'jog',
+        distanceMeters: 1000,
+        currentSpeedKmH: 15.0,
+      );
+
+      expect(stateSlow.totalSteps, greaterThan(stateFast.totalSteps));
+    });
+
+    test('manual stride length overrides dynamic speed stride', () {
+      const stateManual = RunTrackingState(
+        activityType: 'jog',
+        distanceMeters: 1000,
+        currentSpeedKmH: 15.0,
+        manualStrideLengthMeters: 1.0,
+      );
+
+      expect(stateManual.totalSteps, 1000);
+    });
+
+    test('cycle mode hides steps', () {
+      const stateCycle = RunTrackingState(
+        activityType: 'cycle',
+        distanceMeters: 1000,
+        currentSpeedKmH: 25.0,
+      );
+
+      expect(stateCycle.totalSteps, 0);
     });
   });
 }

@@ -17,6 +17,7 @@ class SettingsNotifier extends StateNotifier<AppSettings> {
   static const String _keyDailyCountingMode = 'daily_counting_mode';
   static const String _keyAutoStartRestTimer = 'auto_start_rest_timer';
   static const String _keyDefaultRestDuration = 'default_rest_duration';
+  static const String _keyManualStrideLength = 'manual_stride_length';
 
   SettingsNotifier(this._prefs) : super(const AppSettings()) {
     _loadSettings();
@@ -60,6 +61,9 @@ class SettingsNotifier extends StateNotifier<AppSettings> {
       restDuration = 90;
     }
 
+    final rawStride = _prefs.getDouble(_keyManualStrideLength);
+    final manualStride = (rawStride != null && rawStride > 0) ? rawStride : null;
+
     state = AppSettings(
       themeMode: themeMode,
       weightUnit: weightUnit,
@@ -67,6 +71,7 @@ class SettingsNotifier extends StateNotifier<AppSettings> {
       dailyCountingMode: dailyCountingMode,
       autoStartRestTimer: autoStart,
       defaultRestDuration: restDuration,
+      manualStrideLengthMeters: manualStride,
     );
   }
 
@@ -129,6 +134,16 @@ class SettingsNotifier extends StateNotifier<AppSettings> {
   Future<void> setDefaultRestDuration(int seconds) async {
     state = state.copyWith(defaultRestDuration: seconds);
     await _prefs.setInt(_keyDefaultRestDuration, seconds);
+  }
+
+  Future<void> setManualStrideLength(double? strideMeters) async {
+    if (strideMeters == null || strideMeters <= 0) {
+      state = state.copyWith(clearManualStrideLength: true);
+      await _prefs.remove(_keyManualStrideLength);
+    } else {
+      state = state.copyWith(manualStrideLengthMeters: strideMeters);
+      await _prefs.setDouble(_keyManualStrideLength, strideMeters);
+    }
   }
 }
 

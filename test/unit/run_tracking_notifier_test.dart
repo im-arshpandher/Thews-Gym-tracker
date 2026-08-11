@@ -42,15 +42,15 @@ void main() {
       expect(notifier.state.isPaused, false);
       expect(notifier.state.durationSeconds, 0);
       expect(notifier.state.distanceMeters, 0.0);
-      expect(notifier.state.activityType, 'run');
+      expect(notifier.state.activityType, 'jog');
     });
 
     test('setActivityType updates activity type correctly', () {
       notifier.setActivityType('cycle');
       expect(notifier.state.activityType, 'cycle');
 
-      notifier.setActivityType('walk');
-      expect(notifier.state.activityType, 'walk');
+      notifier.setActivityType('jog');
+      expect(notifier.state.activityType, 'jog');
     });
 
     test('pauseTracking and resumeTracking update state flags', () async {

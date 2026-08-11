@@ -31,6 +31,7 @@ class AppSettings {
   final DailyWorkoutCountingMode dailyCountingMode;
   final bool autoStartRestTimer;
   final int defaultRestDuration;
+  final double? manualStrideLengthMeters;
 
   const AppSettings({
     this.themeMode = ThemeMode.dark,
@@ -39,6 +40,7 @@ class AppSettings {
     this.dailyCountingMode = DailyWorkoutCountingMode.individually,
     this.autoStartRestTimer = true,
     this.defaultRestDuration = 90,
+    this.manualStrideLengthMeters,
   });
 
   AppSettings copyWith({
@@ -48,6 +50,8 @@ class AppSettings {
     DailyWorkoutCountingMode? dailyCountingMode,
     bool? autoStartRestTimer,
     int? defaultRestDuration,
+    double? manualStrideLengthMeters,
+    bool clearManualStrideLength = false,
   }) {
     return AppSettings(
       themeMode: themeMode ?? this.themeMode,
@@ -56,6 +60,9 @@ class AppSettings {
       dailyCountingMode: dailyCountingMode ?? this.dailyCountingMode,
       autoStartRestTimer: autoStartRestTimer ?? this.autoStartRestTimer,
       defaultRestDuration: defaultRestDuration ?? this.defaultRestDuration,
+      manualStrideLengthMeters: clearManualStrideLength
+          ? null
+          : (manualStrideLengthMeters ?? this.manualStrideLengthMeters),
     );
   }
 }

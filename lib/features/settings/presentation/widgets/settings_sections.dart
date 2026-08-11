@@ -281,7 +281,115 @@ class AppearanceSection extends StatelessWidget {
             ),
           ),
         ),
+        const SizedBox(height: 8),
+
+        // Jog Stride Length Setting
+        Card(
+          child: ListTile(
+            contentPadding: const EdgeInsets.symmetric(
+              horizontal: 16,
+              vertical: 8,
+            ),
+            leading: Icon(
+              Icons.straighten,
+              color: isDark
+                  ? AppColors.primaryVoltDim
+                  : AppColors.lightPrimary,
+            ),
+            title: Text(
+              'Jog Stride Length',
+              style: AppTypography.bodyLg(
+                color: isDark
+                    ? AppColors.darkTextPrimary
+                    : AppColors.lightTextPrimary,
+              ),
+            ),
+            subtitle: Text(
+              settings.manualStrideLengthMeters == null
+                  ? 'Auto (Dynamic based on speed)'
+                  : '${(settings.manualStrideLengthMeters! * 100).toStringAsFixed(0)} cm (${settings.manualStrideLengthMeters!.toStringAsFixed(2)} m)',
+              style: AppTypography.bodySm(
+                color: isDark
+                    ? AppColors.darkTextSecondary
+                    : AppColors.lightTextSecondary,
+              ),
+            ),
+            trailing: Icon(
+              Icons.chevron_right,
+              color: isDark
+                  ? AppColors.darkTextSecondary
+                  : AppColors.lightTextSecondary,
+            ),
+            onTap: () => _showStrideLengthDialog(context, settings, notifier, isDark),
+          ),
+        ),
       ],
+    );
+  }
+
+  void _showStrideLengthDialog(
+    BuildContext context,
+    AppSettings settings,
+    SettingsNotifier notifier,
+    bool isDark,
+  ) {
+    final controller = TextEditingController(
+      text: settings.manualStrideLengthMeters != null
+          ? (settings.manualStrideLengthMeters! * 100).toStringAsFixed(0)
+          : '',
+    );
+
+    showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: const Text('Jog Stride Length'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text(
+                'Enter custom stride length in centimeters (cm), or choose Auto to dynamically estimate based on real-time speed.',
+                style: TextStyle(fontSize: 13),
+              ),
+              const SizedBox(height: 16),
+              TextField(
+                controller: controller,
+                keyboardType: TextInputType.number,
+                inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                decoration: const InputDecoration(
+                  labelText: 'Stride Length (cm)',
+                  hintText: 'e.g. 78',
+                  suffixText: 'cm',
+                ),
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () {
+                notifier.setManualStrideLength(null);
+                Navigator.of(context).pop();
+              },
+              child: const Text('SET TO AUTO', maxLines: 1, softWrap: false),
+            ),
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text('CANCEL', maxLines: 1, softWrap: false),
+            ),
+            ElevatedButton(
+              onPressed: () {
+                final cm = int.tryParse(controller.text);
+                if (cm != null && cm >= 40 && cm <= 200) {
+                  notifier.setManualStrideLength(cm / 100.0);
+                  Navigator.of(context).pop();
+                }
+              },
+              child: const Text('SAVE', maxLines: 1, softWrap: false),
+            ),
+          ],
+        );
+      },
     );
   }
 }

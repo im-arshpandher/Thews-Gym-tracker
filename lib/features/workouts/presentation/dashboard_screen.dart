@@ -246,7 +246,7 @@ class DashboardScreen extends ConsumerWidget {
                       icon: Icons.fitness_center_outlined,
                       title: 'EXERCISES',
                       subtitle: 'Library & Custom',
-                      onTap: () => context.go('/exercises'),
+                      onTap: () => context.push('/exercises'),
                     ),
                   ),
                 ],

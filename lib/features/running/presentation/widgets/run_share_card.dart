@@ -164,14 +164,11 @@ class _RunShareCardDialogState extends State<RunShareCardDialog> {
             children: [
               RepaintBoundary(
                 key: _shareCardKey,
-                child: Container(
-                  color: isDark
-                      ? AppColors.darkSurfaceContainerHigh
-                      : AppColors.lightSurfaceContainerLowest,
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(24),
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      // Header Banner
                       Container(
                         padding: const EdgeInsets.all(AppSpacing.md),
                         decoration: BoxDecoration(
@@ -187,10 +184,6 @@ class _RunShareCardDialogState extends State<RunShareCardDialog> {
                                   ],
                             begin: Alignment.topLeft,
                             end: Alignment.bottomRight,
-                          ),
-                          borderRadius: const BorderRadius.only(
-                            topLeft: Radius.circular(22),
-                            topRight: Radius.circular(22),
                           ),
                         ),
                         child: Column(
@@ -244,10 +237,7 @@ class _RunShareCardDialogState extends State<RunShareCardDialog> {
                                 ),
                               ],
                             ),
-
                             const SizedBox(height: AppSpacing.md),
-
-                            // Vector Route Preview
                             SizedBox(
                               height: 180,
                               width: double.infinity,
@@ -263,8 +253,6 @@ class _RunShareCardDialogState extends State<RunShareCardDialog> {
                           ],
                         ),
                       ),
-
-                      // Activity Stats Grid
                       Padding(
                         padding: const EdgeInsets.all(AppSpacing.md),
                         child: Column(
@@ -321,8 +309,6 @@ class _RunShareCardDialogState extends State<RunShareCardDialog> {
                   ),
                 ),
               ),
-
-              // Action Buttons
               Padding(
                 padding: const EdgeInsets.only(
                   left: AppSpacing.md,
