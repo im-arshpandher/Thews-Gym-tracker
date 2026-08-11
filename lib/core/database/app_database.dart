@@ -338,19 +338,22 @@ class AppDatabase extends _$AppDatabase {
     if (allEx.isEmpty) return;
 
     ExerciseData findEx(String name) {
+      final nameLower = name.toLowerCase().trim();
       return allEx.firstWhere(
-        (e) => e.name.toLowerCase() == name.toLowerCase(),
+        (e) => e.name.toLowerCase().trim() == nameLower ||
+            e.name.toLowerCase().contains(nameLower) ||
+            nameLower.contains(e.name.toLowerCase()),
         orElse: () => allEx.first,
       );
     }
 
     final now = DateTime.now();
 
-    // 1. Heavy Push Session (2 days ago)
+    // 1. Push & Chest Hypertrophy Session (3 days ago)
     final pushWorkoutId = await insertWorkout(
       WorkoutsCompanion.insert(
-        date: Value(now.subtract(const Duration(days: 2))),
-        notes: const Value('Heavy Push Hypertrophy Session - Great bench press progress'),
+        date: Value(now.subtract(const Duration(days: 3))),
+        notes: const Value('Push Hypertrophy Session - Heavy bench press & shoulder volume'),
         durationSeconds: const Value(3600),
       ),
     );
@@ -367,9 +370,8 @@ class AppDatabase extends _$AppDatabase {
     await insertSetEntry(SetEntriesCompanion.insert(workoutExerciseId: benchWeId, setNumber: 2, weight: 85, reps: 10, type: const Value('normal')));
     await insertSetEntry(SetEntriesCompanion.insert(workoutExerciseId: benchWeId, setNumber: 3, weight: 95, reps: 8, type: const Value('normal')));
     await insertSetEntry(SetEntriesCompanion.insert(workoutExerciseId: benchWeId, setNumber: 4, weight: 105, reps: 6, type: const Value('normal')));
-    await insertSetEntry(SetEntriesCompanion.insert(workoutExerciseId: benchWeId, setNumber: 5, weight: 75, reps: 12, type: const Value('drop')));
 
-    final ohpEx = findEx('Overhead Shoulder Press');
+    final ohpEx = findEx('Overhead Barbell Press (OHP)');
     final ohpWeId = await insertWorkoutExercise(
       WorkoutExercisesCompanion.insert(
         workoutId: pushWorkoutId,
@@ -379,9 +381,8 @@ class AppDatabase extends _$AppDatabase {
     );
     await insertSetEntry(SetEntriesCompanion.insert(workoutExerciseId: ohpWeId, setNumber: 1, weight: 50, reps: 10, type: const Value('normal')));
     await insertSetEntry(SetEntriesCompanion.insert(workoutExerciseId: ohpWeId, setNumber: 2, weight: 60, reps: 8, type: const Value('normal')));
-    await insertSetEntry(SetEntriesCompanion.insert(workoutExerciseId: ohpWeId, setNumber: 3, weight: 65, reps: 6, type: const Value('normal')));
 
-    final tricepEx = findEx('Tricep Rope Pushdown');
+    final tricepEx = findEx('Tricep Cable Pushdown');
     final tricepWeId = await insertWorkoutExercise(
       WorkoutExercisesCompanion.insert(
         workoutId: pushWorkoutId,
@@ -390,14 +391,13 @@ class AppDatabase extends _$AppDatabase {
       ),
     );
     await insertSetEntry(SetEntriesCompanion.insert(workoutExerciseId: tricepWeId, setNumber: 1, weight: 30, reps: 12, type: const Value('normal')));
-    await insertSetEntry(SetEntriesCompanion.insert(workoutExerciseId: tricepWeId, setNumber: 2, weight: 35, reps: 10, type: const Value('normal')));
-    await insertSetEntry(SetEntriesCompanion.insert(workoutExerciseId: tricepWeId, setNumber: 3, weight: 40, reps: 8, type: const Value('failure')));
+    await insertSetEntry(SetEntriesCompanion.insert(workoutExerciseId: tricepWeId, setNumber: 2, weight: 35, reps: 10, type: const Value('failure')));
 
-    // 2. Pull & Back Power Session (1 day ago)
+    // 2. Pull, Back & Forearms Session (2 days ago)
     final pullWorkoutId = await insertWorkout(
       WorkoutsCompanion.insert(
-        date: Value(now.subtract(const Duration(days: 1))),
-        notes: const Value('Pull & Back Power Session - Deadlift volume'),
+        date: Value(now.subtract(const Duration(days: 2))),
+        notes: const Value('Pull Power & Grip Session - Heavy deadlifts & lat work'),
         durationSeconds: const Value(3300),
       ),
     );
@@ -425,9 +425,8 @@ class AppDatabase extends _$AppDatabase {
     );
     await insertSetEntry(SetEntriesCompanion.insert(workoutExerciseId: latWeId, setNumber: 1, weight: 65, reps: 12, type: const Value('normal')));
     await insertSetEntry(SetEntriesCompanion.insert(workoutExerciseId: latWeId, setNumber: 2, weight: 75, reps: 10, type: const Value('normal')));
-    await insertSetEntry(SetEntriesCompanion.insert(workoutExerciseId: latWeId, setNumber: 3, weight: 85, reps: 8, type: const Value('normal')));
 
-    final curlEx = findEx('Bicep Barbell Curl');
+    final curlEx = findEx('Barbell Bicep Curl');
     final curlWeId = await insertWorkoutExercise(
       WorkoutExercisesCompanion.insert(
         workoutId: pullWorkoutId,
@@ -438,16 +437,27 @@ class AppDatabase extends _$AppDatabase {
     await insertSetEntry(SetEntriesCompanion.insert(workoutExerciseId: curlWeId, setNumber: 1, weight: 30, reps: 12, type: const Value('normal')));
     await insertSetEntry(SetEntriesCompanion.insert(workoutExerciseId: curlWeId, setNumber: 2, weight: 35, reps: 10, type: const Value('normal')));
 
-    // 3. Legs & Lower Body (Today)
+    final wristEx = findEx('Barbell Wrist Curl');
+    final wristWeId = await insertWorkoutExercise(
+      WorkoutExercisesCompanion.insert(
+        workoutId: pullWorkoutId,
+        exerciseId: wristEx.id,
+        sortOrder: const Value(3),
+      ),
+    );
+    await insertSetEntry(SetEntriesCompanion.insert(workoutExerciseId: wristWeId, setNumber: 1, weight: 20, reps: 15, type: const Value('normal')));
+    await insertSetEntry(SetEntriesCompanion.insert(workoutExerciseId: wristWeId, setNumber: 2, weight: 25, reps: 12, type: const Value('normal')));
+
+    // 3. Legs, Core & Neck Session (1 day ago)
     final legWorkoutId = await insertWorkout(
       WorkoutsCompanion.insert(
-        date: Value(now.subtract(const Duration(hours: 4))),
-        notes: const Value('Legs & Quads Session - Squat volume PR'),
+        date: Value(now.subtract(const Duration(days: 1))),
+        notes: const Value('Legs, Abs & Neck Strength - Squat PR & core work'),
         durationSeconds: const Value(3900),
       ),
     );
 
-    final squatEx = findEx('Barbell Squat');
+    final squatEx = findEx('Barbell Back Squat');
     final squatWeId = await insertWorkoutExercise(
       WorkoutExercisesCompanion.insert(
         workoutId: legWorkoutId,
@@ -470,6 +480,28 @@ class AppDatabase extends _$AppDatabase {
     );
     await insertSetEntry(SetEntriesCompanion.insert(workoutExerciseId: rdlWeId, setNumber: 1, weight: 80, reps: 10, type: const Value('normal')));
     await insertSetEntry(SetEntriesCompanion.insert(workoutExerciseId: rdlWeId, setNumber: 2, weight: 100, reps: 8, type: const Value('normal')));
+
+    final absEx = findEx('Hanging Leg Raise');
+    final absWeId = await insertWorkoutExercise(
+      WorkoutExercisesCompanion.insert(
+        workoutId: legWorkoutId,
+        exerciseId: absEx.id,
+        sortOrder: const Value(2),
+      ),
+    );
+    await insertSetEntry(SetEntriesCompanion.insert(workoutExerciseId: absWeId, setNumber: 1, weight: 0, reps: 15, type: const Value('normal')));
+    await insertSetEntry(SetEntriesCompanion.insert(workoutExerciseId: absWeId, setNumber: 2, weight: 0, reps: 12, type: const Value('normal')));
+
+    final neckEx = findEx('Barbell Shrugs');
+    final neckWeId = await insertWorkoutExercise(
+      WorkoutExercisesCompanion.insert(
+        workoutId: legWorkoutId,
+        exerciseId: neckEx.id,
+        sortOrder: const Value(3),
+      ),
+    );
+    await insertSetEntry(SetEntriesCompanion.insert(workoutExerciseId: neckWeId, setNumber: 1, weight: 70, reps: 12, type: const Value('normal')));
+    await insertSetEntry(SetEntriesCompanion.insert(workoutExerciseId: neckWeId, setNumber: 2, weight: 80, reps: 10, type: const Value('normal')));
 
     // 4. Treadmill Run (Today)
     final cardioWorkoutId = await insertWorkout(
@@ -510,7 +542,7 @@ class AppDatabase extends _$AppDatabase {
     ));
   }
 
-  /// Clears all existing exercises, routines, and workout logs, and re-seeds the fresh exercise library.
+  /// Clears all existing exercises, routines, and workout logs, and re-seeds the fresh exercise library and demo workouts.
   Future<void> resetAndSeedExerciseLibrary() async {
     await transaction(() async {
       await delete(setEntries).go();
@@ -522,222 +554,400 @@ class AppDatabase extends _$AppDatabase {
 
       await seedDefaultExercises();
       await seedDefaultRoutines();
+      await clearAndSeedThisWeekWorkouts();
     });
   }
 
-  /// Seeds default exercises with updated configs across all muscle groups and metric types.
+  /// Seeds default exercises with 5 detailed exercises per muscle group, properly populating all schema fields.
   Future<void> seedDefaultExercises() async {
     await batch((b) {
       b.insertAll(exercises, [
-        // CHEST
+        // 1. FOREARMS (5 Exercises)
+        ExercisesCompanion.insert(
+          name: 'Barbell Wrist Curl',
+          muscleGroup: 'Forearms',
+          secondaryMuscleGroups: const Value('Biceps'),
+          category: const Value('weight_reps'),
+          enabledMetrics: const Value('weight,reps'),
+          videoUrl: const Value('https://www.youtube.com/watch?v=FWT4qjDfg3c'),
+        ),
+        ExercisesCompanion.insert(
+          name: 'Reverse Barbell Curl',
+          muscleGroup: 'Forearms',
+          secondaryMuscleGroups: const Value('Biceps'),
+          category: const Value('weight_reps'),
+          enabledMetrics: const Value('weight,reps'),
+          videoUrl: const Value('https://www.youtube.com/watch?v=nRjDqep0y4U'),
+        ),
+        ExercisesCompanion.insert(
+          name: 'Dumbbell Wrist Extension',
+          muscleGroup: 'Forearms',
+          secondaryMuscleGroups: const Value('Triceps'),
+          category: const Value('weight_reps'),
+          enabledMetrics: const Value('weight,reps'),
+          videoUrl: const Value('https://www.youtube.com/watch?v=34d1gVv1-QY'),
+        ),
+        ExercisesCompanion.insert(
+          name: 'Farmer\'s Walk Hold',
+          muscleGroup: 'Forearms',
+          secondaryMuscleGroups: const Value('Shoulders, Core'),
+          category: const Value('weight_reps'),
+          enabledMetrics: const Value('weight,reps'),
+          videoUrl: const Value('https://www.youtube.com/watch?v=Fkzk_Jgl5nM'),
+        ),
+        ExercisesCompanion.insert(
+          name: 'Pinch Plate Hold',
+          muscleGroup: 'Forearms',
+          secondaryMuscleGroups: const Value('Core'),
+          category: const Value('duration_time'),
+          enabledMetrics: const Value('time'),
+          videoUrl: const Value('https://www.youtube.com/watch?v=Y_U5D0U2eB0'),
+        ),
+
+        // 2. CHEST (5 Exercises)
         ExercisesCompanion.insert(
           name: 'Barbell Bench Press',
           muscleGroup: 'Chest',
-          secondaryMuscleGroups: const Value('Shoulders, Arms'),
+          secondaryMuscleGroups: const Value('Shoulders, Triceps'),
           category: const Value('weight_reps'),
           enabledMetrics: const Value('weight,reps'),
+          videoUrl: const Value('https://www.youtube.com/watch?v=rT7DgCr-3pg'),
         ),
         ExercisesCompanion.insert(
           name: 'Incline Dumbbell Press',
           muscleGroup: 'Chest',
-          secondaryMuscleGroups: const Value('Shoulders, Arms'),
+          secondaryMuscleGroups: const Value('Shoulders, Triceps'),
           category: const Value('weight_reps'),
           enabledMetrics: const Value('weight,reps'),
+          videoUrl: const Value('https://www.youtube.com/watch?v=8iPEnn-ltC8'),
         ),
         ExercisesCompanion.insert(
-          name: 'Chest Fly',
+          name: 'Cable Chest Fly',
           muscleGroup: 'Chest',
           secondaryMuscleGroups: const Value('Shoulders'),
           category: const Value('weight_reps'),
           enabledMetrics: const Value('weight,reps'),
+          videoUrl: const Value('https://www.youtube.com/watch?v=Iwe6AmxVf7o'),
         ),
         ExercisesCompanion.insert(
-          name: 'Push-ups',
+          name: 'Bodyweight Push-Ups',
           muscleGroup: 'Chest',
-          secondaryMuscleGroups: const Value('Arms, Core'),
+          secondaryMuscleGroups: const Value('Triceps, Core'),
           category: const Value('reps_only'),
           enabledMetrics: const Value('reps'),
+          videoUrl: const Value('https://www.youtube.com/watch?v=IODxDxX7oi4'),
         ),
         ExercisesCompanion.insert(
-          name: 'Bodyweight Dips',
+          name: 'Chest Dips',
           muscleGroup: 'Chest',
-          secondaryMuscleGroups: const Value('Arms, Shoulders'),
+          secondaryMuscleGroups: const Value('Triceps, Shoulders'),
           category: const Value('reps_only'),
           enabledMetrics: const Value('reps'),
+          videoUrl: const Value('https://www.youtube.com/watch?v=2z8JmcrW-As'),
         ),
 
-        // BACK
+        // 3. CORE / ABS (5 Exercises)
         ExercisesCompanion.insert(
-          name: 'Conventional Deadlift',
-          muscleGroup: 'Back',
-          secondaryMuscleGroups: const Value('Legs, Core'),
-          category: const Value('weight_reps'),
-          enabledMetrics: const Value('weight,reps'),
-        ),
-        ExercisesCompanion.insert(
-          name: 'Lat Pulldown',
-          muscleGroup: 'Back',
-          secondaryMuscleGroups: const Value('Arms'),
-          category: const Value('weight_reps'),
-          enabledMetrics: const Value('weight,reps'),
-        ),
-        ExercisesCompanion.insert(
-          name: 'Bent Over Barbell Row',
-          muscleGroup: 'Back',
-          secondaryMuscleGroups: const Value('Arms'),
-          category: const Value('weight_reps'),
-          enabledMetrics: const Value('weight,reps'),
-        ),
-        ExercisesCompanion.insert(
-          name: 'Single-Arm Dumbbell Row',
-          muscleGroup: 'Back',
-          secondaryMuscleGroups: const Value('Arms'),
-          category: const Value('weight_reps'),
-          enabledMetrics: const Value('weight,reps'),
-        ),
-        ExercisesCompanion.insert(
-          name: 'Pull-ups',
-          muscleGroup: 'Back',
-          secondaryMuscleGroups: const Value('Arms'),
+          name: 'Hanging Leg Raise',
+          muscleGroup: 'Core / Abs',
+          secondaryMuscleGroups: const Value('Forearms, Hip Flexors'),
           category: const Value('reps_only'),
           enabledMetrics: const Value('reps'),
+          videoUrl: const Value('https://www.youtube.com/watch?v=hdng3Nm1x_E'),
         ),
         ExercisesCompanion.insert(
-          name: 'Chin-ups',
-          muscleGroup: 'Back',
-          secondaryMuscleGroups: const Value('Arms'),
+          name: 'Ab Wheel Rollout',
+          muscleGroup: 'Core / Abs',
+          secondaryMuscleGroups: const Value('Back, Shoulders'),
           category: const Value('reps_only'),
           enabledMetrics: const Value('reps'),
-        ),
-
-        // SHOULDERS
-        ExercisesCompanion.insert(
-          name: 'Overhead Shoulder Press',
-          muscleGroup: 'Shoulders',
-          secondaryMuscleGroups: const Value('Arms, Core'),
-          category: const Value('weight_reps'),
-          enabledMetrics: const Value('weight,reps'),
+          videoUrl: const Value('https://www.youtube.com/watch?v=rqiTPdK1c_I'),
         ),
         ExercisesCompanion.insert(
-          name: 'Dumbbell Lateral Raise',
-          muscleGroup: 'Shoulders',
-          category: const Value('weight_reps'),
-          enabledMetrics: const Value('weight,reps'),
-        ),
-        ExercisesCompanion.insert(
-          name: 'Face Pull',
-          muscleGroup: 'Shoulders',
-          secondaryMuscleGroups: const Value('Back'),
-          category: const Value('weight_reps'),
-          enabledMetrics: const Value('weight,reps'),
-        ),
-        ExercisesCompanion.insert(
-          name: 'Rear Delt Fly',
-          muscleGroup: 'Shoulders',
-          category: const Value('weight_reps'),
-          enabledMetrics: const Value('weight,reps'),
-        ),
-
-        // LEGS
-        ExercisesCompanion.insert(
-          name: 'Barbell Back Squat',
-          muscleGroup: 'Legs',
+          name: 'Cable Crunch',
+          muscleGroup: 'Core / Abs',
           secondaryMuscleGroups: const Value('Core'),
           category: const Value('weight_reps'),
           enabledMetrics: const Value('weight,reps'),
+          videoUrl: const Value('https://www.youtube.com/watch?v=2fROk0Cl86U'),
+        ),
+        ExercisesCompanion.insert(
+          name: 'Plank Hold',
+          muscleGroup: 'Core / Abs',
+          secondaryMuscleGroups: const Value('Shoulders, Core'),
+          category: const Value('duration_time'),
+          enabledMetrics: const Value('time'),
+          videoUrl: const Value('https://www.youtube.com/watch?v=pSHjTRCQxIw'),
+        ),
+        ExercisesCompanion.insert(
+          name: 'Russian Twists',
+          muscleGroup: 'Core / Abs',
+          secondaryMuscleGroups: const Value('Obliques'),
+          category: const Value('weight_reps'),
+          enabledMetrics: const Value('weight,reps'),
+          videoUrl: const Value('https://www.youtube.com/watch?v=wkD8rjkodUI'),
+        ),
+
+        // 4. LEGS (5 Exercises)
+        ExercisesCompanion.insert(
+          name: 'Barbell Back Squat',
+          muscleGroup: 'Legs',
+          secondaryMuscleGroups: const Value('Core, Glutes'),
+          category: const Value('weight_reps'),
+          enabledMetrics: const Value('weight,reps'),
+          videoUrl: const Value('https://www.youtube.com/watch?v=ultWZbUMPL8'),
         ),
         ExercisesCompanion.insert(
           name: 'Leg Press',
           muscleGroup: 'Legs',
+          secondaryMuscleGroups: const Value('Glutes, Hamstrings'),
           category: const Value('weight_reps'),
           enabledMetrics: const Value('weight,reps'),
+          videoUrl: const Value('https://www.youtube.com/watch?v=IZxyjW7MPJQ'),
         ),
         ExercisesCompanion.insert(
           name: 'Romanian Deadlift',
           muscleGroup: 'Legs',
-          secondaryMuscleGroups: const Value('Back'),
+          secondaryMuscleGroups: const Value('Back, Glutes'),
           category: const Value('weight_reps'),
           enabledMetrics: const Value('weight,reps'),
+          videoUrl: const Value('https://www.youtube.com/watch?v=JCXUYuzwNrM'),
         ),
         ExercisesCompanion.insert(
           name: 'Leg Extension',
           muscleGroup: 'Legs',
+          secondaryMuscleGroups: const Value('Quads'),
           category: const Value('weight_reps'),
           enabledMetrics: const Value('weight,reps'),
-        ),
-        ExercisesCompanion.insert(
-          name: 'Seated Leg Curl',
-          muscleGroup: 'Legs',
-          category: const Value('weight_reps'),
-          enabledMetrics: const Value('weight,reps'),
+          videoUrl: const Value('https://www.youtube.com/watch?v=YyvSfVjQeL0'),
         ),
         ExercisesCompanion.insert(
           name: 'Standing Calf Raise',
           muscleGroup: 'Legs',
+          secondaryMuscleGroups: const Value('Calves'),
           category: const Value('weight_reps'),
           enabledMetrics: const Value('weight,reps'),
+          videoUrl: const Value('https://www.youtube.com/watch?v=gwLzBJYoWlI'),
         ),
 
-        // ARMS
+        // 5. BACK (5 Exercises)
         ExercisesCompanion.insert(
-          name: 'Bicep Barbell Curl',
-          muscleGroup: 'Arms',
+          name: 'Conventional Deadlift',
+          muscleGroup: 'Back',
+          secondaryMuscleGroups: const Value('Legs, Forearms, Core'),
           category: const Value('weight_reps'),
           enabledMetrics: const Value('weight,reps'),
+          videoUrl: const Value('https://www.youtube.com/watch?v=op9kVnSso6Q'),
+        ),
+        ExercisesCompanion.insert(
+          name: 'Lat Pulldown',
+          muscleGroup: 'Back',
+          secondaryMuscleGroups: const Value('Biceps, Rear Delts'),
+          category: const Value('weight_reps'),
+          enabledMetrics: const Value('weight,reps'),
+          videoUrl: const Value('https://www.youtube.com/watch?v=CAwf7n6Luuc'),
+        ),
+        ExercisesCompanion.insert(
+          name: 'Bent Over Barbell Row',
+          muscleGroup: 'Back',
+          secondaryMuscleGroups: const Value('Biceps, Forearms, Core'),
+          category: const Value('weight_reps'),
+          enabledMetrics: const Value('weight,reps'),
+          videoUrl: const Value('https://www.youtube.com/watch?v=VKFeB7jy8v0'),
+        ),
+        ExercisesCompanion.insert(
+          name: 'Single-Arm Dumbbell Row',
+          muscleGroup: 'Back',
+          secondaryMuscleGroups: const Value('Biceps, Core'),
+          category: const Value('weight_reps'),
+          enabledMetrics: const Value('weight,reps'),
+          videoUrl: const Value('https://www.youtube.com/watch?v=5PoEk21p10E'),
+        ),
+        ExercisesCompanion.insert(
+          name: 'Wide Grip Pull-Ups',
+          muscleGroup: 'Back',
+          secondaryMuscleGroups: const Value('Biceps, Forearms'),
+          category: const Value('reps_only'),
+          enabledMetrics: const Value('reps'),
+          videoUrl: const Value('https://www.youtube.com/watch?v=eGo4IYlbE5g'),
+        ),
+
+        // 6. BICEPS (5 Exercises)
+        ExercisesCompanion.insert(
+          name: 'Barbell Bicep Curl',
+          muscleGroup: 'Biceps',
+          secondaryMuscleGroups: const Value('Forearms'),
+          category: const Value('weight_reps'),
+          enabledMetrics: const Value('weight,reps'),
+          videoUrl: const Value('https://www.youtube.com/watch?v=kwG2ipFRgfo'),
+        ),
+        ExercisesCompanion.insert(
+          name: 'Incline Dumbbell Curl',
+          muscleGroup: 'Biceps',
+          secondaryMuscleGroups: const Value('Forearms'),
+          category: const Value('weight_reps'),
+          enabledMetrics: const Value('weight,reps'),
+          videoUrl: const Value('https://www.youtube.com/watch?v=soxrZlIl35U'),
         ),
         ExercisesCompanion.insert(
           name: 'Hammer Curls',
-          muscleGroup: 'Arms',
+          muscleGroup: 'Biceps',
+          secondaryMuscleGroups: const Value('Forearms'),
           category: const Value('weight_reps'),
           enabledMetrics: const Value('weight,reps'),
+          videoUrl: const Value('https://www.youtube.com/watch?v=zC3YbRLFZzY'),
         ),
         ExercisesCompanion.insert(
-          name: 'Tricep Rope Pushdown',
-          muscleGroup: 'Arms',
+          name: 'Preacher Curl',
+          muscleGroup: 'Biceps',
+          secondaryMuscleGroups: const Value('Forearms'),
           category: const Value('weight_reps'),
           enabledMetrics: const Value('weight,reps'),
+          videoUrl: const Value('https://www.youtube.com/watch?v=vngli9UR6Hw'),
         ),
         ExercisesCompanion.insert(
-          name: 'Skull Crushers',
-          muscleGroup: 'Arms',
+          name: 'Concentration Curl',
+          muscleGroup: 'Biceps',
+          secondaryMuscleGroups: const Value('Forearms'),
           category: const Value('weight_reps'),
           enabledMetrics: const Value('weight,reps'),
+          videoUrl: const Value('https://www.youtube.com/watch?v=Jvj2wV0vOYU'),
         ),
 
-        // CORE
+        // 7. TRICEPS (5 Exercises)
         ExercisesCompanion.insert(
-          name: 'Hanging Leg Raise',
-          muscleGroup: 'Core',
+          name: 'Tricep Cable Pushdown',
+          muscleGroup: 'Triceps',
+          secondaryMuscleGroups: const Value('Forearms'),
+          category: const Value('weight_reps'),
+          enabledMetrics: const Value('weight,reps'),
+          videoUrl: const Value('https://www.youtube.com/watch?v=2-LAMcpzODU'),
+        ),
+        ExercisesCompanion.insert(
+          name: 'Skull Crushers (EZ-Bar)',
+          muscleGroup: 'Triceps',
+          secondaryMuscleGroups: const Value('Shoulders'),
+          category: const Value('weight_reps'),
+          enabledMetrics: const Value('weight,reps'),
+          videoUrl: const Value('https://www.youtube.com/watch?v=d_KZxkY_0cM'),
+        ),
+        ExercisesCompanion.insert(
+          name: 'Overhead Dumbbell Tricep Extension',
+          muscleGroup: 'Triceps',
+          secondaryMuscleGroups: const Value('Shoulders'),
+          category: const Value('weight_reps'),
+          enabledMetrics: const Value('weight,reps'),
+          videoUrl: const Value('https://www.youtube.com/watch?v=_gsUck-7M74'),
+        ),
+        ExercisesCompanion.insert(
+          name: 'Close-Grip Bench Press',
+          muscleGroup: 'Triceps',
+          secondaryMuscleGroups: const Value('Chest, Shoulders'),
+          category: const Value('weight_reps'),
+          enabledMetrics: const Value('weight,reps'),
+          videoUrl: const Value('https://www.youtube.com/watch?v=nEF0bv2w9Fc'),
+        ),
+        ExercisesCompanion.insert(
+          name: 'Bench Dips',
+          muscleGroup: 'Triceps',
+          secondaryMuscleGroups: const Value('Chest, Shoulders'),
           category: const Value('reps_only'),
           enabledMetrics: const Value('reps'),
-        ),
-        ExercisesCompanion.insert(
-          name: 'Ab Wheel Rollout',
-          muscleGroup: 'Core',
-          secondaryMuscleGroups: const Value('Arms'),
-          category: const Value('duration_time'),
-          enabledMetrics: const Value('time'),
-        ),
-        ExercisesCompanion.insert(
-          name: 'Plank',
-          muscleGroup: 'Core',
-          category: const Value('duration_time'),
-          enabledMetrics: const Value('time'),
-        ),
-        ExercisesCompanion.insert(
-          name: 'Side Plank',
-          muscleGroup: 'Core',
-          category: const Value('duration_time'),
-          enabledMetrics: const Value('time'),
+          videoUrl: const Value('https://www.youtube.com/watch?v=0326dy_-CzM'),
         ),
 
-        // CARDIO & ENDURANCE
+        // 8. SHOULDERS (5 Exercises)
+        ExercisesCompanion.insert(
+          name: 'Overhead Barbell Press (OHP)',
+          muscleGroup: 'Shoulders',
+          secondaryMuscleGroups: const Value('Triceps, Core'),
+          category: const Value('weight_reps'),
+          enabledMetrics: const Value('weight,reps'),
+          videoUrl: const Value('https://www.youtube.com/watch?v=2yjwXTZQDDI'),
+        ),
+        ExercisesCompanion.insert(
+          name: 'Dumbbell Lateral Raise',
+          muscleGroup: 'Shoulders',
+          secondaryMuscleGroups: const Value('Neck'),
+          category: const Value('weight_reps'),
+          enabledMetrics: const Value('weight,reps'),
+          videoUrl: const Value('https://www.youtube.com/watch?v=3VcKaXpzqRo'),
+        ),
+        ExercisesCompanion.insert(
+          name: 'Cable Face Pull',
+          muscleGroup: 'Shoulders',
+          secondaryMuscleGroups: const Value('Back, Neck'),
+          category: const Value('weight_reps'),
+          enabledMetrics: const Value('weight,reps'),
+          videoUrl: const Value('https://www.youtube.com/watch?v=rep-qVOkqgk'),
+        ),
+        ExercisesCompanion.insert(
+          name: 'Seated Dumbbell Shoulder Press',
+          muscleGroup: 'Shoulders',
+          secondaryMuscleGroups: const Value('Triceps'),
+          category: const Value('weight_reps'),
+          enabledMetrics: const Value('weight,reps'),
+          videoUrl: const Value('https://www.youtube.com/watch?v=qEwKCR5JCog'),
+        ),
+        ExercisesCompanion.insert(
+          name: 'Rear Delt Cable Fly',
+          muscleGroup: 'Shoulders',
+          secondaryMuscleGroups: const Value('Back'),
+          category: const Value('weight_reps'),
+          enabledMetrics: const Value('weight,reps'),
+          videoUrl: const Value('https://www.youtube.com/watch?v=EA7uM-gS5qE'),
+        ),
+
+        // 9. NECK (5 Exercises)
+        ExercisesCompanion.insert(
+          name: 'Neck Plate Extension',
+          muscleGroup: 'Neck',
+          secondaryMuscleGroups: const Value('Back'),
+          category: const Value('weight_reps'),
+          enabledMetrics: const Value('weight,reps'),
+          videoUrl: const Value('https://www.youtube.com/watch?v=d_2a5k-4b9w'),
+        ),
+        ExercisesCompanion.insert(
+          name: 'Lying Neck Curl (Flexion)',
+          muscleGroup: 'Neck',
+          secondaryMuscleGroups: const Value('Core'),
+          category: const Value('weight_reps'),
+          enabledMetrics: const Value('weight,reps'),
+          videoUrl: const Value('https://www.youtube.com/watch?v=aG3k9N_7C0o'),
+        ),
+        ExercisesCompanion.insert(
+          name: 'Barbell Shrugs',
+          muscleGroup: 'Neck',
+          secondaryMuscleGroups: const Value('Back, Forearms'),
+          category: const Value('weight_reps'),
+          enabledMetrics: const Value('weight,reps'),
+          videoUrl: const Value('https://www.youtube.com/watch?v=cC83bH2tBrc'),
+        ),
+        ExercisesCompanion.insert(
+          name: 'Dumbbell Shrugs',
+          muscleGroup: 'Neck',
+          secondaryMuscleGroups: const Value('Back, Forearms'),
+          category: const Value('weight_reps'),
+          enabledMetrics: const Value('weight,reps'),
+          videoUrl: const Value('https://www.youtube.com/watch?v=g6qbq4a13R0'),
+        ),
+        ExercisesCompanion.insert(
+          name: 'Neck Resistance Band Hold',
+          muscleGroup: 'Neck',
+          secondaryMuscleGroups: const Value('Shoulders'),
+          category: const Value('duration_time'),
+          enabledMetrics: const Value('time'),
+          videoUrl: const Value('https://www.youtube.com/watch?v=J5u_9d_7a2k'),
+        ),
+
+        // 10. CARDIO & ENDURANCE (3 Exercises)
         ExercisesCompanion.insert(
           name: 'Treadmill Run',
           muscleGroup: 'Cardio',
           secondaryMuscleGroups: const Value('Legs'),
           category: const Value('cardio_distance'),
           enabledMetrics: const Value('distance,time,incline,speed'),
+          videoUrl: const Value('https://www.youtube.com/watch?v=9L2b2khySLE'),
         ),
         ExercisesCompanion.insert(
           name: 'Outdoor Running',
@@ -745,20 +955,15 @@ class AppDatabase extends _$AppDatabase {
           secondaryMuscleGroups: const Value('Legs'),
           category: const Value('cardio_distance'),
           enabledMetrics: const Value('distance,time'),
+          videoUrl: const Value('https://www.youtube.com/watch?v=brFHyOtTwPo'),
         ),
         ExercisesCompanion.insert(
           name: 'Rowing Machine',
           muscleGroup: 'Cardio',
-          secondaryMuscleGroups: const Value('Back, Arms'),
+          secondaryMuscleGroups: const Value('Back, Arms, Core'),
           category: const Value('cardio_distance'),
           enabledMetrics: const Value('distance,time'),
-        ),
-        ExercisesCompanion.insert(
-          name: 'Stationary Cycling',
-          muscleGroup: 'Cardio',
-          secondaryMuscleGroups: const Value('Legs'),
-          category: const Value('cardio_distance'),
-          enabledMetrics: const Value('distance,time,speed'),
+          videoUrl: const Value('https://www.youtube.com/watch?v=zQ82RYIFLN8'),
         ),
       ]);
     });
@@ -770,8 +975,11 @@ class AppDatabase extends _$AppDatabase {
     if (allEx.isEmpty) return;
 
     ExerciseData findEx(String name) {
+      final nameLower = name.toLowerCase().trim();
       return allEx.firstWhere(
-        (e) => e.name.toLowerCase() == name.toLowerCase(),
+        (e) => e.name.toLowerCase().trim() == nameLower ||
+            e.name.toLowerCase().contains(nameLower) ||
+            nameLower.contains(e.name.toLowerCase()),
         orElse: () => allEx.first,
       );
     }
@@ -803,7 +1011,7 @@ class AppDatabase extends _$AppDatabase {
     await into(routineExercises).insert(
       RoutineExercisesCompanion.insert(
         routineId: pushId,
-        exerciseId: findEx('Overhead Shoulder Press').id,
+        exerciseId: findEx('Overhead Barbell Press (OHP)').id,
         targetSets: const Value(3),
         targetReps: const Value(10),
         sortOrder: const Value(2),
@@ -812,7 +1020,7 @@ class AppDatabase extends _$AppDatabase {
     await into(routineExercises).insert(
       RoutineExercisesCompanion.insert(
         routineId: pushId,
-        exerciseId: findEx('Tricep Rope Pushdown').id,
+        exerciseId: findEx('Tricep Cable Pushdown').id,
         targetSets: const Value(3),
         targetReps: const Value(12),
         sortOrder: const Value(3),
@@ -822,7 +1030,7 @@ class AppDatabase extends _$AppDatabase {
     final pullId = await into(routines).insert(
       RoutinesCompanion.insert(
         name: 'Pull Power',
-        description: const Value('Back & Biceps workout routine'),
+        description: const Value('Back, Biceps & Forearms focus routine'),
       ),
     );
     await into(routineExercises).insert(
@@ -846,9 +1054,52 @@ class AppDatabase extends _$AppDatabase {
     await into(routineExercises).insert(
       RoutineExercisesCompanion.insert(
         routineId: pullId,
-        exerciseId: findEx('Bicep Barbell Curl').id,
+        exerciseId: findEx('Barbell Bicep Curl').id,
         targetSets: const Value(3),
         targetReps: const Value(12),
+        sortOrder: const Value(2),
+      ),
+    );
+    await into(routineExercises).insert(
+      RoutineExercisesCompanion.insert(
+        routineId: pullId,
+        exerciseId: findEx('Barbell Wrist Curl').id,
+        targetSets: const Value(3),
+        targetReps: const Value(15),
+        sortOrder: const Value(3),
+      ),
+    );
+
+    final legId = await into(routines).insert(
+      RoutinesCompanion.insert(
+        name: 'Legs & Core',
+        description: const Value('Quads, Hamstrings & Core routine'),
+      ),
+    );
+    await into(routineExercises).insert(
+      RoutineExercisesCompanion.insert(
+        routineId: legId,
+        exerciseId: findEx('Barbell Back Squat').id,
+        targetSets: const Value(4),
+        targetReps: const Value(8),
+        sortOrder: const Value(0),
+      ),
+    );
+    await into(routineExercises).insert(
+      RoutineExercisesCompanion.insert(
+        routineId: legId,
+        exerciseId: findEx('Romanian Deadlift').id,
+        targetSets: const Value(3),
+        targetReps: const Value(10),
+        sortOrder: const Value(1),
+      ),
+    );
+    await into(routineExercises).insert(
+      RoutineExercisesCompanion.insert(
+        routineId: legId,
+        exerciseId: findEx('Hanging Leg Raise').id,
+        targetSets: const Value(3),
+        targetReps: const Value(15),
         sortOrder: const Value(2),
       ),
     );

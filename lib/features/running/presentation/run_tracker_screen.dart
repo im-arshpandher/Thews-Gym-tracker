@@ -272,36 +272,99 @@ class _RunTrackerScreenState extends ConsumerState<RunTrackerScreen> {
 
                     const Divider(height: 24),
 
-                    // Lower Pace & Elevation Metrics
-                    Row(
-                      children: [
-                        Expanded(
-                          child: _HudSubTile(
-                            icon: Icons.speed,
-                            label: 'CURRENT PACE',
-                            value: '${runState.formattedCurrentPace} /km',
-                            isDark: isDark,
+                    // Lower Telemetry: Pace, Speed, Elevation & Steps Metrics
+                    if (runState.activityType == 'cycle') ...[
+                      // Cycle Mode: Hide Total Steps & rearrange in balanced single row with bicycle icon
+                      Row(
+                        children: [
+                          Expanded(
+                            child: _HudSubTile(
+                              icon: Icons.directions_bike,
+                              label: 'SPEED',
+                              value: '${runState.formattedCurrentSpeed} km/h',
+                              isDark: isDark,
+                            ),
                           ),
-                        ),
-                        Expanded(
-                          child: _HudSubTile(
-                            icon: Icons.av_timer,
-                            label: 'AVG PACE',
-                            value: '${runState.formattedAvgPace} /km',
-                            isDark: isDark,
+                          Expanded(
+                            child: _HudSubTile(
+                              icon: Icons.speed,
+                              label: 'CURRENT PACE',
+                              value: '${runState.formattedCurrentPace} /km',
+                              isDark: isDark,
+                            ),
                           ),
-                        ),
-                        Expanded(
-                          child: _HudSubTile(
-                            icon: Icons.filter_hdr_outlined,
-                            label: 'ELEVATION',
-                            value:
-                                '${runState.elevationGainMeters.toStringAsFixed(0)} m',
-                            isDark: isDark,
+                          Expanded(
+                            child: _HudSubTile(
+                              icon: Icons.av_timer,
+                              label: 'AVG PACE',
+                              value: '${runState.formattedAvgPace} /km',
+                              isDark: isDark,
+                            ),
                           ),
-                        ),
-                      ],
-                    ),
+                          Expanded(
+                            child: _HudSubTile(
+                              icon: Icons.filter_hdr_outlined,
+                              label: 'ELEVATION',
+                              value:
+                                  '${runState.elevationGainMeters.toStringAsFixed(0)} m',
+                              isDark: isDark,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ] else ...[
+                      // Run / Walk Mode: Show Pace, Speed, Elevation & Total Steps
+                      Row(
+                        children: [
+                          Expanded(
+                            child: _HudSubTile(
+                              icon: Icons.speed,
+                              label: 'CURRENT PACE',
+                              value: '${runState.formattedCurrentPace} /km',
+                              isDark: isDark,
+                            ),
+                          ),
+                          Expanded(
+                            child: _HudSubTile(
+                              icon: Icons.av_timer,
+                              label: 'AVG PACE',
+                              value: '${runState.formattedAvgPace} /km',
+                              isDark: isDark,
+                            ),
+                          ),
+                          Expanded(
+                            child: _HudSubTile(
+                              icon: Icons.bolt,
+                              label: 'SPEED',
+                              value: '${runState.formattedCurrentSpeed} km/h',
+                              isDark: isDark,
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 12),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: _HudSubTile(
+                              icon: Icons.filter_hdr_outlined,
+                              label: 'ELEVATION',
+                              value:
+                                  '${runState.elevationGainMeters.toStringAsFixed(0)} m',
+                              isDark: isDark,
+                            ),
+                          ),
+                          Expanded(
+                            child: _HudSubTile(
+                              icon: Icons.directions_walk,
+                              label: 'TOTAL STEPS',
+                              value: '${runState.totalSteps}',
+                              isDark: isDark,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
                   ],
                 ),
               ),
@@ -374,6 +437,15 @@ class _RunTrackerScreenState extends ConsumerState<RunTrackerScreen> {
                           if (activityId != null && context.mounted) {
                             context
                                 .pushReplacement('/running/summary/$activityId');
+                          } else if (context.mounted) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content: Text(
+                                  'Activity discarded (under 10 meters recorded)',
+                                ),
+                                duration: Duration(seconds: 2),
+                              ),
+                            );
                           }
                         },
                         icon: const Icon(Icons.stop, size: 24),

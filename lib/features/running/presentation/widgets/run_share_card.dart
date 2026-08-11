@@ -1,5 +1,10 @@
+import 'dart:io';
+import 'dart:ui' as ui;
+
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
+import 'package:path_provider/path_provider.dart';
 import 'package:share_plus/share_plus.dart';
 
 import '../../../../core/database/app_database.dart';
@@ -8,9 +13,8 @@ import '../../../../core/theme/app_spacing.dart';
 import '../../../../core/theme/app_typography.dart';
 import '../../../../core/utils/gpx_parser.dart';
 import 'leaflet_route_map.dart';
-import 'route_map_painter.dart';
 
-class RunShareCardDialog extends StatelessWidget {
+class RunShareCardDialog extends StatefulWidget {
   final RunActivityData activity;
 
   const RunShareCardDialog({
@@ -24,6 +28,14 @@ class RunShareCardDialog extends StatelessWidget {
       builder: (context) => RunShareCardDialog(activity: activity),
     );
   }
+
+  @override
+  State<RunShareCardDialog> createState() => _RunShareCardDialogState();
+}
+
+class _RunShareCardDialogState extends State<RunShareCardDialog> {
+  final GlobalKey _shareCardKey = GlobalKey();
+  bool _isExporting = false;
 
   String _formatDuration(int seconds) {
     final mins = (seconds ~/ 60).toString().padLeft(2, '0');
@@ -53,23 +65,72 @@ class RunShareCardDialog extends StatelessWidget {
 
   String _generateTextSummary() {
     final sb = StringBuffer();
-    sb.writeln('🏃 THEWS ${activity.activityType.toUpperCase()} ACTIVITY');
-    sb.writeln('📅 ${_formatDate(activity.startTime)}');
-    sb.writeln('📏 Distance: ${(activity.distanceMeters / 1000.0).toStringAsFixed(2)} km');
-    sb.writeln('⏱️ Duration: ${_formatDuration(activity.durationSeconds)}');
-    sb.writeln('⚡ Avg Pace: ${_formatPace(activity.avgPaceSecondsPerKm)}');
-    sb.writeln('⛰️ Elevation Gain: ${activity.elevationGainMeters.toStringAsFixed(0)} m');
+    sb.writeln('🏃 THEWS ${widget.activity.activityType.toUpperCase()} ACTIVITY');
+    sb.writeln('📅 ${_formatDate(widget.activity.startTime)}');
+    sb.writeln('📏 Distance: ${(widget.activity.distanceMeters / 1000.0).toStringAsFixed(2)} km');
+    sb.writeln('⏱️ Duration: ${_formatDuration(widget.activity.durationSeconds)}');
+    sb.writeln('⚡ Avg Pace: ${_formatPace(widget.activity.avgPaceSecondsPerKm)}');
+    sb.writeln('⛰️ Elevation Gain: ${widget.activity.elevationGainMeters.toStringAsFixed(0)} m');
     sb.writeln('');
     sb.writeln('Tracked with Thews Gym Tracker ⚡');
     return sb.toString();
+  }
+
+  Future<void> _shareImageCard() async {
+    if (_isExporting) return;
+    setState(() => _isExporting = true);
+
+    try {
+      final boundary =
+          _shareCardKey.currentContext?.findRenderObject()
+              as RenderRepaintBoundary?;
+      if (boundary == null) {
+        throw Exception('Could not capture share card image.');
+      }
+
+      final ui.Image image = await boundary.toImage(pixelRatio: 3.0);
+      final ByteData? byteData = await image.toByteData(
+        format: ui.ImageByteFormat.png,
+      );
+      if (byteData == null) {
+        throw Exception('Failed to convert image to bytes.');
+      }
+
+      final Uint8List pngBytes = byteData.buffer.asUint8List();
+      final tempDir = await getTemporaryDirectory();
+      final imagePath =
+          '${tempDir.path}/thews_run_card_${widget.activity.id}_${DateTime.now().millisecondsSinceEpoch}.png';
+      final imageFile = File(imagePath);
+      await imageFile.writeAsBytes(pngBytes);
+
+      final summary = _generateTextSummary();
+      await Share.shareXFiles(
+        [XFile(imagePath)],
+        text: summary,
+        subject: 'My Outdoor Activity on Thews',
+      );
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Failed to share image card: ${e.toString()}'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _isExporting = false);
+      }
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
-    final points = activity.gpxData != null
-        ? GpxParser.parseGpxXml(activity.gpxData!)
+    final points = widget.activity.gpxData != null
+        ? GpxParser.parseGpxXml(widget.activity.gpxData!)
         : <GpxPoint>[];
 
     return Dialog(
@@ -101,150 +162,163 @@ class RunShareCardDialog extends StatelessWidget {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              // Header Banner
-              Container(
-                padding: const EdgeInsets.all(AppSpacing.md),
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    colors: isDark
-                        ? [
-                            AppColors.darkSurfaceContainerHighest,
-                            AppColors.darkSurfaceContainer,
-                          ]
-                        : [
-                            AppColors.lightPrimaryContainer,
-                            AppColors.lightSurfaceContainerLow,
-                          ],
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                  ),
-                  borderRadius: const BorderRadius.only(
-                    topLeft: Radius.circular(22),
-                    topRight: Radius.circular(22),
-                  ),
-                ),
-                child: Column(
-                  children: [
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Row(
+              RepaintBoundary(
+                key: _shareCardKey,
+                child: Container(
+                  color: isDark
+                      ? AppColors.darkSurfaceContainerHigh
+                      : AppColors.lightSurfaceContainerLowest,
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      // Header Banner
+                      Container(
+                        padding: const EdgeInsets.all(AppSpacing.md),
+                        decoration: BoxDecoration(
+                          gradient: LinearGradient(
+                            colors: isDark
+                                ? [
+                                    AppColors.darkSurfaceContainerHighest,
+                                    AppColors.darkSurfaceContainer,
+                                  ]
+                                : [
+                                    AppColors.lightPrimaryContainer,
+                                    AppColors.lightSurfaceContainerLow,
+                                  ],
+                            begin: Alignment.topLeft,
+                            end: Alignment.bottomRight,
+                          ),
+                          borderRadius: const BorderRadius.only(
+                            topLeft: Radius.circular(22),
+                            topRight: Radius.circular(22),
+                          ),
+                        ),
+                        child: Column(
                           children: [
-                            Icon(
-                              activity.activityType == 'cycle'
-                                  ? Icons.directions_bike
-                                  : Icons.directions_run,
-                              color: isDark
-                                  ? AppColors.primaryVolt
-                                  : AppColors.lightPrimary,
-                              size: 24,
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                Row(
+                                  children: [
+                                    Icon(
+                                      widget.activity.activityType == 'cycle'
+                                          ? Icons.directions_bike
+                                          : Icons.directions_run,
+                                      color: isDark
+                                          ? AppColors.primaryVolt
+                                          : AppColors.lightPrimary,
+                                      size: 24,
+                                    ),
+                                    const SizedBox(width: 6),
+                                    Text(
+                                      'THEWS ${widget.activity.activityType.toUpperCase()}',
+                                      style: AppTypography.sectionTitle(
+                                        color: isDark
+                                            ? AppColors.darkTextPrimary
+                                            : AppColors.lightTextPrimary,
+                                      ).copyWith(fontWeight: FontWeight.bold),
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                  ],
+                                ),
+                                Container(
+                                  padding: const EdgeInsets.symmetric(
+                                      horizontal: 10, vertical: 4),
+                                  decoration: BoxDecoration(
+                                    color: isDark
+                                        ? AppColors.primaryVolt.withValues(alpha: 0.15)
+                                        : AppColors.lightPrimary.withValues(alpha: 0.15),
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
+                                  child: Text(
+                                    _formatDate(widget.activity.startTime),
+                                    style: AppTypography.tinyLabel(
+                                      color: isDark
+                                          ? AppColors.primaryVolt
+                                          : AppColors.lightPrimary,
+                                    ),
+                                    maxLines: 1,
+                                    softWrap: false,
+                                  ),
+                                ),
+                              ],
                             ),
-                            const SizedBox(width: 6),
-                            Text(
-                              'THEWS ${activity.activityType.toUpperCase()}',
-                              style: AppTypography.sectionTitle(
-                                color: isDark
-                                    ? AppColors.darkTextPrimary
-                                    : AppColors.lightTextPrimary,
-                              ).copyWith(fontWeight: FontWeight.bold),
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
+
+                            const SizedBox(height: AppSpacing.md),
+
+                            // Vector Route Preview
+                            SizedBox(
+                              height: 180,
+                              width: double.infinity,
+                              child: ClipRRect(
+                                borderRadius: BorderRadius.circular(16),
+                                child: LeafletRouteMap(
+                                  waypoints: points,
+                                  isDark: isDark,
+                                  interactive: false,
+                                ),
+                              ),
                             ),
                           ],
-                        ),
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 10, vertical: 4),
-                          decoration: BoxDecoration(
-                            color: isDark
-                                ? AppColors.primaryVolt.withValues(alpha: 0.15)
-                                : AppColors.lightPrimary.withValues(alpha: 0.15),
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          child: Text(
-                            _formatDate(activity.startTime),
-                            style: AppTypography.tinyLabel(
-                              color: isDark
-                                  ? AppColors.primaryVolt
-                                  : AppColors.lightPrimary,
-                            ),
-                            maxLines: 1,
-                            softWrap: false,
-                          ),
-                        ),
-                      ],
-                    ),
-
-                    const SizedBox(height: AppSpacing.md),
-
-                    // Vector Route Preview
-                    SizedBox(
-                      height: 180,
-                      width: double.infinity,
-                      child: ClipRRect(
-                        borderRadius: BorderRadius.circular(16),
-                        child: LeafletRouteMap(
-                          waypoints: points,
-                          isDark: isDark,
-                          interactive: false,
                         ),
                       ),
-                    ),
-                  ],
-                ),
-              ),
 
-              // Activity Stats Grid
-              Padding(
-                padding: const EdgeInsets.all(AppSpacing.md),
-                child: Column(
-                  children: [
-                    Row(
-                      children: [
-                        Expanded(
-                          child: _RunMetricTile(
-                            icon: Icons.straighten,
-                            label: 'DISTANCE',
-                            value:
-                                '${(activity.distanceMeters / 1000.0).toStringAsFixed(2)} km',
-                            isDark: isDark,
-                          ),
+                      // Activity Stats Grid
+                      Padding(
+                        padding: const EdgeInsets.all(AppSpacing.md),
+                        child: Column(
+                          children: [
+                            Row(
+                              children: [
+                                Expanded(
+                                  child: _RunMetricTile(
+                                    icon: Icons.straighten,
+                                    label: 'DISTANCE',
+                                    value:
+                                        '${(widget.activity.distanceMeters / 1000.0).toStringAsFixed(2)} km',
+                                    isDark: isDark,
+                                  ),
+                                ),
+                                const SizedBox(width: 8),
+                                Expanded(
+                                  child: _RunMetricTile(
+                                    icon: Icons.speed,
+                                    label: 'AVG PACE',
+                                    value: _formatPace(widget.activity.avgPaceSecondsPerKm),
+                                    isDark: isDark,
+                                  ),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 8),
+                            Row(
+                              children: [
+                                Expanded(
+                                  child: _RunMetricTile(
+                                    icon: Icons.timer_outlined,
+                                    label: 'DURATION',
+                                    value: _formatDuration(widget.activity.durationSeconds),
+                                    isDark: isDark,
+                                  ),
+                                ),
+                                const SizedBox(width: 8),
+                                Expanded(
+                                  child: _RunMetricTile(
+                                    icon: Icons.filter_hdr_outlined,
+                                    label: 'ELEVATION GAIN',
+                                    value:
+                                        '${widget.activity.elevationGainMeters.toStringAsFixed(0)} m',
+                                    isDark: isDark,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ],
                         ),
-                        const SizedBox(width: 8),
-                        Expanded(
-                          child: _RunMetricTile(
-                            icon: Icons.speed,
-                            label: 'AVG PACE',
-                            value: _formatPace(activity.avgPaceSecondsPerKm),
-                            isDark: isDark,
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 8),
-                    Row(
-                      children: [
-                        Expanded(
-                          child: _RunMetricTile(
-                            icon: Icons.timer_outlined,
-                            label: 'DURATION',
-                            value: _formatDuration(activity.durationSeconds),
-                            isDark: isDark,
-                          ),
-                        ),
-                        const SizedBox(width: 8),
-                        Expanded(
-                          child: _RunMetricTile(
-                            icon: Icons.filter_hdr_outlined,
-                            label: 'ELEVATION GAIN',
-                            value:
-                                '${activity.elevationGainMeters.toStringAsFixed(0)} m',
-                            isDark: isDark,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ],
+                      ),
+                    ],
+                  ),
                 ),
               ),
 
@@ -289,16 +363,21 @@ class RunShareCardDialog extends StatelessWidget {
                               ? AppColors.darkBackground
                               : Colors.white,
                         ),
-                        onPressed: () async {
-                          final summary = _generateTextSummary();
-                          await Share.share(
-                            summary,
-                            subject: 'My Outdoor Activity on Thews',
-                          );
-                        },
-                        icon: const Icon(Icons.share, size: 18),
+                        onPressed: _isExporting ? null : _shareImageCard,
+                        icon: _isExporting
+                            ? SizedBox(
+                                width: 18,
+                                height: 18,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                  color: isDark
+                                      ? AppColors.darkBackground
+                                      : Colors.white,
+                                ),
+                              )
+                            : const Icon(Icons.image_outlined, size: 18),
                         label: const Text(
-                          'SHARE RUN',
+                          'SHARE IMG',
                           maxLines: 1,
                           softWrap: false,
                         ),

@@ -1,4 +1,5 @@
 import 'dart:math' as math;
+import 'package:flutter/foundation.dart';
 
 class GpxPoint {
   final double latitude;
@@ -35,7 +36,7 @@ class GpxParser {
   static String toGpxXml(List<GpxPoint> points, {String activityName = 'Outdoor Activity'}) {
     final sb = StringBuffer();
     sb.writeln('<?xml version="1.0" encoding="UTF-8"?>');
-    sb.writeln('<gpx version="1.1" creator="Thews Gym Tracker" xmlns="http://www.topografix.com/GPX/1/1">');
+    sb.writeln('<gpx version="1.1" creator="Thews Gym Tracker" xmlns="https://www.topografix.com/GPX/1/1">');
     sb.writeln('  <trk>');
     sb.writeln('    <name>${_escapeXml(activityName)}</name>');
     sb.writeln('    <trkseg>');
@@ -57,19 +58,30 @@ class GpxParser {
 
   /// Parses GPX 1.1 XML string back into a list of GpxPoint objects.
   static List<GpxPoint> parseGpxXml(String xmlString) {
+    if (xmlString.isEmpty) return [];
     final List<GpxPoint> points = [];
+
     final trkptBlockRegex = RegExp(
-      r'<trkpt\s+lat="([^"]+)"\s+lon="([^"]+)"[^>]*>(.*?)</trkpt>',
+      r'<trkpt\s+([^>]+)>(.*?)</trkpt>',
       dotAll: true,
     );
+    final latRegex = RegExp(r'lat=["\x27]([^"\x27]+)["\x27]');
+    final lonRegex = RegExp(r'lon=["\x27]([^"\x27]+)["\x27]');
     final eleRegex = RegExp(r'<ele>([^<]+)</ele>');
     final timeRegex = RegExp(r'<time>([^<]+)</time>');
 
     final matches = trkptBlockRegex.allMatches(xmlString);
     for (final m in matches) {
-      final lat = double.tryParse(m.group(1) ?? '0') ?? 0.0;
-      final lng = double.tryParse(m.group(2) ?? '0') ?? 0.0;
-      final content = m.group(3) ?? '';
+      final attrString = m.group(1) ?? '';
+      final content = m.group(2) ?? '';
+
+      final latMatch = latRegex.firstMatch(attrString);
+      final lonMatch = lonRegex.firstMatch(attrString);
+
+      if (latMatch == null || lonMatch == null) continue;
+
+      final lat = double.tryParse(latMatch.group(1) ?? '0') ?? 0.0;
+      final lng = double.tryParse(lonMatch.group(1) ?? '0') ?? 0.0;
 
       final eleMatch = eleRegex.firstMatch(content);
       final ele =
@@ -88,6 +100,11 @@ class GpxParser {
       ));
     }
     return points;
+  }
+
+  /// Asynchronously parses GPX XML string in a background Isolate to prevent UI thread jank on massive track logs.
+  static Future<List<GpxPoint>> parseGpxXmlInBackground(String xmlString) {
+    return compute(parseGpxXml, xmlString);
   }
 
   /// Calculates total cumulative distance in meters along the path using Haversine formula.

@@ -57,33 +57,29 @@ class AppColors {
   static const Color backAccent = Color(0xFF2979FF);
   static const Color legsAccent = Color(0xFF00E5FF);
   static const Color shouldersAccent = Color(0xFFAA00FF);
-  static const Color armsAccent = Color(0xFFFF007F);
+  static const Color bicepsAccent = Color(0xFFFF007F);
+  static const Color tricepsAccent = Color(0xFFE91E63);
+  static const Color forearmsAccent = Color(0xFFFFC107);
   static const Color coreAccent = Color(0xFFFFD600);
+  static const Color neckAccent = Color(0xFF00BFA5);
+  static const Color armsAccent = Color(0xFFFF007F);
   static const Color cardioAccent = Color(0xFF00E676);
   static const Color fullBodyAccent = Color(0xFFC3F400);
 
   static Color getMuscleGroupColor(String group) {
-    switch (group.toLowerCase().trim()) {
-      case 'chest':
-        return chestAccent;
-      case 'back':
-        return backAccent;
-      case 'legs':
-        return legsAccent;
-      case 'shoulders':
-        return shouldersAccent;
-      case 'arms':
-      case 'biceps':
-      case 'triceps':
-        return armsAccent;
-      case 'core':
-      case 'abs':
-        return coreAccent;
-      case 'cardio':
-        return cardioAccent;
-      default:
-        return fullBodyAccent;
-    }
+    final lower = group.toLowerCase().trim();
+    if (lower.contains('chest')) return chestAccent;
+    if (lower.contains('back') || lower.contains('lat') || lower.contains('trap')) return backAccent;
+    if (lower.contains('leg') || lower.contains('quad') || lower.contains('thigh') || lower.contains('calf') || lower.contains('calves') || lower.contains('hamstring') || lower.contains('glute')) return legsAccent;
+    if (lower.contains('shoulder') || lower.contains('delt')) return shouldersAccent;
+    if (lower.contains('bicep')) return bicepsAccent;
+    if (lower.contains('tricep')) return tricepsAccent;
+    if (lower.contains('forearm') || lower.contains('wrist')) return forearmsAccent;
+    if (lower.contains('arm')) return armsAccent;
+    if (lower.contains('core') || lower.contains('ab')) return coreAccent;
+    if (lower.contains('neck')) return neckAccent;
+    if (lower.contains('cardio') || lower.contains('run')) return cardioAccent;
+    return fullBodyAccent;
   }
 
   /// Returns high-contrast text color for muscle group tags based on brightness.
@@ -91,28 +87,18 @@ class AppColors {
     if (isDark) {
       return getMuscleGroupColor(group);
     }
-    switch (group.toLowerCase().trim()) {
-      case 'chest':
-        return const Color(0xFFD35400);
-      case 'back':
-        return const Color(0xFF1565C0);
-      case 'legs':
-        return const Color(0xFF00838F);
-      case 'shoulders':
-        return const Color(0xFF7B1FA2);
-      case 'arms':
-      case 'biceps':
-      case 'triceps':
-        return const Color(0xFFC2185B);
-      case 'core':
-      case 'abs':
-        return const Color(0xFFD35400);
-      case 'cardio':
-        return const Color(0xFF2E7D32);
-      case 'custom':
-      default:
-        return lightPrimary;
-    }
+    final lower = group.toLowerCase().trim();
+    if (lower.contains('chest')) return const Color(0xFFD35400);
+    if (lower.contains('back')) return const Color(0xFF1565C0);
+    if (lower.contains('leg') || lower.contains('quad') || lower.contains('thigh') || lower.contains('calf')) return const Color(0xFF00838F);
+    if (lower.contains('shoulder')) return const Color(0xFF7B1FA2);
+    if (lower.contains('bicep')) return const Color(0xFFC2185B);
+    if (lower.contains('tricep')) return const Color(0xFFAD1457);
+    if (lower.contains('forearm')) return const Color(0xFFE65100);
+    if (lower.contains('core') || lower.contains('ab')) return const Color(0xFFD35400);
+    if (lower.contains('neck')) return const Color(0xFF00695C);
+    if (lower.contains('cardio')) return const Color(0xFF2E7D32);
+    return lightPrimary;
   }
 
   /// Returns appropriate background color for muscle group tags based on brightness.
@@ -120,27 +106,16 @@ class AppColors {
     if (isDark) {
       return getMuscleGroupColor(group).withValues(alpha: 0.2);
     }
-    switch (group.toLowerCase().trim()) {
-      case 'chest':
-        return const Color(0xFFFFF0E6);
-      case 'back':
-        return const Color(0xFFE8F0FE);
-      case 'legs':
-        return const Color(0xFFE0F7FA);
-      case 'shoulders':
-        return const Color(0xFFF3E5F5);
-      case 'arms':
-      case 'biceps':
-      case 'triceps':
-        return const Color(0xFFFCE4EC);
-      case 'core':
-      case 'abs':
-        return const Color(0xFFFFF3E0);
-      case 'cardio':
-        return const Color(0xFFE8F5E9);
-      case 'custom':
-      default:
-        return const Color(0xFFF1F8D0);
-    }
+    final lower = group.toLowerCase().trim();
+    if (lower.contains('chest')) return const Color(0xFFFFF0E6);
+    if (lower.contains('back')) return const Color(0xFFE8F0FE);
+    if (lower.contains('leg') || lower.contains('quad') || lower.contains('thigh') || lower.contains('calf')) return const Color(0xFFE0F7FA);
+    if (lower.contains('shoulder')) return const Color(0xFFF3E5F5);
+    if (lower.contains('bicep') || lower.contains('tricep') || lower.contains('arm')) return const Color(0xFFFCE4EC);
+    if (lower.contains('forearm')) return const Color(0xFFFFF8E1);
+    if (lower.contains('core') || lower.contains('ab')) return const Color(0xFFFFFDE7);
+    if (lower.contains('neck')) return const Color(0xFFE0F2F1);
+    if (lower.contains('cardio')) return const Color(0xFFE8F5E9);
+    return const Color(0xFFF4FCE3);
   }
 }

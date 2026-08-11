@@ -1,6 +1,8 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:path_provider/path_provider.dart';
 import 'package:share_plus/share_plus.dart';
 
 import '../../../core/database/app_database.dart';
@@ -10,7 +12,6 @@ import '../../../core/theme/app_spacing.dart';
 import '../../../core/theme/app_typography.dart';
 import '../../../core/utils/gpx_parser.dart';
 import 'widgets/leaflet_route_map.dart';
-import 'widgets/route_map_painter.dart';
 import 'widgets/run_share_card.dart';
 
 final singleRunActivityStreamProvider =
@@ -285,11 +286,38 @@ class RunSummaryScreen extends ConsumerWidget {
                   children: [
                     Expanded(
                       child: OutlinedButton.icon(
-                        onPressed: () {
-                          if (activity.gpxData != null) {
-                            Share.share(
-                              activity.gpxData!,
-                              subject: '${activity.activityType}_track.gpx',
+                        onPressed: () async {
+                          if (activity.gpxData != null &&
+                              activity.gpxData!.isNotEmpty) {
+                            try {
+                              final tempDir = await getTemporaryDirectory();
+                              final fileName =
+                                  'thews_${activity.activityType}_${activity.id}.gpx';
+                              final filePath = '${tempDir.path}/$fileName';
+                              final file = File(filePath);
+                              await file.writeAsString(activity.gpxData!);
+                              await Share.shareXFiles(
+                                [XFile(filePath, mimeType: 'application/gpx+xml')],
+                                subject: '${activity.activityType}_track.gpx',
+                              );
+                            } catch (e) {
+                              if (context.mounted) {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(
+                                    content:
+                                        Text('Failed to export GPX: ${e.toString()}'),
+                                    backgroundColor: Colors.red,
+                                  ),
+                                );
+                              }
+                            }
+                          } else {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content: Text(
+                                  'No GPX track data available for this activity.',
+                                ),
+                              ),
                             );
                           }
                         },

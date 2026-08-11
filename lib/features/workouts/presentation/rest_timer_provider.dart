@@ -43,11 +43,13 @@ class RestTimerState {
 
 class RestTimerNotifier extends StateNotifier<RestTimerState> {
   Timer? _timer;
+  DateTime? _targetEndTime;
 
   RestTimerNotifier() : super(const RestTimerState());
 
   void startTimer({int durationSeconds = 90}) {
     _timer?.cancel();
+    _targetEndTime = DateTime.now().add(Duration(seconds: durationSeconds));
     state = RestTimerState(
       secondsRemaining: durationSeconds,
       totalDuration: durationSeconds,
@@ -55,9 +57,20 @@ class RestTimerNotifier extends StateNotifier<RestTimerState> {
       isExpired: false,
     );
 
+    _startTicker();
+  }
+
+  void _startTicker() {
+    _timer?.cancel();
     _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
-      if (state.secondsRemaining <= 1) {
+      if (_targetEndTime == null) {
         timer.cancel();
+        return;
+      }
+      final remaining = _targetEndTime!.difference(DateTime.now()).inSeconds;
+      if (remaining <= 0) {
+        timer.cancel();
+        _targetEndTime = null;
         HapticFeedback.vibrate();
         HapticFeedback.heavyImpact();
         state = state.copyWith(
@@ -66,7 +79,7 @@ class RestTimerNotifier extends StateNotifier<RestTimerState> {
           isExpired: true,
         );
       } else {
-        state = state.copyWith(secondsRemaining: state.secondsRemaining - 1);
+        state = state.copyWith(secondsRemaining: remaining);
       }
     });
   }
@@ -74,10 +87,17 @@ class RestTimerNotifier extends StateNotifier<RestTimerState> {
   void addTime(int seconds) {
     final newTime = state.secondsRemaining + seconds;
     final newTotal = state.totalDuration + seconds;
+
+    if (_targetEndTime != null) {
+      _targetEndTime = _targetEndTime!.add(Duration(seconds: seconds));
+    } else if (newTime > 0) {
+      _targetEndTime = DateTime.now().add(Duration(seconds: newTime));
+    }
+
     state = state.copyWith(
-      secondsRemaining: newTime,
-      totalDuration: newTotal,
-      isExpired: false,
+      secondsRemaining: newTime > 0 ? newTime : 0,
+      totalDuration: newTotal > 0 ? newTotal : 1,
+      isExpired: newTime <= 0,
     );
 
     if (!state.isRunning && newTime > 0) {
@@ -87,31 +107,22 @@ class RestTimerNotifier extends StateNotifier<RestTimerState> {
 
   void pauseTimer() {
     _timer?.cancel();
+    _targetEndTime = null;
     state = state.copyWith(isRunning: false);
   }
 
   void resumeTimer() {
     if (state.secondsRemaining <= 0) return;
     _timer?.cancel();
+    _targetEndTime =
+        DateTime.now().add(Duration(seconds: state.secondsRemaining));
     state = state.copyWith(isRunning: true, isExpired: false);
-    _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
-      if (state.secondsRemaining <= 1) {
-        timer.cancel();
-        HapticFeedback.vibrate();
-        HapticFeedback.heavyImpact();
-        state = state.copyWith(
-          secondsRemaining: 0,
-          isRunning: false,
-          isExpired: true,
-        );
-      } else {
-        state = state.copyWith(secondsRemaining: state.secondsRemaining - 1);
-      }
-    });
+    _startTicker();
   }
 
   void stopTimer() {
     _timer?.cancel();
+    _targetEndTime = null;
     state = const RestTimerState();
   }
 

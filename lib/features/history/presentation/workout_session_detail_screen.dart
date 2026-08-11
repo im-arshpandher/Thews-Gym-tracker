@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../../core/database/app_database.dart';
 import '../../../core/database/database_provider.dart';
+import '../../../core/presentation/widgets/anatomical_body_painter.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_spacing.dart';
 import '../../../core/theme/app_typography.dart';
@@ -70,6 +71,31 @@ class _WorkoutSessionDetailScreenState
     final timeStr =
         '${date.hour.toString().padLeft(2, '0')}:${date.minute.toString().padLeft(2, '0')}';
     return '${date.day} ${months[date.month - 1]} ${date.year} • $timeStr';
+  }
+
+  Map<String, int> _calculateSessionMuscleSetCounts(
+    List<WorkoutExerciseDetail> details,
+  ) {
+    final Map<String, int> counts = {};
+    for (final detail in details) {
+      final primary = detail.exercise.muscleGroup.toLowerCase().trim();
+      final setCount = detail.sets.isNotEmpty ? detail.sets.length : 1;
+      counts[primary] = (counts[primary] ?? 0) + setCount;
+
+      if (detail.exercise.secondaryMuscleGroups != null &&
+          detail.exercise.secondaryMuscleGroups!.trim().isNotEmpty) {
+        final secondaries = detail.exercise.secondaryMuscleGroups!
+            .split(',')
+            .map((s) => s.trim().toLowerCase());
+        for (final sec in secondaries) {
+          if (sec.isNotEmpty) {
+            counts[sec] =
+                (counts[sec] ?? 0) + (setCount ~/ 2 > 0 ? setCount ~/ 2 : 1);
+          }
+        }
+      }
+    }
+    return counts;
   }
 
   Future<void> _showDeleteConfirmation(BuildContext context, WorkoutData workout) async {
@@ -308,6 +334,79 @@ class _WorkoutSessionDetailScreenState
                           ),
                         );
                       }).toList(),
+                    ),
+
+                    const SizedBox(height: AppSpacing.lg),
+
+                    // Muscle Heatmap Visualizer Card
+                    Builder(
+                      builder: (context) {
+                        final muscleSetCounts = _calculateSessionMuscleSetCounts(details);
+                        return Container(
+                          padding: const EdgeInsets.all(AppSpacing.md),
+                          decoration: BoxDecoration(
+                            color: isDark
+                                ? AppColors.darkSurfaceContainerHigh
+                                : AppColors.lightSurfaceContainerLowest,
+                            borderRadius: BorderRadius.circular(20),
+                            border: Border.all(
+                              color: isDark
+                                  ? AppColors.darkOutline.withValues(alpha: 0.2)
+                                  : AppColors.lightOutline.withValues(alpha: 0.2),
+                            ),
+                          ),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Row(
+                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                children: [
+                                  Text(
+                                    'MUSCLE HEATMAP VISUALIZER',
+                                    style: AppTypography.labelCaps(
+                                      color: isDark
+                                          ? AppColors.darkTextSecondary
+                                          : AppColors.lightTextSecondary,
+                                    ).copyWith(fontWeight: FontWeight.bold),
+                                  ),
+                                  Container(
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 8,
+                                      vertical: 2,
+                                    ),
+                                    decoration: BoxDecoration(
+                                      color: isDark
+                                          ? AppColors.primaryVolt.withValues(
+                                              alpha: 0.15,
+                                            )
+                                          : AppColors.lightPrimary.withValues(
+                                              alpha: 0.15,
+                                            ),
+                                      borderRadius: BorderRadius.circular(8),
+                                    ),
+                                    child: Text(
+                                      '${muscleSetCounts.length} TARGETED',
+                                      style: AppTypography.tinyLabel(
+                                        color: isDark
+                                            ? AppColors.primaryVolt
+                                            : AppColors.lightPrimary,
+                                      ).copyWith(fontWeight: FontWeight.bold),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(height: 12),
+                              AnatomicalBodyPainterWidget(
+                                muscleSetCounts: muscleSetCounts,
+                                selectedMuscleGroup: 'All',
+                                transparentBg: true,
+                                figureHeight: 200.0,
+                                hideChips: true,
+                              ),
+                            ],
+                          ),
+                        );
+                      },
                     ),
 
                     const SizedBox(height: AppSpacing.lg),

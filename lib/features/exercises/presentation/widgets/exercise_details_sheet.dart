@@ -628,7 +628,7 @@ class _ExerciseDetailsSheetState extends ConsumerState<ExerciseDetailsSheet> {
 
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+      padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
         color: isDark
             ? AppColors.darkSurfaceContainer
@@ -661,13 +661,14 @@ class _ExerciseDetailsSheetState extends ConsumerState<ExerciseDetailsSheet> {
               ),
             ],
           ),
-          const SizedBox(height: 4),
+          const SizedBox(height: 10),
           AnatomicalBodyPainterWidget(
             muscleSetCounts: targetCounts,
             selectedMuscleGroup: widget.exercise.muscleGroup,
             hideViewSelector: true,
             hideChips: true,
-            figureHeight: 85.0,
+            figureHeight: 120.0,
+            transparentBg: true,
           ),
         ],
       ),

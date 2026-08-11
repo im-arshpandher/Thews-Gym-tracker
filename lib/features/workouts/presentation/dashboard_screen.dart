@@ -260,7 +260,7 @@ class DashboardScreen extends ConsumerWidget {
                       icon: Icons.directions_run_outlined,
                       title: 'GPS RUN',
                       subtitle: 'Outdoor Tracking',
-                      onTap: () => context.push('/running'),
+                      onTap: () => context.go('/running'),
                     ),
                   ),
                   const SizedBox(width: 12),

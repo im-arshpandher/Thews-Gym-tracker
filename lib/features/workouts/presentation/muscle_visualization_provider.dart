@@ -51,6 +51,21 @@ final selectedVisualizationMuscleProvider = StateProvider<String>(
   (ref) => 'Chest',
 );
 
+String normalizeMuscleGroupName(String group) {
+  final lower = group.toLowerCase().trim();
+  if (lower.contains('forearm') || lower.contains('wrist')) return 'Forearms';
+  if (lower.contains('bicep')) return 'Biceps';
+  if (lower.contains('tricep')) return 'Triceps';
+  if (lower.contains('neck')) return 'Neck';
+  if (lower.contains('core') || lower.contains('ab')) return 'Core / Abs';
+  if (lower.contains('chest')) return 'Chest';
+  if (lower.contains('back') || lower.contains('lat')) return 'Back';
+  if (lower.contains('shoulder') || lower.contains('delt')) return 'Shoulders';
+  if (lower.contains('leg') || lower.contains('quad') || lower.contains('thigh') || lower.contains('calf') || lower.contains('hamstring') || lower.contains('glute')) return 'Legs';
+  if (lower.contains('cardio') || lower.contains('run')) return 'Cardio';
+  return 'Arms';
+}
+
 final muscleVisualizationProvider =
     FutureProvider<Map<String, MuscleGroupStats>>((ref) async {
       final db = ref.watch(databaseProvider);
@@ -76,12 +91,17 @@ final muscleVisualizationProvider =
       final Map<String, Map<String, MuscleTopExercise>> exMap = {};
 
       final groups = [
+        'Forearms',
         'Chest',
-        'Back',
-        'Legs',
-        'Shoulders',
-        'Arms',
+        'Core / Abs',
         'Core',
+        'Legs',
+        'Back',
+        'Biceps',
+        'Triceps',
+        'Shoulders',
+        'Neck',
+        'Arms',
         'Cardio',
       ];
       for (final g in groups) {
@@ -94,7 +114,8 @@ final muscleVisualizationProvider =
       for (final w in filteredWorkouts) {
         final details = await db.watchWorkoutDetails(w.id).first;
         for (final detail in details) {
-          final primaryGroup = detail.exercise.muscleGroup;
+          final rawGroup = detail.exercise.muscleGroup;
+          final primaryGroup = normalizeMuscleGroupName(rawGroup);
           final setList = detail.sets;
 
           double exVol = 0.0;
@@ -110,30 +131,35 @@ final muscleVisualizationProvider =
           }
 
           // 1. Primary Muscle Contribution (100% Volume & Sets)
-          if (volumeMap.containsKey(primaryGroup)) {
-            workoutsMap[primaryGroup]!.add(w.id);
-            setsMap[primaryGroup] =
-                (setsMap[primaryGroup] ?? 0) + setList.length;
-            volumeMap[primaryGroup] = (volumeMap[primaryGroup] ?? 0.0) + exVol;
+          if (!volumeMap.containsKey(primaryGroup)) {
+            volumeMap[primaryGroup] = 0.0;
+            setsMap[primaryGroup] = 0;
+            workoutsMap[primaryGroup] = {};
+            exMap[primaryGroup] = {};
+          }
 
-            if (!exMap[primaryGroup]!.containsKey(detail.exercise.name)) {
-              exMap[primaryGroup]![detail.exercise.name] = MuscleTopExercise(
-                name: detail.exercise.name,
-                sets: setList.length,
-                maxWeight: exMaxWeight,
-                totalVolume: exVol,
-              );
-            } else {
-              final existing = exMap[primaryGroup]![detail.exercise.name]!;
-              exMap[primaryGroup]![detail.exercise.name] = MuscleTopExercise(
-                name: detail.exercise.name,
-                sets: existing.sets + setList.length,
-                maxWeight: exMaxWeight > existing.maxWeight
-                    ? exMaxWeight
-                    : existing.maxWeight,
-                totalVolume: existing.totalVolume + exVol,
-              );
-            }
+          workoutsMap[primaryGroup]!.add(w.id);
+          setsMap[primaryGroup] =
+              (setsMap[primaryGroup] ?? 0) + setList.length;
+          volumeMap[primaryGroup] = (volumeMap[primaryGroup] ?? 0.0) + exVol;
+
+          if (!exMap[primaryGroup]!.containsKey(detail.exercise.name)) {
+            exMap[primaryGroup]![detail.exercise.name] = MuscleTopExercise(
+              name: detail.exercise.name,
+              sets: setList.length,
+              maxWeight: exMaxWeight,
+              totalVolume: exVol,
+            );
+          } else {
+            final existing = exMap[primaryGroup]![detail.exercise.name]!;
+            exMap[primaryGroup]![detail.exercise.name] = MuscleTopExercise(
+              name: detail.exercise.name,
+              sets: existing.sets + setList.length,
+              maxWeight: exMaxWeight > existing.maxWeight
+                  ? exMaxWeight
+                  : existing.maxWeight,
+              totalVolume: existing.totalVolume + exVol,
+            );
           }
 
           // 2. Secondary / Minor Muscle Group Contribution (50% Volume & Sets)
@@ -141,10 +167,17 @@ final muscleVisualizationProvider =
           if (secGroupsStr != null && secGroupsStr.isNotEmpty) {
             final secList = secGroupsStr
                 .split(',')
-                .map((s) => s.trim())
+                .map((s) => normalizeMuscleGroupName(s.trim()))
                 .toList();
             for (final sec in secList) {
-              if (volumeMap.containsKey(sec) && sec != primaryGroup) {
+              if (sec != primaryGroup) {
+                if (!volumeMap.containsKey(sec)) {
+                  volumeMap[sec] = 0.0;
+                  setsMap[sec] = 0;
+                  workoutsMap[sec] = {};
+                  exMap[sec] = {};
+                }
+
                 workoutsMap[sec]!.add(w.id);
                 setsMap[sec] =
                     (setsMap[sec] ?? 0) + (setList.length * 0.5).round();
@@ -176,8 +209,8 @@ final muscleVisualizationProvider =
       }
 
       final Map<String, MuscleGroupStats> result = {};
-      for (final g in groups) {
-        final topList = exMap[g]!.values.toList()
+      for (final g in volumeMap.keys) {
+        final topList = (exMap[g]?.values.toList() ?? [])
           ..sort((a, b) => b.totalVolume.compareTo(a.totalVolume));
 
         result[g] = MuscleGroupStats(

@@ -22,8 +22,11 @@ class InteractiveBodyMap extends StatelessWidget {
       {'name': 'Back', 'icon': Icons.waves_outlined},
       {'name': 'Legs', 'icon': Icons.directions_run_outlined},
       {'name': 'Shoulders', 'icon': Icons.accessibility_new_outlined},
-      {'name': 'Arms', 'icon': Icons.fitness_center_outlined},
-      {'name': 'Core', 'icon': Icons.crop_portrait_outlined},
+      {'name': 'Biceps', 'icon': Icons.fitness_center_outlined},
+      {'name': 'Triceps', 'icon': Icons.hardware_outlined},
+      {'name': 'Forearms', 'icon': Icons.pan_tool_outlined},
+      {'name': 'Core / Abs', 'icon': Icons.crop_portrait_outlined},
+      {'name': 'Neck', 'icon': Icons.person_outline},
     ];
 
     return Container(

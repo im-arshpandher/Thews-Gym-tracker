@@ -15,15 +15,48 @@ class _YouTubeInlinePlayerState extends State<YouTubeInlinePlayer> {
   late final WebViewController _controller;
   bool _isPlaying = true;
 
+  String _buildIframeHtml(String videoId) {
+    return '''
+<!DOCTYPE html>
+<html>
+<head>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    html, body { width: 100%; height: 100%; background-color: #000000; overflow: hidden; }
+    .iframe-container { position: relative; width: 100%; height: 100%; }
+    .iframe-container iframe { position: absolute; top: 0; left: 0; width: 100%; height: 100%; border: 0; }
+  </style>
+</head>
+<body>
+  <div class="iframe-container">
+    <iframe id="player"
+      src="https://www.youtube.com/embed/$videoId?enablejsapi=1&autoplay=1&mute=1&loop=1&playlist=$videoId&controls=0&playsinline=1&rel=0"
+      allow="autoplay; encrypted-media; picture-in-picture"
+      allowfullscreen>
+    </iframe>
+  </div>
+</body>
+</html>
+''';
+  }
+
   @override
   void initState() {
     super.initState();
     _controller = WebViewController()
       ..setJavaScriptMode(JavaScriptMode.unrestricted)
-      ..loadRequest(
-        Uri.parse(
-          'https://www.youtube.com/embed/${widget.videoId}?enablejsapi=1&autoplay=1&mute=1&loop=1&playlist=${widget.videoId}&controls=0',
+      ..setBackgroundColor(Colors.black)
+      ..setNavigationDelegate(
+        NavigationDelegate(
+          onWebResourceError: (WebResourceError error) {
+            // Ignore non-critical webview resource error / cache miss
+          },
         ),
+      )
+      ..loadHtmlString(
+        _buildIframeHtml(widget.videoId),
+        baseUrl: 'https://www.youtube.com',
       );
   }
 
@@ -31,10 +64,9 @@ class _YouTubeInlinePlayerState extends State<YouTubeInlinePlayer> {
   void didUpdateWidget(covariant YouTubeInlinePlayer oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (oldWidget.videoId != widget.videoId) {
-      _controller.loadRequest(
-        Uri.parse(
-          'https://www.youtube.com/embed/${widget.videoId}?enablejsapi=1&autoplay=1&mute=1&loop=1&playlist=${widget.videoId}&controls=0',
-        ),
+      _controller.loadHtmlString(
+        _buildIframeHtml(widget.videoId),
+        baseUrl: 'https://www.youtube.com',
       );
     }
   }

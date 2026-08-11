@@ -44,6 +44,7 @@ class RunTrackingState {
   final double avgPaceSecondsPerKm;
   final double currentSpeedKmH;
   final double headingDegrees;
+  final int stepCount;
   final List<GpxPoint> waypoints;
   final List<RunSplit> splits;
   final bool hasLocationPermission;
@@ -60,6 +61,7 @@ class RunTrackingState {
     this.avgPaceSecondsPerKm = 0.0,
     this.currentSpeedKmH = 0.0,
     this.headingDegrees = 0.0,
+    this.stepCount = 0,
     this.waypoints = const [],
     this.splits = const [],
     this.hasLocationPermission = false,
@@ -77,6 +79,7 @@ class RunTrackingState {
     double? avgPaceSecondsPerKm,
     double? currentSpeedKmH,
     double? headingDegrees,
+    int? stepCount,
     List<GpxPoint>? waypoints,
     List<RunSplit>? splits,
     bool? hasLocationPermission,
@@ -94,6 +97,7 @@ class RunTrackingState {
       avgPaceSecondsPerKm: avgPaceSecondsPerKm ?? this.avgPaceSecondsPerKm,
       currentSpeedKmH: currentSpeedKmH ?? this.currentSpeedKmH,
       headingDegrees: headingDegrees ?? this.headingDegrees,
+      stepCount: stepCount ?? this.stepCount,
       waypoints: waypoints ?? this.waypoints,
       splits: splits ?? this.splits,
       hasLocationPermission:
@@ -133,6 +137,20 @@ class RunTrackingState {
     final secs = (currentPaceSecondsPerKm % 60).toInt().toString().padLeft(2, '0');
     return '$mins:$secs';
   }
+
+  String get formattedCurrentSpeed {
+    if (currentSpeedKmH <= 0 || currentSpeedKmH.isInfinite) return '0.0';
+    return currentSpeedKmH.toStringAsFixed(1);
+  }
+
+  int get totalSteps {
+    if (stepCount > 0) return stepCount;
+    final strideLength = activityType == 'walk'
+        ? 0.72
+        : (activityType == 'cycle' ? 0.0 : 0.82);
+    if (strideLength == 0) return 0;
+    return (distanceMeters / strideLength).round();
+  }
 }
 
 class RunTrackingNotifier extends StateNotifier<RunTrackingState> {
@@ -152,6 +170,10 @@ class RunTrackingNotifier extends StateNotifier<RunTrackingState> {
   int _lastSplitDuration = 0;
   double _lastSensorMagnitude = 0.0;
   double _lastValidElevation = 0.0;
+  int _sensorStepCount = 0;
+  DateTime _lastStepTime = DateTime.now();
+  double _lastAccelMag = 0.0;
+  double _smoothedSpeedMs = 0.0;
 
   RunTrackingNotifier(this.db) : super(const RunTrackingState()) {
     _initInitialLocation();
@@ -339,6 +361,8 @@ class RunTrackingNotifier extends StateNotifier<RunTrackingState> {
     _totalPausedDuration = Duration.zero;
     _lastSplitDistance = 0.0;
     _lastSplitDuration = 0;
+    _sensorStepCount = 0;
+    _smoothedSpeedMs = 0.0;
 
     state = RunTrackingState(
       isTracking: true,
@@ -351,14 +375,25 @@ class RunTrackingNotifier extends StateNotifier<RunTrackingState> {
       avgPaceSecondsPerKm: 0.0,
       currentSpeedKmH: 0.0,
       headingDegrees: state.headingDegrees,
+      stepCount: 0,
       waypoints: state.waypoints.isNotEmpty ? [state.waypoints.last] : [],
       splits: [],
       hasLocationPermission: state.hasLocationPermission,
     );
 
-    // Wall-clock elapsed duration timer (accurately subtracts paused intervals)
+    _startElapsedTimer();
+
+    // Start accelerometer & magnetometer sensor fusion stream
+    _initSensorFusion();
+
+    // Start real phone GPS position stream
+    _startRealGpsStream();
+  }
+
+  void _startElapsedTimer() {
+    _timer?.cancel();
     _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
-      if (!state.isPaused && _trackingStartTime != null) {
+      if (state.isTracking && !state.isPaused && _trackingStartTime != null) {
         final elapsedSecs = _getActiveElapsedSeconds();
         final avgPace = state.distanceMeters > 5.0
             ? (elapsedSecs / (state.distanceMeters / 1000.0))
@@ -369,12 +404,6 @@ class RunTrackingNotifier extends StateNotifier<RunTrackingState> {
         );
       }
     });
-
-    // Start accelerometer & magnetometer sensor fusion stream
-    _initSensorFusion();
-
-    // Start real phone GPS position stream
-    _startRealGpsStream();
   }
 
   void _startRealGpsStream() {
@@ -438,24 +467,50 @@ class RunTrackingNotifier extends StateNotifier<RunTrackingState> {
 
   void _initSensorFusion() {
     try {
-      _sensorSubscription = userAccelerometerEventStream().listen((event) {
-        // Calculate accelerometer magnitude: sqrt(x^2 + y^2 + z^2)
-        _lastSensorMagnitude = math.sqrt(
-          (event.x * event.x) + (event.y * event.y) + (event.z * event.z),
-        );
-      }, onError: (_) {});
+      _sensorSubscription = userAccelerometerEventStream().listen(
+        (event) {
+          final mag = math.sqrt(
+            (event.x * event.x) + (event.y * event.y) + (event.z * event.z),
+          );
+          _lastSensorMagnitude = mag;
 
-      _magnetometerSubscription = magnetometerEventStream().listen((event) {
-        // Calculate heading in degrees from magnetometer: atan2(y, x)
-        final headingRad = math.atan2(event.y, event.x);
-        double headingDeg = headingRad * (180.0 / math.pi);
-        if (headingDeg < 0) headingDeg += 360.0;
+          if (state.isTracking &&
+              !state.isPaused &&
+              state.activityType != 'cycle') {
+            final now = DateTime.now();
+            final stepThreshold = state.activityType == 'run' ? 2.4 : 1.6;
+            final minIntervalMs = state.activityType == 'run' ? 220 : 320;
 
-        // Smoothly update device facing heading
-        if (!state.isTracking) {
-          state = state.copyWith(headingDegrees: headingDeg);
-        }
-      }, onError: (_) {});
+            if (mag > stepThreshold && _lastAccelMag <= stepThreshold) {
+              if (now.difference(_lastStepTime).inMilliseconds >
+                  minIntervalMs) {
+                _sensorStepCount++;
+                _lastStepTime = now;
+                state = state.copyWith(stepCount: _sensorStepCount);
+              }
+            }
+          }
+          _lastAccelMag = mag;
+        },
+        onError: (_) {},
+        cancelOnError: false,
+      );
+
+      _magnetometerSubscription = magnetometerEventStream().listen(
+        (event) {
+          final headingRad = math.atan2(event.y, event.x);
+          double headingDeg = headingRad * (180.0 / math.pi);
+          if (headingDeg < 0) headingDeg += 360.0;
+
+          if (!state.isTracking) {
+            state = state.copyWith(headingDegrees: headingDeg);
+          }
+        },
+        onError: (_) {},
+        cancelOnError: false,
+      );
+    } on MissingPluginException {
+      // Silently ignore hardware sensor channel unavailability in test environment
     } catch (_) {}
   }
 
@@ -478,6 +533,7 @@ class RunTrackingNotifier extends StateNotifier<RunTrackingState> {
 
     double addedDistance = 0.0;
     double addedElevationGain = 0.0;
+    double effectiveSpeedMs = speedMs;
 
     if (state.waypoints.isNotEmpty) {
       final lastPoint = state.waypoints.last;
@@ -488,8 +544,17 @@ class RunTrackingNotifier extends StateNotifier<RunTrackingState> {
         longitude,
       );
 
+      // Hardware fallback: if GPS hardware doesn't report position.speed, calculate derived speed from timestamp delta
+      if (effectiveSpeedMs <= 0 && distBetween > 0) {
+        final timeDiffSec =
+            timestamp.difference(lastPoint.timestamp).inMilliseconds / 1000.0;
+        if (timeDiffSec > 0) {
+          effectiveSpeedMs = distBetween / timeDiffSec;
+        }
+      }
+
       // Filter out static GPS drift jitter (< 2.0m when speed is minimal)
-      if (distBetween >= 2.0 && speedMs >= 0.3) {
+      if (distBetween >= 2.0 && effectiveSpeedMs >= 0.2) {
         addedDistance = distBetween;
 
         final eleDiff = elevation - _lastValidElevation;
@@ -509,31 +574,44 @@ class RunTrackingNotifier extends StateNotifier<RunTrackingState> {
         ? [...state.waypoints, newPoint]
         : state.waypoints;
 
-    // Accurate speed (km/h) & instant pace (sec/km)
-    final speedKmH = speedMs >= 0.3 ? (speedMs * 3.6) : 0.0;
-    final currentPace = speedMs >= 0.4
-        ? (1000.0 / speedMs).clamp(120.0, 1800.0)
+    // Sensor-assisted speed smoothing & stationary zero check
+    if (_lastSensorMagnitude < 0.2 && speedMs < 0.3) {
+      effectiveSpeedMs = 0.0;
+      _smoothedSpeedMs = 0.0;
+    } else {
+      if (_smoothedSpeedMs == 0.0) {
+        _smoothedSpeedMs = effectiveSpeedMs;
+      } else {
+        _smoothedSpeedMs = (0.7 * _smoothedSpeedMs) + (0.3 * effectiveSpeedMs);
+      }
+    }
+
+    final speedKmH = _smoothedSpeedMs >= 0.2 ? (_smoothedSpeedMs * 3.6) : 0.0;
+    final currentPace = _smoothedSpeedMs >= 0.3
+        ? (1000.0 / _smoothedSpeedMs).clamp(120.0, 1800.0)
         : 0.0;
 
     final elapsedSecs = _getActiveElapsedSeconds();
 
+    // Multi-kilometer interval split loop
     final updatedSplits = [...state.splits];
-    if (totalDist - _lastSplitDistance >= 1000.0) {
+    var currentSplitDist = totalDist - _lastSplitDistance;
+    while (currentSplitDist >= 1000.0) {
       final splitIndex = updatedSplits.length + 1;
-      final splitDist = totalDist - _lastSplitDistance;
       final splitDuration = elapsedSecs - _lastSplitDuration;
       final splitPace =
-          splitDist > 0 ? (splitDuration / (splitDist / 1000.0)) : 0.0;
+          splitDuration > 0 ? (splitDuration / (1000.0 / 1000.0)) : 0.0;
 
       updatedSplits.add(RunSplit(
         splitIndex: splitIndex,
-        distanceMeters: splitDist,
+        distanceMeters: 1000.0,
         durationSeconds: splitDuration,
         paceSecondsPerKm: splitPace,
       ));
 
-      _lastSplitDistance = totalDist;
+      _lastSplitDistance += 1000.0;
       _lastSplitDuration = elapsedSecs;
+      currentSplitDist = totalDist - _lastSplitDistance;
     }
 
     final avgPace = totalDist > 5.0
@@ -556,38 +634,61 @@ class RunTrackingNotifier extends StateNotifier<RunTrackingState> {
   }
 
   void pauseTracking() {
-    if (!state.isPaused) {
+    if (state.isTracking && !state.isPaused) {
       _pauseStartTime = DateTime.now();
+      _timer?.cancel();
+      _timer = null;
       state = state.copyWith(isPaused: true);
     }
   }
 
   void resumeTracking() {
-    if (state.isPaused) {
+    if (state.isTracking && state.isPaused) {
       if (_pauseStartTime != null) {
         _totalPausedDuration += DateTime.now().difference(_pauseStartTime!);
         _pauseStartTime = null;
       }
       state = state.copyWith(isPaused: false);
+      _startElapsedTimer();
     }
   }
 
   void stopTracking() {
+    if (state.isPaused && _pauseStartTime != null) {
+      _totalPausedDuration += DateTime.now().difference(_pauseStartTime!);
+      _pauseStartTime = null;
+    }
     _stopAllTimersAndStreams();
+    _trackingStartTime = null;
+    _pauseStartTime = null;
+    _totalPausedDuration = Duration.zero;
     state = state.copyWith(isTracking: false, isPaused: false);
   }
 
   void _stopAllTimersAndStreams() {
     _timer?.cancel();
+    _timer = null;
     _positionSubscription?.cancel();
+    _positionSubscription = null;
     _sensorSubscription?.cancel();
+    _sensorSubscription = null;
     _magnetometerSubscription?.cancel();
+    _magnetometerSubscription = null;
   }
 
   Future<int?> finishAndSaveActivity() async {
+    if (state.isPaused && _pauseStartTime != null) {
+      _totalPausedDuration += DateTime.now().difference(_pauseStartTime!);
+      _pauseStartTime = null;
+    }
     _stopAllTimersAndStreams();
 
-    if (state.waypoints.isEmpty) {
+    _trackingStartTime = null;
+    _pauseStartTime = null;
+    _totalPausedDuration = Duration.zero;
+
+    // Guard against saving zero-distance accidental activities (< 10 meters or < 2 waypoints)
+    if (state.waypoints.length < 2 || state.distanceMeters < 10.0) {
       state = const RunTrackingState();
       return null;
     }

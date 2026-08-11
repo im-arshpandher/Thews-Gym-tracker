@@ -1,8 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+
 import '../../../core/database/app_database.dart';
-import '../../../core/database/database_provider.dart';
-import '../../../core/models/exercise_metric.dart';
 import '../../../core/models/muscle_group.dart';
 import '../../../core/presentation/widgets/muscle_group_icon.dart';
 import '../../../core/theme/app_colors.dart';
@@ -88,7 +87,17 @@ class ExerciseListScreen extends ConsumerWidget {
                 return Padding(
                   padding: const EdgeInsets.only(right: 8),
                   child: FilterChip(
-                    label: Text(group.label.toUpperCase()),
+                    avatar: group == MuscleGroup.all
+                        ? null
+                        : MuscleGroupIcon(
+                            muscleGroup: group.label,
+                            size: 18,
+                          ),
+                    label: Text(
+                      group.label.toUpperCase(),
+                      maxLines: 1,
+                      softWrap: false,
+                    ),
                     selected: isSelected,
                     onSelected: (_) {
                       ref
@@ -168,51 +177,52 @@ class ExerciseListScreen extends ConsumerWidget {
 
   Widget _buildEmptyState(BuildContext context, WidgetRef ref) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(32),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(
-              Icons.fitness_center_outlined,
-              size: 64,
+    return SingleChildScrollView(
+      physics: const AlwaysScrollableScrollPhysics(),
+      padding: const EdgeInsets.all(32),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          const SizedBox(height: 16),
+          Icon(
+            Icons.fitness_center_outlined,
+            size: 64,
+            color: isDark
+                ? AppColors.darkOutlineVariant
+                : AppColors.lightOutlineVariant,
+          ),
+          const SizedBox(height: 16),
+          Text(
+            'No exercises found',
+            style: AppTypography.headlineSm(
               color: isDark
-                  ? AppColors.darkOutlineVariant
-                  : AppColors.lightOutlineVariant,
+                  ? AppColors.darkTextPrimary
+                  : AppColors.lightTextPrimary,
             ),
-            const SizedBox(height: 16),
-            Text(
-              'No exercises found',
-              style: AppTypography.headlineSm(
-                color: isDark
-                    ? AppColors.darkTextPrimary
-                    : AppColors.lightTextPrimary,
-              ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            'Try selecting a different muscle group or search term, or create your own custom exercise.',
+            textAlign: TextAlign.center,
+            style: AppTypography.bodySm(
+              color: isDark
+                  ? AppColors.darkTextSecondary
+                  : AppColors.lightTextSecondary,
             ),
-            const SizedBox(height: 8),
-            Text(
-              'Try selecting a different muscle group or search term, or create your own custom exercise.',
-              textAlign: TextAlign.center,
-              style: AppTypography.bodySm(
-                color: isDark
-                    ? AppColors.darkTextSecondary
-                    : AppColors.lightTextSecondary,
-              ),
+          ),
+          const SizedBox(height: 24),
+          ElevatedButton.icon(
+            onPressed: () => ExerciseFormDialog.show(context),
+            icon: const Icon(Icons.add),
+            label: const Text(
+              'CREATE EXERCISE',
+              maxLines: 1,
+              softWrap: false,
+              overflow: TextOverflow.ellipsis,
             ),
-            const SizedBox(height: 24),
-            ElevatedButton.icon(
-              onPressed: () => ExerciseFormDialog.show(context),
-              icon: const Icon(Icons.add),
-              label: const Text(
-                'CREATE EXERCISE',
-                maxLines: 1,
-                softWrap: false,
-                overflow: TextOverflow.ellipsis,
-              ),
-            ),
-          ],
-        ),
+          ),
+          const SizedBox(height: 16),
+        ],
       ),
     );
   }
@@ -242,16 +252,21 @@ class _ExerciseCard extends ConsumerWidget {
                 ? AppColors.darkTextPrimary
                 : AppColors.lightTextPrimary,
           ),
+          maxLines: 1,
+          softWrap: false,
+          overflow: TextOverflow.ellipsis,
         ),
         subtitle: Padding(
           padding: const EdgeInsets.only(top: 4),
           child: Wrap(
             spacing: 6,
             runSpacing: 4,
-            crossAxisAlignment: WrapCrossAlignment.center,
             children: [
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 8,
+                  vertical: 2,
+                ),
                 decoration: BoxDecoration(
                   color: AppColors.getMuscleGroupBgColor(
                     exercise.muscleGroup,
@@ -267,10 +282,15 @@ class _ExerciseCard extends ConsumerWidget {
                       isDark,
                     ),
                   ).copyWith(fontSize: 10, fontWeight: FontWeight.bold),
+                  maxLines: 1,
+                  softWrap: false,
                 ),
               ),
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 8,
+                  vertical: 2,
+                ),
                 decoration: BoxDecoration(
                   color: isDark
                       ? AppColors.darkSurfaceContainerHigh
@@ -278,114 +298,55 @@ class _ExerciseCard extends ConsumerWidget {
                   borderRadius: BorderRadius.circular(6),
                 ),
                 child: Text(
-                  ExerciseMetric.parseMetrics(exercise.enabledMetrics)
-                      .map((m) => m.shortLabel)
-                      .join(' • '),
+                  _getCategoryLabel(exercise.category).toUpperCase(),
                   style: AppTypography.labelCaps(
                     color: isDark
                         ? AppColors.darkTextSecondary
                         : AppColors.lightTextSecondary,
-                  ).copyWith(fontSize: 9, fontWeight: FontWeight.w600),
+                  ).copyWith(fontSize: 10),
+                  maxLines: 1,
+                  softWrap: false,
                 ),
               ),
-              if (exercise.isCustom)
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 8,
-                    vertical: 2,
-                  ),
-                  decoration: BoxDecoration(
-                    color: AppColors.getMuscleGroupBgColor('custom', isDark),
-                    borderRadius: BorderRadius.circular(6),
-                  ),
-                  child: Text(
-                    'CUSTOM',
-                    style: AppTypography.labelCaps(
-                      color: AppColors.getMuscleGroupTextColor(
-                        'custom',
-                        isDark,
-                      ),
-                    ).copyWith(fontSize: 10, fontWeight: FontWeight.bold),
-                  ),
-                ),
-              if (hasMedia)
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 6,
-                    vertical: 2,
-                  ),
-                  decoration: BoxDecoration(
-                    color: isDark
-                        ? AppColors.primaryVolt.withValues(alpha: 0.2)
-                        : AppColors.lightPrimaryContainer,
-                    borderRadius: BorderRadius.circular(6),
-                    border: Border.all(
-                      color: isDark
-                          ? AppColors.primaryVolt
-                          : AppColors.lightPrimary,
-                      width: 1,
-                    ),
-                  ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(
-                        Icons.play_circle_fill,
-                        size: 11,
-                        color: isDark
-                            ? AppColors.primaryVolt
-                            : AppColors.lightPrimary,
-                      ),
-                      const SizedBox(width: 3),
-                      Text(
-                        'DEMO',
-                        style: AppTypography.labelCaps(
-                          color: isDark
-                              ? AppColors.primaryVolt
-                              : AppColors.lightPrimary,
-                        ).copyWith(fontSize: 9, fontWeight: FontWeight.bold),
-                      ),
-                    ],
-                  ),
-                ),
             ],
           ),
         ),
-        trailing: exercise.isCustom
-            ? IconButton(
-                icon: const Icon(Icons.delete_outline, color: AppColors.error),
-                tooltip: 'Delete Exercise',
-                onPressed: () => _confirmDelete(context, ref),
-              )
-            : const Icon(
-                Icons.chevron_right,
-                color: AppColors.darkOutlineVariant,
+        trailing: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            if (hasMedia)
+              const Padding(
+                padding: EdgeInsets.only(right: 8),
+                child: Icon(
+                  Icons.play_circle_fill_rounded,
+                  size: 20,
+                  color: AppColors.primaryVolt,
+                ),
               ),
+            Icon(
+              Icons.chevron_right,
+              color: isDark
+                  ? AppColors.darkOutlineVariant
+                  : AppColors.lightOutlineVariant,
+            ),
+          ],
+        ),
       ),
     );
   }
 
-  void _confirmDelete(BuildContext context, WidgetRef ref) {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Delete Exercise?'),
-        content: Text('Are you sure you want to delete "${exercise.name}"?'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(),
-            child: const Text('CANCEL'),
-          ),
-          TextButton(
-            onPressed: () async {
-              Navigator.of(context).pop();
-              await ref.read(databaseProvider).deleteExercise(exercise.id);
-            },
-            style: TextButton.styleFrom(foregroundColor: AppColors.error),
-            child: const Text('DELETE'),
-          ),
-        ],
-      ),
-    );
+  String _getCategoryLabel(String? category) {
+    switch (category?.toLowerCase().trim()) {
+      case 'weight_reps':
+        return 'Weight • Reps';
+      case 'reps_only':
+        return 'Reps Only';
+      case 'duration_time':
+        return 'Duration';
+      case 'cardio_distance':
+        return 'Cardio';
+      default:
+        return 'Weight • Reps';
+    }
   }
 }

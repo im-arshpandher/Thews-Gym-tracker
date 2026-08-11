@@ -37,6 +37,9 @@ class _ActiveSessionScreenState extends ConsumerState<ActiveSessionScreen> {
   bool _isTimerRunning = false;
   bool _hasStartedWorkout = false;
   bool _isSaving = false;
+  DateTime? _workoutStartTime;
+  DateTime? _pauseStartTime;
+  Duration _totalPausedDuration = Duration.zero;
 
   @override
   void initState() {
@@ -45,19 +48,35 @@ class _ActiveSessionScreenState extends ConsumerState<ActiveSessionScreen> {
 
   void _startTimer() {
     if (_isTimerRunning) return;
+    final now = DateTime.now();
+    if (_workoutStartTime == null) {
+      _workoutStartTime = now;
+      _totalPausedDuration = Duration.zero;
+    } else if (_pauseStartTime != null) {
+      _totalPausedDuration += now.difference(_pauseStartTime!);
+      _pauseStartTime = null;
+    }
+
     setState(() {
       _hasStartedWorkout = true;
       _isTimerRunning = true;
     });
+
+    _timer?.cancel();
     _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
-      if (mounted) {
-        setState(() => _secondsElapsed++);
+      if (mounted && _isTimerRunning && _workoutStartTime != null) {
+        final activeSecs = DateTime.now().difference(_workoutStartTime!).inSeconds - _totalPausedDuration.inSeconds;
+        setState(() => _secondsElapsed = activeSecs < 0 ? 0 : activeSecs);
       }
     });
   }
 
   void _pauseTimer() {
     _timer?.cancel();
+    _timer = null;
+    if (_isTimerRunning) {
+      _pauseStartTime = DateTime.now();
+    }
     if (mounted) {
       setState(() {
         _isTimerRunning = false;
@@ -67,6 +86,10 @@ class _ActiveSessionScreenState extends ConsumerState<ActiveSessionScreen> {
 
   void _resetTimer() {
     _timer?.cancel();
+    _timer = null;
+    _workoutStartTime = null;
+    _pauseStartTime = null;
+    _totalPausedDuration = Duration.zero;
     if (mounted) {
       setState(() {
         _hasStartedWorkout = false;

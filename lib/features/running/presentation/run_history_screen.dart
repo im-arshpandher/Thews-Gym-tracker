@@ -1,6 +1,8 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:path_provider/path_provider.dart';
 import 'package:share_plus/share_plus.dart';
 
 import '../../../core/database/app_database.dart';
@@ -98,7 +100,7 @@ class RunHistoryScreen extends ConsumerWidget {
           return ListView.separated(
             padding: const EdgeInsets.all(AppSpacing.md),
             itemCount: runs.length,
-            separatorBuilder: (_, __) => const SizedBox(height: AppSpacing.md),
+            separatorBuilder: (_, _) => const SizedBox(height: AppSpacing.md),
             itemBuilder: (context, index) {
               final run = runs[index];
               final distKm = (run.distanceMeters / 1000.0).toStringAsFixed(2);
@@ -182,17 +184,54 @@ class RunHistoryScreen extends ConsumerWidget {
                                 final db = ref.read(databaseProvider);
                                 if (value == 'export') {
                                   final gpxContent = run.gpxData ?? '';
-                                  final points =
-                                      GpxParser.parseGpxXml(gpxContent);
-                                  final gpxString = GpxParser.toGpxXml(
-                                    points,
-                                    activityName: run.activityType,
-                                  );
-                                  await Share.share(
-                                    gpxString,
-                                    subject:
-                                        '${run.activityType} Route GPX File',
-                                  );
+                                  if (gpxContent.isNotEmpty) {
+                                    try {
+                                      final points =
+                                          GpxParser.parseGpxXml(gpxContent);
+                                      final gpxString = GpxParser.toGpxXml(
+                                        points,
+                                        activityName: run.activityType,
+                                      );
+                                      final tempDir =
+                                          await getTemporaryDirectory();
+                                      final fileName =
+                                          'thews_${run.activityType}_${run.id}.gpx';
+                                      final filePath =
+                                          '${tempDir.path}/$fileName';
+                                      final file = File(filePath);
+                                      await file.writeAsString(gpxString);
+                                      await Share.shareXFiles(
+                                        [
+                                          XFile(
+                                            filePath,
+                                            mimeType: 'application/gpx+xml',
+                                          )
+                                        ],
+                                        subject:
+                                            '${run.activityType} Route GPX File',
+                                      );
+                                    } catch (e) {
+                                      if (context.mounted) {
+                                        ScaffoldMessenger.of(context)
+                                            .showSnackBar(
+                                          SnackBar(
+                                            content: Text(
+                                              'Failed to export GPX: ${e.toString()}',
+                                            ),
+                                            backgroundColor: Colors.red,
+                                          ),
+                                        );
+                                      }
+                                    }
+                                  } else {
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      const SnackBar(
+                                        content: Text(
+                                          'No GPX data available for this activity.',
+                                        ),
+                                      ),
+                                    );
+                                  }
                                 } else if (value == 'delete') {
                                   await db.deleteRunActivity(run.id);
                                 }

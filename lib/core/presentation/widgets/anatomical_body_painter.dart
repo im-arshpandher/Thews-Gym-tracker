@@ -11,6 +11,7 @@ class AnatomicalBodyPainterWidget extends StatefulWidget {
   final bool hideViewSelector;
   final bool hideChips;
   final double figureHeight;
+  final bool transparentBg;
 
   const AnatomicalBodyPainterWidget({
     super.key,
@@ -21,6 +22,7 @@ class AnatomicalBodyPainterWidget extends StatefulWidget {
     this.hideViewSelector = false,
     this.hideChips = false,
     this.figureHeight = 180.0,
+    this.transparentBg = false,
   });
 
   @override
@@ -35,7 +37,8 @@ class _AnatomicalBodyPainterWidgetState
   @override
   void initState() {
     super.initState();
-    _currentView = widget.initialView ??
+    _currentView =
+        widget.initialView ??
         _getBestViewForMuscle(widget.selectedMuscleGroup);
   }
 
@@ -45,9 +48,6 @@ class _AnatomicalBodyPainterWidgetState
     if (widget.initialView != null &&
         widget.initialView != oldWidget.initialView) {
       _currentView = widget.initialView!;
-    } else if (widget.selectedMuscleGroup != oldWidget.selectedMuscleGroup &&
-        widget.initialView == null) {
-      _currentView = _getBestViewForMuscle(widget.selectedMuscleGroup);
     }
   }
 
@@ -68,7 +68,16 @@ class _AnatomicalBodyPainterWidgetState
   }
 
   Color _getMuscleColor(String muscleName, bool isDark) {
-    final sets = widget.muscleSetCounts[muscleName] ?? 0;
+    int sets = widget.muscleSetCounts[muscleName] ?? 0;
+    if (sets == 0) {
+      final normName = _normalizeMuscleKey(muscleName);
+      for (final entry in widget.muscleSetCounts.entries) {
+        if (_normalizeMuscleKey(entry.key) == normName) {
+          sets += entry.value;
+        }
+      }
+    }
+
     if (sets == 0) {
       return isDark
           ? AppColors.darkSurfaceContainerHigh
@@ -82,46 +91,73 @@ class _AnatomicalBodyPainterWidgetState
     }
   }
 
+  static String _normalizeMuscleKey(String name) {
+    final lower = name.toLowerCase().trim();
+    if (lower.contains('neck')) return 'neck';
+    if (lower.contains('chest')) return 'chest';
+    if (lower.contains('back') || lower.contains('lat')) return 'back';
+    if (lower.contains('shoulder') || lower.contains('delt')) return 'shoulders';
+    if (lower.contains('bicep')) return 'biceps';
+    if (lower.contains('tricep')) return 'triceps';
+    if (lower.contains('forearm')) return 'forearms';
+    if (lower.contains('arm')) return 'biceps';
+    if (lower.contains('core') || lower.contains('ab')) return 'core';
+    if (lower.contains('leg') ||
+        lower.contains('quad') ||
+        lower.contains('thigh') ||
+        lower.contains('calf')) {
+      return 'legs';
+    }
+    return lower;
+  }
+
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     final frontMuscles = [
+      {'name': 'Neck', 'label': 'NECK'},
       {'name': 'Chest', 'label': 'CHEST'},
       {'name': 'Shoulders', 'label': 'SHOULDERS'},
-      {'name': 'Arms', 'label': 'BICEPS/ARMS'},
-      {'name': 'Core', 'label': 'ABS/CORE'},
-      {'name': 'Legs', 'label': 'QUADS/LEGS'},
+      {'name': 'Biceps', 'label': 'BICEPS'},
+      {'name': 'Forearms', 'label': 'FOREARMS'},
+      {'name': 'Core / Abs', 'label': 'ABS / CORE'},
+      {'name': 'Legs', 'label': 'QUADS & LEGS'},
     ];
 
     final backMuscles = [
-      {'name': 'Back', 'label': 'UPPER/LOWER BACK'},
+      {'name': 'Neck', 'label': 'NECK'},
+      {'name': 'Back', 'label': 'BACK'},
       {'name': 'Shoulders', 'label': 'REAR DELTS'},
-      {'name': 'Arms', 'label': 'TRICEPS/ARMS'},
-      {'name': 'Legs', 'label': 'GLUTES/CALVES'},
+      {'name': 'Triceps', 'label': 'TRICEPS'},
+      {'name': 'Forearms', 'label': 'FOREARMS'},
+      {'name': 'Legs', 'label': 'CALVES & LEGS'},
     ];
 
-    final currentMuscles = _currentView == AnatomicalView.front
-        ? frontMuscles
-        : backMuscles;
+    final currentMuscles =
+        _currentView == AnatomicalView.front ? frontMuscles : backMuscles;
+
+    final useTransparent = widget.transparentBg || (widget.hideViewSelector && widget.hideChips);
 
     return Container(
       width: double.infinity,
-      padding: EdgeInsets.all(widget.hideViewSelector ? 8 : 16),
-      decoration: BoxDecoration(
-        color: isDark
-            ? AppColors.darkSurfaceContainer
-            : AppColors.lightSurfaceContainerLowest,
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(
-          color: isDark
-              ? AppColors.darkOutline.withValues(alpha: 0.3)
-              : AppColors.lightOutline.withValues(alpha: 0.3),
-        ),
-      ),
+      padding: EdgeInsets.all(useTransparent ? 0 : (widget.hideViewSelector ? 8 : 16)),
+      decoration: useTransparent
+          ? null
+          : BoxDecoration(
+              color: isDark
+                  ? AppColors.darkSurfaceContainer
+                  : AppColors.lightSurfaceContainerLowest,
+              borderRadius: BorderRadius.circular(20),
+              border: Border.all(
+                color: isDark
+                    ? AppColors.darkOutline.withValues(alpha: 0.3)
+                    : AppColors.lightOutline.withValues(alpha: 0.3),
+              ),
+            ),
       child: Column(
         children: [
-          // Front vs Back View Switcher (Hidden when hideViewSelector is true)
+          // Front vs Back View Switcher (User controlled)
           if (!widget.hideViewSelector) ...[
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -142,11 +178,23 @@ class _AnatomicalBodyPainterWidgetState
                   segments: const [
                     ButtonSegment<AnatomicalView>(
                       value: AnatomicalView.front,
-                      label: Text('FRONT', style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold)),
+                      label: Text(
+                        'FRONT',
+                        style: TextStyle(
+                          fontSize: 10,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
                     ),
                     ButtonSegment<AnatomicalView>(
                       value: AnatomicalView.back,
-                      label: Text('BACK', style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold)),
+                      label: Text(
+                        'BACK',
+                        style: TextStyle(
+                          fontSize: 10,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
                     ),
                   ],
                   selected: {_currentView},
@@ -157,7 +205,9 @@ class _AnatomicalBodyPainterWidgetState
                   },
                   style: ButtonStyle(
                     visualDensity: VisualDensity.compact,
-                    padding: WidgetStateProperty.all(const EdgeInsets.symmetric(horizontal: 10)),
+                    padding: WidgetStateProperty.all(
+                      const EdgeInsets.symmetric(horizontal: 10),
+                    ),
                   ),
                 ),
               ],
@@ -176,7 +226,18 @@ class _AnatomicalBodyPainterWidgetState
                   view: _currentView,
                   selectedMuscleGroup: widget.selectedMuscleGroup,
                   muscleColors: {
-                    for (final m in ['Chest', 'Back', 'Legs', 'Shoulders', 'Arms', 'Core'])
+                    for (final m in [
+                      'Neck',
+                      'Chest',
+                      'Back',
+                      'Legs',
+                      'Shoulders',
+                      'Biceps',
+                      'Triceps',
+                      'Forearms',
+                      'Core',
+                      'Core / Abs',
+                    ])
                       m: _getMuscleColor(m, isDark),
                   },
                 ),
@@ -195,10 +256,14 @@ class _AnatomicalBodyPainterWidgetState
               children: currentMuscles.map((m) {
                 final name = m['name']!;
                 final label = m['label']!;
-                final isSelected =
-                    widget.selectedMuscleGroup.toLowerCase() == name.toLowerCase();
+                final isSelected = _normalizeMuscleKey(
+                      widget.selectedMuscleGroup,
+                    ) ==
+                    _normalizeMuscleKey(name);
                 final muscleColor = _getMuscleColor(name, isDark);
-                final setNum = widget.muscleSetCounts[name] ?? 0;
+                final setNum = widget.muscleSetCounts[name] ??
+                    widget.muscleSetCounts[_normalizeMuscleKey(name)] ??
+                    0;
 
                 return InkWell(
                   onTap: () => widget.onSelectMuscleGroup?.call(name),
@@ -211,7 +276,9 @@ class _AnatomicalBodyPainterWidgetState
                     ),
                     decoration: BoxDecoration(
                       color: isSelected
-                          ? muscleColor.withValues(alpha: isDark ? 0.35 : 0.25)
+                          ? muscleColor.withValues(
+                              alpha: isDark ? 0.35 : 0.25,
+                            )
                           : (isDark
                                 ? AppColors.darkSurfaceContainerHigh
                                 : AppColors.lightSurfaceContainerLow),
@@ -299,32 +366,32 @@ class _RealisticBodySilhouettePainter extends CustomPainter {
       ..strokeWidth = 2.0
       ..color = isDark ? Colors.white30 : Colors.black26;
 
-    final headCenter = Offset(cx, 24);
+    final headCenter = Offset(cx, 22);
     canvas.drawOval(
-      Rect.fromCenter(center: headCenter, width: 22, height: 28),
+      Rect.fromCenter(center: headCenter, width: 22, height: 26),
       outlinePaint,
     );
 
     // Draw Neck & Torso Outline
     final bodyOutline = Path();
-    bodyOutline.moveTo(cx - 5, 38);
-    bodyOutline.lineTo(cx - 18, 48); // Left shoulder
-    bodyOutline.lineTo(cx - 36, 60); // Left arm outer
+    bodyOutline.moveTo(cx - 6, 35);
+    bodyOutline.lineTo(cx - 18, 46); // Left shoulder
+    bodyOutline.lineTo(cx - 36, 58); // Left arm outer
     bodyOutline.lineTo(cx - 38, 110); // Left arm hand
     bodyOutline.lineTo(cx - 24, 110); // Inner arm
-    bodyOutline.lineTo(cx - 22, 64);  // Armpit
+    bodyOutline.lineTo(cx - 22, 64); // Armpit
     bodyOutline.lineTo(cx - 18, 120); // Left waist/hip
     bodyOutline.lineTo(cx - 20, 185); // Left foot
-    bodyOutline.lineTo(cx - 4, 185);  // Crotch inner left
-    bodyOutline.lineTo(cx, 125);      // Crotch center
-    bodyOutline.lineTo(cx + 4, 185);  // Crotch inner right
+    bodyOutline.lineTo(cx - 4, 185); // Crotch inner left
+    bodyOutline.lineTo(cx, 125); // Crotch center
+    bodyOutline.lineTo(cx + 4, 185); // Crotch inner right
     bodyOutline.lineTo(cx + 20, 185); // Right foot
     bodyOutline.lineTo(cx + 18, 120); // Right waist/hip
-    bodyOutline.lineTo(cx + 22, 64);  // Armpit right
+    bodyOutline.lineTo(cx + 22, 64); // Armpit right
     bodyOutline.lineTo(cx + 24, 110); // Inner arm right
     bodyOutline.lineTo(cx + 38, 110); // Hand right
-    bodyOutline.lineTo(cx + 36, 60);  // Shoulder right
-    bodyOutline.lineTo(cx + 5, 38);   // Neck right
+    bodyOutline.lineTo(cx + 36, 58); // Shoulder right
+    bodyOutline.lineTo(cx + 6, 35); // Neck right
 
     canvas.drawPath(bodyOutline, outlinePaint);
 
@@ -339,85 +406,119 @@ class _RealisticBodySilhouettePainter extends CustomPainter {
   }
 
   void _drawFrontMuscles(Canvas canvas, double cx) {
-    // 1. Shoulders / Deltoids (Left & Right)
+    // 1. Neck (Front)
+    _drawMusclePath(
+      canvas,
+      'Neck',
+      Path()
+        ..moveTo(cx - 8, 33)
+        ..lineTo(cx + 8, 33)
+        ..lineTo(cx + 14, 45)
+        ..lineTo(cx - 14, 45)
+        ..close(),
+    );
+
+    // 2. Shoulders / Deltoids (Left & Right)
     _drawMusclePath(
       canvas,
       'Shoulders',
       Path()
-        ..moveTo(cx - 18, 48)
-        ..lineTo(cx - 34, 58)
-        ..lineTo(cx - 28, 72)
-        ..lineTo(cx - 18, 60)
+        ..moveTo(cx - 18, 46)
+        ..lineTo(cx - 34, 56)
+        ..lineTo(cx - 28, 70)
+        ..lineTo(cx - 18, 58)
         ..close(),
     );
     _drawMusclePath(
       canvas,
       'Shoulders',
       Path()
-        ..moveTo(cx + 18, 48)
-        ..lineTo(cx + 34, 58)
-        ..lineTo(cx + 28, 72)
-        ..lineTo(cx + 18, 60)
+        ..moveTo(cx + 18, 46)
+        ..lineTo(cx + 34, 56)
+        ..lineTo(cx + 28, 70)
+        ..lineTo(cx + 18, 58)
         ..close(),
     );
 
-    // 2. Chest Pecs (Left & Right)
+    // 3. Chest Pecs (Left & Right)
     _drawMusclePath(
       canvas,
       'Chest',
       Path()
-        ..moveTo(cx - 18, 50)
-        ..lineTo(cx - 2, 50)
-        ..lineTo(cx - 2, 70)
-        ..lineTo(cx - 18, 64)
+        ..moveTo(cx - 16, 48)
+        ..lineTo(cx - 2, 48)
+        ..lineTo(cx - 2, 68)
+        ..lineTo(cx - 16, 62)
         ..close(),
     );
     _drawMusclePath(
       canvas,
       'Chest',
       Path()
-        ..moveTo(cx + 2, 50)
-        ..lineTo(cx + 18, 50)
-        ..lineTo(cx + 18, 64)
-        ..lineTo(cx + 2, 70)
+        ..moveTo(cx + 2, 48)
+        ..lineTo(cx + 16, 48)
+        ..lineTo(cx + 16, 62)
+        ..lineTo(cx + 2, 68)
         ..close(),
     );
 
-    // 3. Biceps / Arms
+    // 4. Biceps (Upper Arms Front)
     _drawMusclePath(
       canvas,
-      'Arms',
+      'Biceps',
       Path()
-        ..moveTo(cx - 32, 66)
-        ..lineTo(cx - 36, 92)
-        ..lineTo(cx - 24, 92)
-        ..lineTo(cx - 22, 66)
+        ..moveTo(cx - 32, 64)
+        ..lineTo(cx - 35, 86)
+        ..lineTo(cx - 25, 86)
+        ..lineTo(cx - 22, 64)
         ..close(),
     );
     _drawMusclePath(
       canvas,
-      'Arms',
+      'Biceps',
       Path()
-        ..moveTo(cx + 22, 66)
-        ..lineTo(cx + 24, 92)
-        ..lineTo(cx + 36, 92)
-        ..lineTo(cx + 32, 66)
+        ..moveTo(cx + 22, 64)
+        ..lineTo(cx + 25, 86)
+        ..lineTo(cx + 35, 86)
+        ..lineTo(cx + 32, 64)
         ..close(),
     );
 
-    // 4. Core / Abs Grid
+    // 5. Forearms (Lower Arms Front)
+    _drawMusclePath(
+      canvas,
+      'Forearms',
+      Path()
+        ..moveTo(cx - 35, 88)
+        ..lineTo(cx - 37, 108)
+        ..lineTo(cx - 26, 108)
+        ..lineTo(cx - 25, 88)
+        ..close(),
+    );
+    _drawMusclePath(
+      canvas,
+      'Forearms',
+      Path()
+        ..moveTo(cx + 25, 88)
+        ..lineTo(cx + 26, 108)
+        ..lineTo(cx + 37, 108)
+        ..lineTo(cx + 35, 88)
+        ..close(),
+    );
+
+    // 6. Core / Abs Grid
     _drawMusclePath(
       canvas,
       'Core',
       Path()
-        ..moveTo(cx - 14, 72)
-        ..lineTo(cx + 14, 72)
+        ..moveTo(cx - 14, 70)
+        ..lineTo(cx + 14, 70)
         ..lineTo(cx + 12, 108)
         ..lineTo(cx - 12, 108)
         ..close(),
     );
 
-    // 5. Quadriceps / Legs
+    // 7. Quadriceps / Legs
     _drawMusclePath(
       canvas,
       'Legs',
@@ -441,7 +542,41 @@ class _RealisticBodySilhouettePainter extends CustomPainter {
   }
 
   void _drawBackMuscles(Canvas canvas, double cx) {
-    // 1. Upper Back & Traps V-shape
+    // 1. Neck (Back / Upper Traps)
+    _drawMusclePath(
+      canvas,
+      'Neck',
+      Path()
+        ..moveTo(cx - 8, 33)
+        ..lineTo(cx + 8, 33)
+        ..lineTo(cx + 14, 45)
+        ..lineTo(cx - 14, 45)
+        ..close(),
+    );
+
+    // 2. Rear Shoulders / Delts
+    _drawMusclePath(
+      canvas,
+      'Shoulders',
+      Path()
+        ..moveTo(cx - 18, 46)
+        ..lineTo(cx - 34, 56)
+        ..lineTo(cx - 28, 70)
+        ..lineTo(cx - 18, 58)
+        ..close(),
+    );
+    _drawMusclePath(
+      canvas,
+      'Shoulders',
+      Path()
+        ..moveTo(cx + 18, 46)
+        ..lineTo(cx + 34, 56)
+        ..lineTo(cx + 28, 70)
+        ..lineTo(cx + 18, 58)
+        ..close(),
+    );
+
+    // 3. Upper Back & Lats
     _drawMusclePath(
       canvas,
       'Back',
@@ -453,8 +588,6 @@ class _RealisticBodySilhouettePainter extends CustomPainter {
         ..lineTo(cx - 18, 70)
         ..close(),
     );
-
-    // 2. Lats & Lower Back
     _drawMusclePath(
       canvas,
       'Back',
@@ -466,29 +599,51 @@ class _RealisticBodySilhouettePainter extends CustomPainter {
         ..close(),
     );
 
-    // 3. Triceps / Arms
+    // 4. Triceps (Upper Arms Back)
     _drawMusclePath(
       canvas,
-      'Arms',
+      'Triceps',
       Path()
         ..moveTo(cx - 33, 62)
-        ..lineTo(cx - 36, 90)
-        ..lineTo(cx - 25, 90)
+        ..lineTo(cx - 36, 88)
+        ..lineTo(cx - 25, 88)
         ..lineTo(cx - 23, 62)
         ..close(),
     );
     _drawMusclePath(
       canvas,
-      'Arms',
+      'Triceps',
       Path()
         ..moveTo(cx + 23, 62)
-        ..lineTo(cx + 25, 90)
-        ..lineTo(cx + 36, 90)
+        ..lineTo(cx + 25, 88)
+        ..lineTo(cx + 36, 88)
         ..lineTo(cx + 33, 62)
         ..close(),
     );
 
-    // 4. Glutes & Calves / Posterior Legs
+    // 5. Forearms (Lower Arms Back)
+    _drawMusclePath(
+      canvas,
+      'Forearms',
+      Path()
+        ..moveTo(cx - 36, 90)
+        ..lineTo(cx - 38, 110)
+        ..lineTo(cx - 26, 110)
+        ..lineTo(cx - 25, 90)
+        ..close(),
+    );
+    _drawMusclePath(
+      canvas,
+      'Forearms',
+      Path()
+        ..moveTo(cx + 25, 90)
+        ..lineTo(cx + 26, 110)
+        ..lineTo(cx + 38, 110)
+        ..lineTo(cx + 36, 90)
+        ..close(),
+    );
+
+    // 6. Glutes & Posterior Legs / Calves
     _drawMusclePath(
       canvas,
       'Legs',
@@ -532,9 +687,8 @@ class _RealisticBodySilhouettePainter extends CustomPainter {
   }
 
   void _drawMusclePath(Canvas canvas, String name, Path path) {
-    final color = muscleColors[name] ?? Colors.grey;
-    final isSelected =
-        selectedMuscleGroup.toLowerCase() == name.toLowerCase();
+    final color = _resolveColorForPath(name);
+    final isSelected = _isMuscleSelected(name);
 
     final fillPaint = Paint()
       ..style = PaintingStyle.fill
@@ -551,6 +705,37 @@ class _RealisticBodySilhouettePainter extends CustomPainter {
     canvas.drawPath(path, strokePaint);
   }
 
+  Color _resolveColorForPath(String name) {
+    for (final entry in muscleColors.entries) {
+      if (_isMatchingGroup(entry.key, name)) {
+        return entry.value;
+      }
+    }
+    return muscleColors[name] ?? (isDark ? Colors.white24 : Colors.black12);
+  }
+
+  bool _isMuscleSelected(String pathMuscleName) {
+    return _isMatchingGroup(selectedMuscleGroup, pathMuscleName);
+  }
+
+  static bool _isMatchingGroup(String sel, String target) {
+    final s = sel.toLowerCase().trim();
+    final t = target.toLowerCase().trim();
+
+    if (s == t) return true;
+    if (t.contains('neck') && s.contains('neck')) return true;
+    if (t.contains('shoulder') && (s.contains('shoulder') || s.contains('delt'))) return true;
+    if (t.contains('bicep') && (s.contains('bicep') || (s.contains('arm') && !s.contains('forearm')))) return true;
+    if (t.contains('tricep') && (s.contains('tricep') || (s.contains('arm') && !s.contains('forearm')))) return true;
+    if (t.contains('forearm') && s.contains('forearm')) return true;
+    if (t.contains('core') && (s.contains('core') || s.contains('ab'))) return true;
+    if (t.contains('chest') && s.contains('chest')) return true;
+    if (t.contains('back') && s.contains('back')) return true;
+    if (t.contains('leg') && (s.contains('leg') || s.contains('quad') || s.contains('thigh') || s.contains('calf'))) return true;
+
+    return false;
+  }
+
   @override
   bool shouldRepaint(covariant _RealisticBodySilhouettePainter oldDelegate) {
     return oldDelegate.selectedMuscleGroup != selectedMuscleGroup ||
@@ -559,4 +744,3 @@ class _RealisticBodySilhouettePainter extends CustomPainter {
         oldDelegate.isDark != isDark;
   }
 }
-

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+
 import '../../../core/presentation/widgets/anatomical_body_painter.dart';
 import '../../../core/presentation/widgets/muscle_group_icon.dart';
 import '../../../core/theme/app_colors.dart';
@@ -124,6 +125,7 @@ class MuscleVisualizationScreen extends ConsumerWidget {
 
                   final currentStats =
                       muscleMap[selectedMuscle] ??
+                      muscleMap[normalizeMuscleGroupName(selectedMuscle)] ??
                       MuscleGroupStats(
                         muscleGroup: selectedMuscle,
                         totalVolume: 0,
@@ -186,9 +188,11 @@ class MuscleVisualizationScreen extends ConsumerWidget {
                                                 ? AppColors.darkTextPrimary
                                                 : AppColors.lightTextPrimary,
                                           ),
+                                          maxLines: 1,
+                                          softWrap: false,
                                         ),
                                         Text(
-                                          '${currentStats.statusLabel} • $volumeSharePercent% of total workout volume',
+                                          '${currentStats.statusLabel} • $volumeSharePercent% of total volume',
                                           style: AppTypography.bodySm(
                                             color: isDark
                                                 ? AppColors.darkTextSecondary
@@ -222,6 +226,8 @@ class MuscleVisualizationScreen extends ConsumerWidget {
                                             fontSize: 10,
                                             fontWeight: FontWeight.bold,
                                           ),
+                                      maxLines: 1,
+                                      softWrap: false,
                                     ),
                                   ),
                                 ],
@@ -267,6 +273,8 @@ class MuscleVisualizationScreen extends ConsumerWidget {
                                       ? AppColors.darkTextSecondary
                                       : AppColors.lightTextSecondary,
                                 ).copyWith(fontSize: 10),
+                                maxLines: 1,
+                                softWrap: false,
                               ),
                               const SizedBox(height: 6),
                               ClipRRect(
@@ -298,6 +306,8 @@ class MuscleVisualizationScreen extends ConsumerWidget {
                               ? AppColors.darkTextSecondary
                               : AppColors.lightTextSecondary,
                         ),
+                        maxLines: 1,
+                        softWrap: false,
                       ),
                       const SizedBox(height: 8),
 
@@ -333,6 +343,8 @@ class MuscleVisualizationScreen extends ConsumerWidget {
                                       ? AppColors.darkTextPrimary
                                       : AppColors.lightTextPrimary,
                                 ).copyWith(fontWeight: FontWeight.bold),
+                                maxLines: 1,
+                                softWrap: false,
                               ),
                               subtitle: Text(
                                 '${ex.sets} sets • Max: ${ex.maxWeight % 1 == 0 ? ex.maxWeight.toInt() : ex.maxWeight} kg',
@@ -341,6 +353,8 @@ class MuscleVisualizationScreen extends ConsumerWidget {
                                       ? AppColors.darkTextSecondary
                                       : AppColors.lightTextSecondary,
                                 ),
+                                maxLines: 1,
+                                softWrap: false,
                               ),
                               trailing: Text(
                                 ex.totalVolume >= 1000
@@ -352,6 +366,8 @@ class MuscleVisualizationScreen extends ConsumerWidget {
                                       ? AppColors.primaryVolt
                                       : AppColors.lightPrimary,
                                 ),
+                                maxLines: 1,
+                                softWrap: false,
                               ),
                             ),
                           );
@@ -363,7 +379,11 @@ class MuscleVisualizationScreen extends ConsumerWidget {
                         child: OutlinedButton.icon(
                           onPressed: () => context.go('/exercises'),
                           icon: const Icon(Icons.fitness_center, size: 18),
-                          label: const Text('EXPLORE EXERCISES IN LIBRARY'),
+                          label: const Text(
+                            'EXPLORE EXERCISES IN LIBRARY',
+                            maxLines: 1,
+                            softWrap: false,
+                          ),
                           style: OutlinedButton.styleFrom(
                             padding: const EdgeInsets.symmetric(vertical: 12),
                             shape: const StadiumBorder(),
@@ -396,6 +416,8 @@ class MuscleVisualizationScreen extends ConsumerWidget {
                 ? AppColors.darkTextSecondary
                 : AppColors.lightTextSecondary,
           ).copyWith(fontSize: 10),
+          maxLines: 1,
+          softWrap: false,
         ),
         const SizedBox(height: 4),
         Text(
@@ -405,6 +427,8 @@ class MuscleVisualizationScreen extends ConsumerWidget {
                 ? AppColors.darkTextPrimary
                 : AppColors.lightTextPrimary,
           ).copyWith(fontWeight: FontWeight.bold),
+          maxLines: 1,
+          softWrap: false,
         ),
       ],
     );

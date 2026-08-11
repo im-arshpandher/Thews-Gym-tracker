@@ -17,7 +17,8 @@ class PersistentDiskTileProvider extends TileProvider {
   @override
   ImageProvider getImage(TileCoordinates coordinates, TileLayer options) {
     final url = getTileUrl(coordinates, options);
-    final tileKey = '${coordinates.z}_${coordinates.x}_${coordinates.y}';
+    final themePrefix = url.contains('dark') ? 'dark' : 'light';
+    final tileKey = '${themePrefix}_${coordinates.z}_${coordinates.x}_${coordinates.y}';
     return DiskCachedTileImageProvider(url, tileKey);
   }
 }

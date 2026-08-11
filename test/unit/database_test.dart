@@ -34,7 +34,7 @@ void main() {
     expect(exercises.any((e) => e.name == 'Treadmill Run'), true);
     expect(exercises.any((e) => e.name == 'Conventional Deadlift'), true);
     expect(exercises.any((e) => e.name == 'Outdoor Running'), true);
-    expect(exercises.any((e) => e.name == 'Plank'), true);
+    expect(exercises.any((e) => e.name == 'Plank Hold'), true);
 
     final routines = await db.watchAllRoutines().first;
     expect(routines.isNotEmpty, true);
@@ -164,7 +164,7 @@ void main() {
   });
 
   test('Routines creation and details stream', () async {
-    await db.insertExercise(
+    final benchExId = await db.insertExercise(
       ExercisesCompanion.insert(
         name: 'Barbell Bench Press',
         muscleGroup: 'Chest',
@@ -181,7 +181,7 @@ void main() {
     await db.insertRoutineExercise(
       RoutineExercisesCompanion.insert(
         routineId: routineId,
-        exerciseId: 1,
+        exerciseId: benchExId,
         targetSets: const Value(4),
         targetReps: const Value(8),
       ),

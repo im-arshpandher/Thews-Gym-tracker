@@ -47,12 +47,28 @@ final appRouter = GoRouter(
             ),
           ],
         ),
-        // Branch 1: Exercises Library
+        // Branch 1: Outdoor Run Tracker
         StatefulShellBranch(
           routes: [
             GoRoute(
-              path: '/exercises',
-              builder: (context, state) => const ExerciseListScreen(),
+              path: '/running',
+              builder: (context, state) => const RunTrackerScreen(),
+              routes: [
+                GoRoute(
+                  path: 'history',
+                  parentNavigatorKey: _rootNavigatorKey,
+                  builder: (context, state) => const RunHistoryScreen(),
+                ),
+                GoRoute(
+                  path: 'summary/:id',
+                  parentNavigatorKey: _rootNavigatorKey,
+                  builder: (context, state) {
+                    final idStr = state.pathParameters['id'] ?? '0';
+                    final activityId = int.tryParse(idStr) ?? 0;
+                    return RunSummaryScreen(activityId: activityId);
+                  },
+                ),
+              ],
             ),
           ],
         ),
@@ -107,25 +123,9 @@ final appRouter = GoRouter(
       builder: (context, state) => const MuscleVisualizationScreen(),
     ),
     GoRoute(
-      path: '/running',
+      path: '/exercises',
       parentNavigatorKey: _rootNavigatorKey,
-      builder: (context, state) => const RunTrackerScreen(),
-      routes: [
-        GoRoute(
-          path: 'history',
-          parentNavigatorKey: _rootNavigatorKey,
-          builder: (context, state) => const RunHistoryScreen(),
-        ),
-        GoRoute(
-          path: 'summary/:id',
-          parentNavigatorKey: _rootNavigatorKey,
-          builder: (context, state) {
-            final idStr = state.pathParameters['id'] ?? '0';
-            final activityId = int.tryParse(idStr) ?? 0;
-            return RunSummaryScreen(activityId: activityId);
-          },
-        ),
-      ],
+      builder: (context, state) => const ExerciseListScreen(),
     ),
   ],
 );
