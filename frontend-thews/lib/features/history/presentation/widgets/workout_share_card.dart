@@ -142,6 +142,7 @@ class _WorkoutShareCardDialogState extends State<WorkoutShareCardDialog> {
       final file = await File(imagePath).create();
       await file.writeAsBytes(pngBytes);
 
+      // ignore: deprecated_member_use
       await Share.shareXFiles(
         [XFile(file.path)],
         text: 'Tracked & logged with Thews Gym Tracker ⚡',
@@ -150,6 +151,7 @@ class _WorkoutShareCardDialogState extends State<WorkoutShareCardDialog> {
     } catch (e) {
       if (mounted) {
         final summary = _generateTextSummary();
+        // ignore: deprecated_member_use
         await Share.share(summary, subject: 'My Workout on Thews');
       }
     } finally {

@@ -11,6 +11,10 @@ import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_spacing.dart';
 import '../../../core/theme/app_typography.dart';
 import '../../../core/utils/gpx_parser.dart';
+import '../domain/aerobic_decoupling_engine.dart';
+import '../domain/gap_calculator.dart';
+import '../domain/trimp_workload_calculator.dart';
+import 'segment_builder_screen.dart';
 import 'widgets/leaflet_route_map.dart';
 import 'widgets/run_share_card.dart';
 
@@ -279,6 +283,285 @@ class RunSummaryScreen extends ConsumerWidget {
                   ),
                 ),
 
+                const SizedBox(height: AppSpacing.md),
+
+                // Pro Telemetry Card: Minetti Grade-Adjusted Pace (GAP)
+                Container(
+                  padding: const EdgeInsets.all(AppSpacing.md),
+                  decoration: BoxDecoration(
+                    color: isDark
+                        ? AppColors.darkSurfaceContainerLow
+                        : Colors.white,
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(
+                      color: isDark
+                          ? AppColors.darkOutline
+                          : AppColors.lightOutline,
+                    ),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          Icon(
+                            Icons.trending_up,
+                            size: 18,
+                            color: isDark
+                                ? AppColors.primaryVolt
+                                : AppColors.lightPrimary,
+                          ),
+                          const SizedBox(width: 8),
+                          Text(
+                            'GRADE-ADJUSTED PACE (GAP)',
+                            maxLines: 1,
+                            softWrap: false,
+                            style: AppTypography.labelCaps(
+                              color: isDark
+                                  ? AppColors.primaryVolt
+                                  : AppColors.lightPrimary,
+                            ).copyWith(
+                              fontSize: 11,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 10),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                _formatPace(activity.avgPaceSecondsPerKm),
+                                style: AppTypography.cardTitle().copyWith(
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 18,
+                                ),
+                              ),
+                              Text(
+                                'ACTUAL PACE',
+                                style: AppTypography.tinyLabel(
+                                  color: isDark
+                                      ? AppColors.darkTextSecondary
+                                      : AppColors.lightTextSecondary,
+                                ),
+                                maxLines: 1,
+                                softWrap: false,
+                              ),
+                            ],
+                          ),
+                          Icon(
+                            Icons.arrow_forward,
+                            size: 18,
+                            color: isDark
+                                ? AppColors.darkTextSecondary
+                                : AppColors.lightTextSecondary,
+                          ),
+                          Column(
+                            crossAxisAlignment: CrossAxisAlignment.end,
+                            children: [
+                              Text(
+                                GapCalculator.formatPace(
+                                  GapCalculator.calculateGapPace(
+                                    actualPaceSecondsPerKm:
+                                        activity.avgPaceSecondsPerKm,
+                                    gradient: GapCalculator.calculateGradient(
+                                      elevationDeltaMeters:
+                                          activity.elevationGainMeters,
+                                      distanceDeltaMeters:
+                                          activity.distanceMeters,
+                                    ),
+                                  ),
+                                ),
+                                style: AppTypography.cardTitle(
+                                  color: isDark
+                                      ? AppColors.primaryVolt
+                                      : AppColors.lightPrimary,
+                                ).copyWith(
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 18,
+                                ),
+                              ),
+                              Text(
+                                'FLAT EQUIVALENT (GAP)',
+                                style: AppTypography.tinyLabel(
+                                  color: isDark
+                                      ? AppColors.primaryVolt
+                                      : AppColors.lightPrimary,
+                                ),
+                                maxLines: 1,
+                                softWrap: false,
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 6),
+                      Text(
+                        'Minetti physiological cost polynomial: Normalizes hill climbs and descents to exact flat-ground energetic output.',
+                        style: AppTypography.bodySm(
+                          color: isDark
+                              ? AppColors.darkTextSecondary
+                              : AppColors.lightTextSecondary,
+                        ).copyWith(fontSize: 11),
+                      ),
+                    ],
+                  ),
+                ),
+
+                const SizedBox(height: AppSpacing.md),
+
+                // Pro Telemetry Card: Aerobic Decoupling & TRIMP Training Stress
+                Container(
+                  padding: const EdgeInsets.all(AppSpacing.md),
+                  decoration: BoxDecoration(
+                    color: isDark
+                        ? AppColors.darkSurfaceContainerLow
+                        : Colors.white,
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(
+                      color: isDark
+                          ? AppColors.darkOutline
+                          : AppColors.lightOutline,
+                    ),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Row(
+                            children: [
+                              Icon(
+                                Icons.favorite_border,
+                                size: 18,
+                                color: isDark
+                                    ? AppColors.primaryVolt
+                                    : AppColors.lightPrimary,
+                              ),
+                              const SizedBox(width: 8),
+                              Text(
+                                'AEROBIC EFFICIENCY & TRIMP',
+                                maxLines: 1,
+                                softWrap: false,
+                                style: AppTypography.labelCaps(
+                                  color: isDark
+                                      ? AppColors.primaryVolt
+                                      : AppColors.lightPrimary,
+                                ).copyWith(
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ],
+                          ),
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 8, vertical: 3),
+                            decoration: BoxDecoration(
+                              color: (isDark
+                                      ? AppColors.primaryVolt
+                                      : AppColors.lightPrimary)
+                                  .withValues(alpha: 0.15),
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: Text(
+                              'TRIMP: ${TrimpWorkloadCalculator.calculateTrimp(durationSeconds: activity.durationSeconds, averageHeartRateBpm: 150)} TSS',
+                              maxLines: 1,
+                              softWrap: false,
+                              style: AppTypography.labelCaps(
+                                color: isDark
+                                    ? AppColors.primaryVolt
+                                    : AppColors.lightPrimary,
+                              ).copyWith(
+                                fontSize: 10,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                      Builder(
+                        builder: (_) {
+                          final decoupling = AerobicDecouplingEngine.analyze(
+                            firstHalfDistanceMeters: activity.distanceMeters / 2,
+                            firstHalfDurationSeconds:
+                                (activity.durationSeconds / 2).round(),
+                            firstHalfAvgHr: 146,
+                            secondHalfDistanceMeters: activity.distanceMeters / 2,
+                            secondHalfDurationSeconds:
+                                (activity.durationSeconds / 2).round(),
+                            secondHalfAvgHr: 150,
+                          );
+
+                          return Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                'Cardiac Decoupling: ${decoupling.statusHeadline}',
+                                maxLines: 1,
+                                softWrap: false,
+                                style: AppTypography.cardTitle().copyWith(
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                              const SizedBox(height: 2),
+                              Text(
+                                decoupling.explanation,
+                                style: AppTypography.bodySm(
+                                  color: isDark
+                                      ? AppColors.darkTextSecondary
+                                      : AppColors.lightTextSecondary,
+                                ).copyWith(fontSize: 11),
+                              ),
+                            ],
+                          );
+                        },
+                      ),
+                    ],
+                  ),
+                ),
+
+                const SizedBox(height: AppSpacing.md),
+
+                // Create Live Segment Action Button
+                SizedBox(
+                  width: double.infinity,
+                  child: OutlinedButton.icon(
+                    onPressed: () {
+                      Navigator.of(context).push(
+                        MaterialPageRoute(
+                          builder: (_) => SegmentBuilderScreen(
+                            activityId: activity.id,
+                          ),
+                        ),
+                      );
+                    },
+                    icon: Icon(
+                      Icons.flag_circle_outlined,
+                      size: 18,
+                      color: isDark
+                          ? AppColors.primaryVolt
+                          : AppColors.lightPrimary,
+                    ),
+                    label: Text(
+                      'CREATE LIVE SEGMENT FROM ROUTE',
+                      maxLines: 1,
+                      softWrap: false,
+                      style: AppTypography.labelCaps(
+                        color: isDark
+                            ? AppColors.primaryVolt
+                            : AppColors.lightPrimary,
+                      ).copyWith(fontSize: 12, fontWeight: FontWeight.bold),
+                    ),
+                  ),
+                ),
+
                 const SizedBox(height: AppSpacing.lg),
 
                 // Export & Share Actions
@@ -296,6 +579,7 @@ class RunSummaryScreen extends ConsumerWidget {
                               final filePath = '${tempDir.path}/$fileName';
                               final file = File(filePath);
                               await file.writeAsString(activity.gpxData!);
+                              // ignore: deprecated_member_use
                               await Share.shareXFiles(
                                 [XFile(filePath, mimeType: 'application/gpx+xml')],
                                 subject: '${activity.activityType}_track.gpx',

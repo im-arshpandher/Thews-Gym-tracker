@@ -104,6 +104,7 @@ class _RunShareCardDialogState extends State<RunShareCardDialog> {
       await imageFile.writeAsBytes(pngBytes);
 
       final summary = _generateTextSummary();
+      // ignore: deprecated_member_use
       await Share.shareXFiles(
         [XFile(imagePath)],
         text: summary,

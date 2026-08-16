@@ -137,7 +137,9 @@ class DiskCachedTileImageProvider
       try {
         final response = await http.get(
           Uri.parse(url),
-          headers: const {'User-Agent': 'com.thews.gymtracker'},
+          headers: const {
+            'User-Agent': 'ThewsFitnessApp/1.0 (contact: support@thewsfitness.com)',
+          },
         );
         if (response.statusCode == 200 &&
             response.bodyBytes.isNotEmpty &&

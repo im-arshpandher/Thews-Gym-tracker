@@ -6,7 +6,10 @@ import '../../../core/services/gps_tracking_service.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_spacing.dart';
 import '../../../core/theme/app_typography.dart';
+import '../domain/gap_calculator.dart';
+import '../domain/live_segment_engine.dart';
 import 'widgets/leaflet_route_map.dart';
+import 'widgets/live_segment_hud.dart';
 
 class RunTrackerScreen extends ConsumerStatefulWidget {
   const RunTrackerScreen({super.key});
@@ -34,17 +37,57 @@ class _RunTrackerScreenState extends ConsumerState<RunTrackerScreen> {
     final runState = ref.watch(runTrackingProvider);
     final runNotifier = ref.read(runTrackingProvider.notifier);
 
+    // Listen to GPS stream to feed Live Segment Detection & Ghost Racing
+    ref.listen<RunTrackingState>(runTrackingProvider, (previous, next) {
+      if (next.isTracking && next.waypoints.isNotEmpty) {
+        final last = next.waypoints.last;
+        ref.read(liveSegmentEngineProvider.notifier).onLocationUpdate(
+              latitude: last.latitude,
+              longitude: last.longitude,
+              timestamp: last.timestamp,
+            );
+      } else if (!next.isTracking && (previous?.isTracking ?? false)) {
+        ref.read(liveSegmentEngineProvider.notifier).resetSegmentTracking();
+      }
+    });
+
+    final gradient = (runState.distanceMeters > 30 && runState.waypoints.length >= 2)
+        ? GapCalculator.calculateGradient(
+            elevationDeltaMeters: runState.elevationGainMeters,
+            distanceDeltaMeters: runState.distanceMeters,
+          )
+        : 0.0;
+    final gapPaceSeconds = GapCalculator.calculateGapPace(
+      actualPaceSecondsPerKm: runState.currentPaceSecondsPerKm,
+      gradient: gradient,
+    );
+    final formattedGapPace = GapCalculator.formatPace(gapPaceSeconds);
+
     return Scaffold(
       appBar: AppBar(
-        title: Text(
-          'OUTDOOR TRACKER',
-          style: AppTypography.sectionTitle(
-            color: isDark
-                ? AppColors.darkTextPrimary
-                : AppColors.lightTextPrimary,
+        title: FittedBox(
+          fit: BoxFit.scaleDown,
+          alignment: Alignment.centerLeft,
+          child: Text(
+            'OUTDOOR TRACKER',
+            style: AppTypography.sectionTitle(
+              color: isDark
+                  ? AppColors.darkTextPrimary
+                  : AppColors.lightTextPrimary,
+            ),
           ),
         ),
         actions: [
+          IconButton(
+            icon: const Icon(Icons.emoji_events_outlined),
+            tooltip: 'Loop Challenges & Trophies',
+            onPressed: () => context.push('/challenges'),
+          ),
+          IconButton(
+            icon: const Icon(Icons.local_fire_department),
+            tooltip: 'Territory Heatmap',
+            onPressed: () => context.push('/running/heatmap'),
+          ),
           IconButton(
             icon: const Icon(Icons.history),
             tooltip: 'Run History',
@@ -137,27 +180,38 @@ class _RunTrackerScreenState extends ConsumerState<RunTrackerScreen> {
 
               const SizedBox(height: AppSpacing.md),
 
-              // Live Map Canvas
+              // Live Map Canvas & Live Segment HUD Overlay
               Expanded(
-                child: Container(
-                  width: double.infinity,
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(20),
-                    border: Border.all(
-                      color: isDark
-                          ? AppColors.darkOutline.withValues(alpha: 0.3)
-                          : AppColors.lightOutline.withValues(alpha: 0.3),
+                child: Stack(
+                  children: [
+                    Container(
+                      width: double.infinity,
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(20),
+                        border: Border.all(
+                          color: isDark
+                              ? AppColors.darkOutline.withValues(alpha: 0.3)
+                              : AppColors.lightOutline.withValues(alpha: 0.3),
+                        ),
+                      ),
+                      child: ClipRRect(
+                        borderRadius: BorderRadius.circular(19),
+                        child: LeafletRouteMap(
+                          waypoints: runState.waypoints,
+                          isDark: isDark,
+                          isTracking: runState.isTracking,
+                          headingDegrees: runState.headingDegrees,
+                        ),
+                      ),
                     ),
-                  ),
-                  child: ClipRRect(
-                    borderRadius: BorderRadius.circular(19),
-                    child: LeafletRouteMap(
-                      waypoints: runState.waypoints,
-                      isDark: isDark,
-                      isTracking: runState.isTracking,
-                      headingDegrees: runState.headingDegrees,
-                    ),
-                  ),
+                    if (runState.isTracking)
+                      const Positioned(
+                        top: 8,
+                        left: 0,
+                        right: 0,
+                        child: LiveSegmentHud(),
+                      ),
+                  ],
                 ),
               ),
 
@@ -271,7 +325,7 @@ class _RunTrackerScreenState extends ConsumerState<RunTrackerScreen> {
 
                     const Divider(height: 24),
 
-                    // Lower Telemetry: Pace, Speed, Elevation & Steps Metrics
+                    // Lower Telemetry: Pace, Speed, Elevation, GAP & Steps Metrics
                     if (runState.activityType == 'cycle') ...[
                       // Cycle Mode: Hide Total Steps & rearrange in balanced single row with bicycle icon
                       Row(
@@ -312,7 +366,7 @@ class _RunTrackerScreenState extends ConsumerState<RunTrackerScreen> {
                         ],
                       ),
                     ] else ...[
-                      // Run / Walk Mode: Show Pace, Speed, Elevation & Total Steps
+                      // Run / Walk Mode: Show Pace, Speed, Elevation, Steps & GAP
                       Row(
                         children: [
                           Expanded(
@@ -350,6 +404,14 @@ class _RunTrackerScreenState extends ConsumerState<RunTrackerScreen> {
                               label: 'ELEVATION',
                               value:
                                   '${runState.elevationGainMeters.toStringAsFixed(0)} m',
+                              isDark: isDark,
+                            ),
+                          ),
+                          Expanded(
+                            child: _HudSubTile(
+                              icon: Icons.trending_up,
+                              label: 'GAP (GRADE ADJ)',
+                              value: formattedGapPace,
                               isDark: isDark,
                             ),
                           ),

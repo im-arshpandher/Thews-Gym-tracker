@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
+import 'package:go_router/go_router.dart';
 import 'package:latlong2/latlong.dart';
 
 import '../../../../core/services/tile_cache_service.dart';
@@ -12,6 +13,8 @@ class LeafletRouteMap extends StatefulWidget {
   final bool interactive;
   final bool isTracking;
   final double headingDegrees;
+  final bool showHeatmapButton;
+  final VoidCallback? onHeatmapTap;
 
   const LeafletRouteMap({
     super.key,
@@ -20,6 +23,8 @@ class LeafletRouteMap extends StatefulWidget {
     this.interactive = true,
     this.isTracking = false,
     this.headingDegrees = 0.0,
+    this.showHeatmapButton = true,
+    this.onHeatmapTap,
   });
 
   @override
@@ -133,10 +138,10 @@ class _LeafletRouteMapState extends State<LeafletRouteMap> {
         : const LatLng(0.0, 0.0);
 
     // Leaflet OpenStreetMap tile URLs for dark and light themes
-    // Standard OpenStreetMap provides high-contrast street lines and clear labels
+    // CartoDB Positron & Dark Matter provide high-contrast street lines and clear labels
     final tileUrl = widget.isDark
         ? 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png'
-        : 'https://tile.openstreetmap.org/{z}/{x}/{y}.png';
+        : 'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png';
 
     // Show markers & route polylines when tracking or when activity has waypoints
     final showRoute = widget.isTracking || latLngPoints.length >= 2;
@@ -162,7 +167,8 @@ class _LeafletRouteMapState extends State<LeafletRouteMap> {
             TileLayer(
               key: ValueKey(tileUrl),
               urlTemplate: tileUrl,
-              subdomains: widget.isDark ? const ['a', 'b', 'c'] : const [],
+              subdomains: const ['a', 'b', 'c', 'd'],
+              userAgentPackageName: 'com.thews.fitnessapp',
               retinaMode: RetinaMode.isHighDensity(context),
               tileProvider: PersistentDiskTileProvider(),
               keepBuffer: 3,
@@ -191,7 +197,6 @@ class _LeafletRouteMapState extends State<LeafletRouteMap> {
                   ),
                 );
               },
-              userAgentPackageName: 'com.thews.gymtracker',
             ),
 
             // Route Polyline outlining the whole activity route
@@ -270,7 +275,7 @@ class _LeafletRouteMapState extends State<LeafletRouteMap> {
           ],
         ),
 
-        // Interactive Map Control Column (Zoom In, Zoom Out, Fit Route, Recenter)
+        // Interactive Map Control Column (Heatmap, Zoom In, Zoom Out, Fit Route, Recenter)
         if (widget.interactive)
           Positioned(
             bottom: 12,
@@ -278,6 +283,28 @@ class _LeafletRouteMapState extends State<LeafletRouteMap> {
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
+                // Territory Heatmap Button (Direct shortcut above Zoom In +)
+                if (widget.showHeatmapButton) ...[
+                  _buildControlButton(
+                    icon: Icons.local_fire_department_rounded,
+                    tooltip: 'Territory Heatmap',
+                    iconColor: widget.isDark
+                        ? AppColors.chestAccent
+                        : const Color(0xFFE65100),
+                    borderColor: widget.isDark
+                        ? AppColors.chestAccent
+                        : const Color(0xFFE65100),
+                    onTap: () {
+                      if (widget.onHeatmapTap != null) {
+                        widget.onHeatmapTap!();
+                      } else {
+                        context.push('/running/heatmap');
+                      }
+                    },
+                  ),
+                  const SizedBox(height: 8),
+                ],
+
                 // Zoom In (+)
                 _buildControlButton(
                   icon: Icons.add,
@@ -328,37 +355,39 @@ class _LeafletRouteMapState extends State<LeafletRouteMap> {
     required IconData icon,
     required String tooltip,
     required VoidCallback onTap,
+    Color? iconColor,
+    Color? borderColor,
   }) {
+    final defaultColor =
+        widget.isDark ? AppColors.primaryVolt : AppColors.lightPrimary;
     return Material(
       color: Colors.transparent,
       elevation: 4,
       shape: const CircleBorder(),
-      child: InkWell(
-        customBorder: const CircleBorder(),
-        onTap: onTap,
-        child: Container(
-          width: 42,
-          height: 42,
-          decoration: BoxDecoration(
-            color: (widget.isDark
-                    ? AppColors.darkSurfaceContainerHighest
-                    : Colors.white)
-                .withValues(alpha: 0.95),
-            shape: BoxShape.circle,
-            border: Border.all(
+      child: Tooltip(
+        message: tooltip,
+        child: InkWell(
+          customBorder: const CircleBorder(),
+          onTap: onTap,
+          child: Container(
+            width: 42,
+            height: 42,
+            decoration: BoxDecoration(
               color: (widget.isDark
-                      ? AppColors.primaryVolt
-                      : AppColors.lightPrimary)
-                  .withValues(alpha: 0.5),
-              width: 1.5,
+                      ? AppColors.darkSurfaceContainerHighest
+                      : Colors.white)
+                  .withValues(alpha: 0.95),
+              shape: BoxShape.circle,
+              border: Border.all(
+                color: (borderColor ?? defaultColor).withValues(alpha: 0.5),
+                width: 1.5,
+              ),
             ),
-          ),
-          child: Icon(
-            icon,
-            color: widget.isDark
-                ? AppColors.primaryVolt
-                : AppColors.lightPrimary,
-            size: 20,
+            child: Icon(
+              icon,
+              color: iconColor ?? defaultColor,
+              size: 20,
+            ),
           ),
         ),
       ),

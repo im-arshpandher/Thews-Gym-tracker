@@ -1,12 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../features/challenges/presentation/challenges_screen.dart';
 import '../../features/exercises/presentation/exercise_list_screen.dart';
 import '../../features/history/presentation/history_screen.dart';
 import '../../features/history/presentation/workout_session_detail_screen.dart';
+import '../../features/profile/presentation/profile_screen.dart';
+import '../../features/running/presentation/run_heatmap_screen.dart';
 import '../../features/running/presentation/run_history_screen.dart';
 import '../../features/running/presentation/run_summary_screen.dart';
 import '../../features/running/presentation/run_tracker_screen.dart';
+import '../../features/running/presentation/segment_builder_screen.dart';
 import '../../features/settings/presentation/settings_screen.dart';
 import '../../features/workouts/presentation/active_session_screen.dart';
 import '../../features/workouts/presentation/dashboard_screen.dart';
@@ -31,19 +35,6 @@ final appRouter = GoRouter(
             GoRoute(
               path: '/',
               builder: (context, state) => const DashboardScreen(),
-              routes: [
-                GoRoute(
-                  path: 'visualizer',
-                  parentNavigatorKey: _rootNavigatorKey,
-                  builder: (context, state) =>
-                      const MuscleVisualizationScreen(),
-                ),
-                GoRoute(
-                  path: 'routines',
-                  parentNavigatorKey: _rootNavigatorKey,
-                  builder: (context, state) => const RoutinesScreen(),
-                ),
-              ],
             ),
           ],
         ),
@@ -54,6 +45,11 @@ final appRouter = GoRouter(
               path: '/running',
               builder: (context, state) => const RunTrackerScreen(),
               routes: [
+                GoRoute(
+                  path: 'heatmap',
+                  parentNavigatorKey: _rootNavigatorKey,
+                  builder: (context, state) => const RunHeatmapScreen(),
+                ),
                 GoRoute(
                   path: 'history',
                   parentNavigatorKey: _rootNavigatorKey,
@@ -66,6 +62,15 @@ final appRouter = GoRouter(
                     final idStr = state.pathParameters['id'] ?? '0';
                     final activityId = int.tryParse(idStr) ?? 0;
                     return RunSummaryScreen(activityId: activityId);
+                  },
+                ),
+                GoRoute(
+                  path: 'segment-builder/:id',
+                  parentNavigatorKey: _rootNavigatorKey,
+                  builder: (context, state) {
+                    final idStr = state.pathParameters['id'] ?? '0';
+                    final activityId = int.tryParse(idStr) ?? 0;
+                    return SegmentBuilderScreen(activityId: activityId);
                   },
                 ),
               ],
@@ -126,6 +131,16 @@ final appRouter = GoRouter(
       path: '/exercises',
       parentNavigatorKey: _rootNavigatorKey,
       builder: (context, state) => const ExerciseListScreen(),
+    ),
+    GoRoute(
+      path: '/challenges',
+      parentNavigatorKey: _rootNavigatorKey,
+      builder: (context, state) => const ChallengesScreen(),
+    ),
+    GoRoute(
+      path: '/profile',
+      parentNavigatorKey: _rootNavigatorKey,
+      builder: (context, state) => const ProfileScreen(),
     ),
   ],
 );

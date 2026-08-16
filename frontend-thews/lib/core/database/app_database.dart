@@ -286,6 +286,9 @@ class AppDatabase extends _$AppDatabase {
   Stream<RunActivityData?> watchRunActivityById(int id) =>
       (select(runActivities)..where((t) => t.id.equals(id))).watchSingleOrNull();
 
+  Future<RunActivityData?> getRunActivityById(int id) =>
+      (select(runActivities)..where((t) => t.id.equals(id))).getSingleOrNull();
+
   Future<int> deleteRunActivity(int id) =>
       (delete(runActivities)..where((t) => t.id.equals(id))).go();
 

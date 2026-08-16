@@ -59,6 +59,13 @@ class RunHistoryScreen extends ConsumerWidget {
                 : AppColors.lightTextPrimary,
           ),
         ),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.local_fire_department),
+            tooltip: 'Territory Heatmap',
+            onPressed: () => context.push('/running/heatmap'),
+          ),
+        ],
       ),
       body: runsAsync.when(
         data: (runs) {
@@ -200,6 +207,7 @@ class RunHistoryScreen extends ConsumerWidget {
                                           '${tempDir.path}/$fileName';
                                       final file = File(filePath);
                                       await file.writeAsString(gpxString);
+                                      // ignore: deprecated_member_use
                                       await Share.shareXFiles(
                                         [
                                           XFile(

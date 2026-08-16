@@ -6,8 +6,8 @@ import '../../../../core/theme/app_typography.dart';
 import '../../domain/ai_coach_models.dart';
 import '../ai_coach_provider.dart';
 
-/// Dashboard card displaying real-time systemic readiness score,
-/// daily workout split recommendation, and muscle group recovery status.
+/// Redesigned cybernetic glassmorphic card displaying real-time systemic readiness,
+/// recommended workout split, and muscle recovery status.
 class AiCoachOverviewCard extends ConsumerWidget {
   const AiCoachOverviewCard({super.key});
 
@@ -50,181 +50,238 @@ class AiCoachOverviewCard extends ConsumerWidget {
   ) {
     final scoreColor = _getScoreColor(state.overallReadinessScore, isDark);
     final voltColor = isDark ? AppColors.primaryVolt : AppColors.lightPrimary;
-    final cardBg = isDark
-        ? AppColors.darkSurfaceContainerLow
-        : AppColors.lightSurfaceContainerLow;
-    final borderColor = isDark ? AppColors.darkOutline : AppColors.lightOutline;
-    final secondaryText =
-        isDark ? AppColors.darkTextSecondary : AppColors.lightTextSecondary;
 
     return Container(
-      margin: const EdgeInsets.only(bottom: 16),
-      padding: const EdgeInsets.all(16),
+      margin: const EdgeInsets.only(top: 16, bottom: 8),
+      padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
-        color: cardBg,
-        borderRadius: BorderRadius.circular(16),
+        color: isDark
+            ? AppColors.darkSurfaceContainerLow
+            : AppColors.lightSurfaceContainerLowest,
+        borderRadius: BorderRadius.circular(22),
         border: Border.all(
-          color: borderColor.withValues(alpha: 0.4),
+          color: (isDark ? AppColors.darkOutline : AppColors.lightOutline)
+              .withValues(alpha: 0.35),
         ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: isDark ? 0.35 : 0.05),
+            blurRadius: 18,
+            offset: const Offset(0, 6),
+          ),
+        ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Header Row
+          // Cybernetic Header
           Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                decoration: BoxDecoration(
-                  color: voltColor.withValues(alpha: 0.15),
-                  borderRadius: BorderRadius.circular(6),
-                ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Container(
-                      width: 6,
-                      height: 6,
-                      decoration: BoxDecoration(
-                        color: voltColor,
-                        shape: BoxShape.circle,
+              Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(6),
+                    decoration: BoxDecoration(
+                      color: voltColor.withValues(alpha: 0.15),
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(
+                        color: voltColor.withValues(alpha: 0.4),
                       ),
                     ),
-                    const SizedBox(width: 6),
-                    Text(
-                      'AI ADAPTIVE COACH',
-                      maxLines: 1,
-                      softWrap: false,
-                      style: AppTypography.labelCaps(color: voltColor).copyWith(
-                        fontWeight: FontWeight.bold,
-                        fontSize: 10,
-                      ),
+                    child: Icon(Icons.auto_awesome, size: 14, color: voltColor),
+                  ),
+                  const SizedBox(width: 8),
+                  Text(
+                    'AI ADAPTIVE COACH',
+                    style: AppTypography.headlineMd(
+                      color: isDark
+                          ? AppColors.darkTextPrimary
+                          : AppColors.lightTextPrimary,
+                    ).copyWith(
+                      fontWeight: FontWeight.w900,
+                      letterSpacing: 1.1,
+                      fontSize: 14,
                     ),
-                  ],
-                ),
+                    maxLines: 1,
+                    softWrap: false,
+                  ),
+                ],
               ),
-              const Spacer(),
               if (state.deloadAdvised)
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 4,
+                  ),
                   decoration: BoxDecoration(
                     color: AppColors.error.withValues(alpha: 0.15),
                     borderRadius: BorderRadius.circular(6),
+                    border: Border.all(
+                      color: AppColors.error.withValues(alpha: 0.5),
+                    ),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Icon(Icons.warning_amber_rounded,
+                          size: 12, color: AppColors.error),
+                      const SizedBox(width: 4),
+                      Text(
+                        'DELOAD ADVISED',
+                        style: AppTypography.labelCaps(
+                          color: AppColors.error,
+                        ).copyWith(fontWeight: FontWeight.bold, fontSize: 10),
+                        maxLines: 1,
+                        softWrap: false,
+                      ),
+                    ],
+                  ),
+                )
+              else
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 3,
+                  ),
+                  decoration: BoxDecoration(
+                    color: scoreColor.withValues(alpha: 0.12),
+                    borderRadius: BorderRadius.circular(6),
                   ),
                   child: Text(
-                    'DELOAD ADVISED',
+                    state.overallReadinessScore >= 80 ? 'PEAK READINESS' : 'OPTIMAL',
+                    style: AppTypography.labelCaps(color: scoreColor).copyWith(
+                      fontWeight: FontWeight.w900,
+                      fontSize: 9,
+                    ),
                     maxLines: 1,
                     softWrap: false,
-                    style: AppTypography.labelCaps(color: AppColors.error).copyWith(
-                      fontWeight: FontWeight.bold,
-                      fontSize: 10,
-                    ),
                   ),
                 ),
             ],
           ),
-          const SizedBox(height: 14),
+          const SizedBox(height: 16),
 
-          // Readiness Ring & Daily Split Suggestion
+          // Readiness Ring & Today's Optimal Focus
           Row(
             children: [
-              // Circular Readiness Gauge
-              Stack(
-                alignment: Alignment.center,
-                children: [
-                  SizedBox(
-                    width: 58,
-                    height: 58,
-                    child: CircularProgressIndicator(
-                      value: state.overallReadinessScore / 100.0,
-                      backgroundColor: isDark
-                          ? AppColors.darkSurfaceContainerHighest
-                          : Colors.grey.shade200,
-                      color: scoreColor,
-                      strokeWidth: 5.5,
-                      strokeCap: StrokeCap.round,
+              // Radial Gauge
+              Container(
+                width: 68,
+                height: 68,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: isDark
+                      ? AppColors.darkSurfaceContainerLowest
+                      : Colors.white,
+                  boxShadow: [
+                    BoxShadow(
+                      color: scoreColor.withValues(alpha: 0.2),
+                      blurRadius: 10,
                     ),
-                  ),
-                  Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      FittedBox(
-                        fit: BoxFit.scaleDown,
-                        child: Text(
+                  ],
+                ),
+                child: Stack(
+                  alignment: Alignment.center,
+                  children: [
+                    SizedBox(
+                      width: 68,
+                      height: 68,
+                      child: CircularProgressIndicator(
+                        value: state.overallReadinessScore / 100.0,
+                        backgroundColor: (isDark
+                                ? AppColors.darkSurfaceContainerHighest
+                                : AppColors.lightSurfaceContainerHigh)
+                            .withValues(alpha: 0.5),
+                        color: scoreColor,
+                        strokeWidth: 6,
+                        strokeCap: StrokeCap.round,
+                      ),
+                    ),
+                    Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(
                           '${state.overallReadinessScore.toInt()}%',
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w900,
+                            color: scoreColor,
+                          ),
                           maxLines: 1,
                           softWrap: false,
-                          style: AppTypography.cardTitle(color: scoreColor).copyWith(
-                            fontWeight: FontWeight.w900,
-                            fontSize: 16,
-                          ),
                         ),
-                      ),
-                      Text(
-                        'READINESS',
-                        maxLines: 1,
-                        softWrap: false,
-                        style: AppTypography.labelCaps(color: secondaryText).copyWith(
-                          fontSize: 7,
+                        Text(
+                          'READY',
+                          style: AppTypography.labelCaps(
+                            color: isDark
+                                ? AppColors.darkTextSecondary
+                                : AppColors.lightTextSecondary,
+                          ).copyWith(fontSize: 7, fontWeight: FontWeight.w800),
+                          maxLines: 1,
+                          softWrap: false,
                         ),
-                      ),
-                    ],
-                  ),
-                ],
+                      ],
+                    ),
+                  ],
+                ),
               ),
-              const SizedBox(width: 14),
+              const SizedBox(width: 16),
 
-              // Recommended Daily Split Focus
+              // Focus recommendation
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      'TODAY\'S OPTIMAL FOCUS',
+                      'RECOMMENDED TRAINING FOCUS',
+                      style: AppTypography.labelCaps(
+                        color: isDark
+                            ? AppColors.darkTextSecondary
+                            : AppColors.lightTextSecondary,
+                      ).copyWith(fontSize: 9),
                       maxLines: 1,
                       softWrap: false,
-                      style: AppTypography.labelCaps(color: secondaryText).copyWith(
-                        fontSize: 10,
-                      ),
                     ),
                     const SizedBox(height: 2),
                     Text(
                       state.recommendedSplit,
+                      style: AppTypography.headlineMd(
+                        color: isDark
+                            ? AppColors.darkTextPrimary
+                            : AppColors.lightTextPrimary,
+                      ).copyWith(fontWeight: FontWeight.w900, fontSize: 16),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
-                      softWrap: false,
-                      style: AppTypography.cardTitle().copyWith(
-                        fontSize: 15,
-                        fontWeight: FontWeight.bold,
-                      ),
                     ),
-                    const SizedBox(height: 2),
+                    const SizedBox(height: 3),
                     Text(
                       state.splitRationale,
+                      style: AppTypography.bodySm(
+                        color: isDark
+                            ? AppColors.darkTextSecondary
+                            : AppColors.lightTextSecondary,
+                      ),
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
-                      style: AppTypography.bodySm(color: secondaryText).copyWith(
-                        fontSize: 11,
-                      ),
                     ),
                   ],
                 ),
               ),
             ],
           ),
-
-          const SizedBox(height: 14),
-          Divider(height: 1, color: borderColor.withValues(alpha: 0.2)),
-          const SizedBox(height: 10),
+          const SizedBox(height: 16),
 
           // Muscle Group Recovery Chips
           Text(
-            'MUSCLE GROUP READINESS',
+            'MUSCLE GROUP READINESS STATUS',
+            style: AppTypography.labelCaps(
+              color: isDark
+                  ? AppColors.darkTextSecondary
+                  : AppColors.lightTextSecondary,
+            ).copyWith(fontSize: 9),
             maxLines: 1,
             softWrap: false,
-            style: AppTypography.labelCaps(color: secondaryText).copyWith(
-              fontSize: 10,
-            ),
           ),
           const SizedBox(height: 8),
 
@@ -236,15 +293,15 @@ class AiCoachOverviewCard extends ConsumerWidget {
                 final tierColor = _getTierColor(m.tier, isDark);
                 return Container(
                   margin: const EdgeInsets.only(right: 8),
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                   decoration: BoxDecoration(
                     color: isDark
-                        ? AppColors.darkSurfaceContainer
-                        : AppColors.lightSurfaceContainer,
-                    borderRadius: BorderRadius.circular(8),
+                        ? AppColors.darkSurfaceContainerLowest
+                        : AppColors.lightSurfaceContainerLowest,
+                    borderRadius: BorderRadius.circular(10),
                     border: Border.all(
-                      color: tierColor.withValues(alpha: 0.3),
-                      width: 1,
+                      color: tierColor.withValues(alpha: 0.35),
                     ),
                   ),
                   child: Row(
@@ -261,22 +318,24 @@ class AiCoachOverviewCard extends ConsumerWidget {
                       const SizedBox(width: 6),
                       Text(
                         m.muscleGroup,
+                        style: AppTypography.labelCaps(
+                          color: isDark
+                              ? AppColors.darkTextPrimary
+                              : AppColors.lightTextPrimary,
+                        ).copyWith(fontSize: 10, fontWeight: FontWeight.bold),
                         maxLines: 1,
                         softWrap: false,
-                        style: AppTypography.labelCaps().copyWith(
-                          fontSize: 11,
-                          fontWeight: FontWeight.w600,
-                        ),
                       ),
                       const SizedBox(width: 4),
                       Text(
                         '${m.recoveryPercentage.toInt()}%',
+                        style: AppTypography.labelCaps(color: tierColor)
+                            .copyWith(
+                          fontSize: 10,
+                          fontWeight: FontWeight.w900,
+                        ),
                         maxLines: 1,
                         softWrap: false,
-                        style: AppTypography.labelCaps(color: tierColor).copyWith(
-                          fontSize: 11,
-                          fontWeight: FontWeight.bold,
-                        ),
                       ),
                     ],
                   ),
@@ -284,36 +343,6 @@ class AiCoachOverviewCard extends ConsumerWidget {
               }).toList(),
             ),
           ),
-
-          // Alert banner if any
-          if (state.alerts.isNotEmpty) ...[
-            const SizedBox(height: 10),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-              decoration: BoxDecoration(
-                color: Colors.amber.withValues(alpha: 0.12),
-                borderRadius: BorderRadius.circular(8),
-                border: Border.all(color: Colors.amber.withValues(alpha: 0.3)),
-              ),
-              child: Row(
-                children: [
-                  const Icon(Icons.info_outline, size: 14, color: Colors.amber),
-                  const SizedBox(width: 6),
-                  Expanded(
-                    child: Text(
-                      state.alerts.first,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      softWrap: false,
-                      style: AppTypography.bodySm(color: Colors.amber).copyWith(
-                        fontSize: 11,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ],
         ],
       ),
     );

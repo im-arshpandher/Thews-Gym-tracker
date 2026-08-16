@@ -94,6 +94,32 @@ class DashboardScreen extends ConsumerWidget {
             ),
           ],
         ),
+        actions: [
+          IconButton(
+            tooltip: 'Athlete Profile & Trophies',
+            icon: Container(
+              padding: const EdgeInsets.all(4),
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                border: Border.all(
+                  color: isDark
+                      ? AppColors.primaryVolt
+                      : AppColors.lightPrimary,
+                  width: 1.5,
+                ),
+              ),
+              child: Icon(
+                Icons.person_outline,
+                size: 20,
+                color: isDark
+                    ? AppColors.primaryVolt
+                    : AppColors.lightPrimary,
+              ),
+            ),
+            onPressed: () => context.push('/profile'),
+          ),
+          const SizedBox(width: 8),
+        ],
       ),
       body: RefreshIndicator(
         onRefresh: () async {
@@ -177,9 +203,6 @@ class DashboardScreen extends ConsumerWidget {
                 ],
               ),
               const SizedBox(height: 16),
-
-              // AI Adaptive Coach Overview & Muscle Readiness Card
-              const AiCoachOverviewCard(),
 
               // Hero Primary Action Button: START WORKOUT LOG
               Container(
@@ -271,10 +294,10 @@ class DashboardScreen extends ConsumerWidget {
                   Expanded(
                     child: _buildQuickActionCard(
                       context,
-                      icon: Icons.map_outlined,
-                      title: 'GPX LOGS',
-                      subtitle: 'Saved GPS Runs',
-                      onTap: () => context.push('/running/history'),
+                      icon: Icons.emoji_events_outlined,
+                      title: 'CHALLENGES',
+                      subtitle: 'Loop Routes & Trophies',
+                      onTap: () => context.push('/challenges'),
                     ),
                   ),
                 ],
@@ -460,6 +483,10 @@ class DashboardScreen extends ConsumerWidget {
                           context.push('/visualizer');
                         },
                       ),
+                      const SizedBox(height: 16),
+
+                      // Redesigned AI Adaptive Coach Card (Relocated beneath Heatmap)
+                      const AiCoachOverviewCard(),
                       const SizedBox(height: 28),
 
                       // Recent Activity Section
