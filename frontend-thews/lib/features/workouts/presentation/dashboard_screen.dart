@@ -165,43 +165,40 @@ class DashboardScreen extends ConsumerWidget {
                       ),
                     ),
                     statsAsync.maybeWhen(
-                      data: (stats) => PulsingBeacon(
-                        glowColor: Colors.amber,
-                        maxRadius: 28.0,
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 12,
-                            vertical: 6,
-                          ),
-                          decoration: BoxDecoration(
+                      data: (stats) => Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 12,
+                          vertical: 6,
+                        ),
+                        decoration: BoxDecoration(
+                          color: (isDark
+                                  ? AppColors.primaryVolt
+                                  : AppColors.lightPrimary)
+                              .withValues(alpha: 0.15),
+                          borderRadius: BorderRadius.circular(20),
+                          border: Border.all(
                             color: (isDark
                                     ? AppColors.primaryVolt
                                     : AppColors.lightPrimary)
-                                .withValues(alpha: 0.15),
-                            borderRadius: BorderRadius.circular(20),
-                            border: Border.all(
-                              color: (isDark
-                                      ? AppColors.primaryVolt
-                                      : AppColors.lightPrimary)
-                                  .withValues(alpha: 0.4),
+                                .withValues(alpha: 0.4),
+                          ),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            const FireGradientIcon(size: 18),
+                            const SizedBox(width: 4),
+                            Text(
+                              '${stats.streakDays} STREAK',
+                              style: AppTypography.labelCaps(
+                                color: isDark
+                                    ? AppColors.primaryVolt
+                                    : AppColors.lightPrimary,
+                              ).copyWith(fontWeight: FontWeight.bold),
+                              maxLines: 1,
+                              softWrap: false,
                             ),
-                          ),
-                          child: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              const FireGradientIcon(size: 18),
-                              const SizedBox(width: 4),
-                              AnimatedCountText(
-                                value: stats.streakDays.toDouble(),
-                                suffix: ' STREAK',
-                                style: AppTypography.labelCaps(
-                                  color: isDark
-                                      ? AppColors.primaryVolt
-                                      : AppColors.lightPrimary,
-                                ).copyWith(fontWeight: FontWeight.bold),
-                              ),
-                            ],
-                          ),
+                          ],
                         ),
                       ),
                       orElse: () => const SizedBox(),

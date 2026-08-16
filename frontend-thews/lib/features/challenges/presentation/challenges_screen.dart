@@ -321,6 +321,7 @@ class _ChallengesScreenState extends ConsumerState<ChallengesScreen>
     LocalChallenge challenge,
     bool isDark,
   ) {
+    final userLocation = ref.watch(challengesProvider).userLocation;
     final tierColor = _getDifficultyColor(challenge.difficulty);
     final trophyTierColor = _getTrophyTierColor(challenge.trophyReward.tier);
 
@@ -503,6 +504,7 @@ class _ChallengesScreenState extends ConsumerState<ChallengesScreen>
                       ),
                       MarkerLayer(
                         markers: [
+                          // 1. Challenge Start Flag
                           Marker(
                             point: challenge.loopWaypoints.first,
                             width: 24,
@@ -522,6 +524,35 @@ class _ChallengesScreenState extends ConsumerState<ChallengesScreen>
                                 Icons.flag,
                                 size: 12,
                                 color: Colors.black,
+                              ),
+                            ),
+                          ),
+                          // 2. User Live Location Marker
+                          Marker(
+                            point: userLocation,
+                            width: 26,
+                            height: 26,
+                            child: Container(
+                              decoration: BoxDecoration(
+                                color: const Color(0xFF2979FF),
+                                shape: BoxShape.circle,
+                                border: Border.all(
+                                  color: Colors.white,
+                                  width: 2,
+                                ),
+                                boxShadow: const [
+                                  BoxShadow(
+                                    color: Colors.black26,
+                                    blurRadius: 4,
+                                  ),
+                                ],
+                              ),
+                              child: const Center(
+                                child: Icon(
+                                  Icons.my_location,
+                                  size: 12,
+                                  color: Colors.white,
+                                ),
                               ),
                             ),
                           ),

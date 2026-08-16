@@ -6,6 +6,7 @@ import 'package:latlong2/latlong.dart';
 import '../../../../core/services/tile_cache_service.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/utils/gpx_parser.dart';
+import '../../domain/live_segment_models.dart';
 import 'heatmap_polyline_painter.dart';
 
 class LeafletRouteMap extends StatefulWidget {
@@ -18,6 +19,8 @@ class LeafletRouteMap extends StatefulWidget {
   final bool isHeatmapVisible;
   final List<List<LatLng>>? heatmapRoutes;
   final VoidCallback? onHeatmapTap;
+  final LatLng? ghostPosition;
+  final RunSegment? activeGhostSegment;
 
   const LeafletRouteMap({
     super.key,
@@ -26,10 +29,12 @@ class LeafletRouteMap extends StatefulWidget {
     this.interactive = true,
     this.isTracking = false,
     this.headingDegrees = 0.0,
-    this.showHeatmapButton = true,
+    this.showHeatmapButton = false,
     this.isHeatmapVisible = false,
     this.heatmapRoutes,
     this.onHeatmapTap,
+    this.ghostPosition,
+    this.activeGhostSegment,
   });
 
   @override
@@ -299,6 +304,23 @@ class _LeafletRouteMapState extends State<LeafletRouteMap>
                     : const Color(0xFFE65100),
               ),
 
+            // Ghost Segment Polyline (Glowing Neon Cyan)
+            if (widget.activeGhostSegment != null &&
+                widget.activeGhostSegment!.polyline.length >= 2)
+              PolylineLayer(
+                polylines: [
+                  Polyline(
+                    points: widget.activeGhostSegment!.polyline
+                        .map((p) => p.toLatLng())
+                        .toList(),
+                    strokeWidth: 5.5,
+                    color: AppColors.neonCyan.withValues(alpha: 0.85),
+                    borderColor: Colors.black.withValues(alpha: 0.5),
+                    borderStrokeWidth: 1.5,
+                  ),
+                ],
+              ),
+
             // Route Polyline outlining the whole activity route
             if (showRoute && latLngPoints.length >= 2)
               PolylineLayer(
@@ -314,9 +336,74 @@ class _LeafletRouteMapState extends State<LeafletRouteMap>
               ),
 
             // Marker Layer (Fixed upright markers that do not spin when map rotates)
-            if (latLngPoints.isNotEmpty)
-              MarkerLayer(
-                markers: [
+            MarkerLayer(
+              markers: [
+                // 1. Ghost Segment Start & Finish Markers
+                if (widget.activeGhostSegment != null) ...[
+                  Marker(
+                    point: widget.activeGhostSegment!.startPoint.toLatLng(),
+                    width: 32,
+                    height: 32,
+                    rotate: false,
+                    child: Container(
+                      decoration: const BoxDecoration(
+                        color: Colors.green,
+                        shape: BoxShape.circle,
+                      ),
+                      child: const Icon(
+                        Icons.flag,
+                        color: Colors.white,
+                        size: 18,
+                      ),
+                    ),
+                  ),
+                  Marker(
+                    point: widget.activeGhostSegment!.endPoint.toLatLng(),
+                    width: 32,
+                    height: 32,
+                    rotate: false,
+                    child: Container(
+                      decoration: const BoxDecoration(
+                        color: Colors.redAccent,
+                        shape: BoxShape.circle,
+                      ),
+                      child: const Icon(
+                        Icons.sports_score,
+                        color: Colors.white,
+                        size: 18,
+                      ),
+                    ),
+                  ),
+                ],
+
+                // 2. Ghost Runner Position Marker (Moving 👻 along segment)
+                if (widget.ghostPosition != null)
+                  Marker(
+                    point: widget.ghostPosition!,
+                    width: 44,
+                    height: 44,
+                    rotate: false,
+                    child: Container(
+                      decoration: BoxDecoration(
+                        color: AppColors.neonCyan,
+                        shape: BoxShape.circle,
+                        boxShadow: [
+                          BoxShadow(
+                            color: AppColors.neonCyan.withValues(alpha: 0.6),
+                            blurRadius: 10,
+                            spreadRadius: 2,
+                          ),
+                        ],
+                        border: Border.all(color: Colors.white, width: 2),
+                      ),
+                      child: const Center(
+                        child: Text('👻', style: TextStyle(fontSize: 20)),
+                      ),
+                    ),
+                  ),
+
+                // 3. User Tracker Markers
+                if (latLngPoints.isNotEmpty) ...[
                   if (widget.isTracking) ...[
                     // Active Workout: Start Origin Pin
                     Marker(
@@ -371,7 +458,8 @@ class _LeafletRouteMapState extends State<LeafletRouteMap>
                     ),
                   ],
                 ],
-              ),
+              ],
+            ),
           ],
         ),
 
@@ -420,7 +508,7 @@ class _LeafletRouteMapState extends State<LeafletRouteMap>
                   tooltip: 'Zoom In',
                   onTap: _zoomIn,
                 ),
-                const SizedBox(height: 8),
+                const SizedBox(height: 5),
 
                 // Zoom Out (-)
                 _buildControlButton(
@@ -428,7 +516,7 @@ class _LeafletRouteMapState extends State<LeafletRouteMap>
                   tooltip: 'Zoom Out',
                   onTap: _zoomOut,
                 ),
-                const SizedBox(height: 8),
+                const SizedBox(height: 5),
 
                 // Fit Full Route / Distance Span
                 if (latLngPoints.length >= 2) ...[
@@ -437,7 +525,7 @@ class _LeafletRouteMapState extends State<LeafletRouteMap>
                     tooltip: 'Fit Entire Route',
                     onTap: () => _autoZoomAndCenterMap(animate: true),
                   ),
-                  const SizedBox(height: 8),
+                  const SizedBox(height: 5),
                 ],
 
                 // Recenter to Last / Current Position (Smoothly animated)
@@ -470,7 +558,7 @@ class _LeafletRouteMapState extends State<LeafletRouteMap>
         widget.isDark ? AppColors.primaryVolt : AppColors.lightPrimary;
     return Material(
       color: Colors.transparent,
-      elevation: 4,
+      elevation: 3,
       shape: const CircleBorder(),
       child: Tooltip(
         message: tooltip,
@@ -478,8 +566,8 @@ class _LeafletRouteMapState extends State<LeafletRouteMap>
           customBorder: const CircleBorder(),
           onTap: onTap,
           child: Container(
-            width: 42,
-            height: 42,
+            width: 34,
+            height: 34,
             decoration: BoxDecoration(
               color: backgroundColor ??
                   (widget.isDark
@@ -488,14 +576,14 @@ class _LeafletRouteMapState extends State<LeafletRouteMap>
                       .withValues(alpha: 0.95),
               shape: BoxShape.circle,
               border: Border.all(
-                color: (borderColor ?? defaultColor).withValues(alpha: 0.8),
-                width: 1.5,
+                color: (borderColor ?? defaultColor).withValues(alpha: 0.7),
+                width: 1.2,
               ),
             ),
             child: Icon(
               icon,
               color: iconColor ?? defaultColor,
-              size: 20,
+              size: 18,
             ),
           ),
         ),

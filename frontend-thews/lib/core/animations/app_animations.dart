@@ -1,4 +1,3 @@
-import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import '../theme/app_colors.dart';
 
@@ -17,7 +16,7 @@ class AppAnimations {
   static const Curve curvePulse = Curves.easeInOut;
 }
 
-/// Staggered Slide-Up & Fade-In Entrance Animation
+/// Clean Fade-In Entrance Animation (No positional displacement / movement)
 class FadeSlideEntrance extends StatefulWidget {
   final Widget child;
   final Duration delay;
@@ -28,8 +27,8 @@ class FadeSlideEntrance extends StatefulWidget {
     super.key,
     required this.child,
     this.delay = Duration.zero,
-    this.duration = const Duration(milliseconds: 400),
-    this.slideOffset = 18.0,
+    this.duration = const Duration(milliseconds: 250),
+    this.slideOffset = 0.0,
   });
 
   @override
@@ -40,7 +39,6 @@ class _FadeSlideEntranceState extends State<FadeSlideEntrance>
     with SingleTickerProviderStateMixin {
   late AnimationController _controller;
   late Animation<double> _fadeAnimation;
-  late Animation<double> _slideAnimation;
 
   @override
   void initState() {
@@ -52,10 +50,6 @@ class _FadeSlideEntranceState extends State<FadeSlideEntrance>
 
     _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
       CurvedAnimation(parent: _controller, curve: Curves.easeOut),
-    );
-
-    _slideAnimation = Tween<double>(begin: widget.slideOffset, end: 0.0).animate(
-      CurvedAnimation(parent: _controller, curve: Curves.easeOutCubic),
     );
 
     if (widget.delay == Duration.zero) {
@@ -75,17 +69,8 @@ class _FadeSlideEntranceState extends State<FadeSlideEntrance>
 
   @override
   Widget build(BuildContext context) {
-    return AnimatedBuilder(
-      animation: _controller,
-      builder: (context, child) {
-        return Opacity(
-          opacity: _fadeAnimation.value,
-          child: Transform.translate(
-            offset: Offset(0, _slideAnimation.value),
-            child: child,
-          ),
-        );
-      },
+    return FadeTransition(
+      opacity: _fadeAnimation,
       child: widget.child,
     );
   }
@@ -175,8 +160,8 @@ class _BouncingButtonState extends State<BouncingButton>
   }
 }
 
-/// Looping Radar Pulse / Breathing Glow Beacon (for live GPS, HR, Streak)
-class PulsingBeacon extends StatefulWidget {
+/// Static Glow Beacon Container (No continuous movement when static)
+class PulsingBeacon extends StatelessWidget {
   final Widget child;
   final Color glowColor;
   final double maxRadius;
@@ -191,54 +176,8 @@ class PulsingBeacon extends StatefulWidget {
   });
 
   @override
-  State<PulsingBeacon> createState() => _PulsingBeaconState();
-}
-
-class _PulsingBeaconState extends State<PulsingBeacon>
-    with SingleTickerProviderStateMixin {
-  late AnimationController _controller;
-
-  @override
-  void initState() {
-    super.initState();
-    _controller = AnimationController(
-      vsync: this,
-      duration: widget.duration,
-    )..repeat();
-  }
-
-  @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
-  }
-
-  @override
   Widget build(BuildContext context) {
-    return AnimatedBuilder(
-      animation: _controller,
-      builder: (context, child) {
-        final progress = _controller.value;
-        final waveRadius = widget.maxRadius * (0.6 + 0.4 * progress);
-        final opacity = math.max(0.0, (1.0 - progress) * 0.45);
-
-        return Stack(
-          alignment: Alignment.center,
-          children: [
-            Container(
-              width: waveRadius * 2,
-              height: waveRadius * 2,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: widget.glowColor.withValues(alpha: opacity),
-              ),
-            ),
-            child!,
-          ],
-        );
-      },
-      child: widget.child,
-    );
+    return child;
   }
 }
 

@@ -9,6 +9,7 @@ import '../../../core/services/segment_storage_service.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_typography.dart';
 import '../../../core/utils/gpx_parser.dart';
+import '../domain/live_segment_engine.dart';
 import '../domain/live_segment_models.dart';
 
 /// Interactive tool allowing athletes to create custom Live Segments from any past workout route.
@@ -323,6 +324,9 @@ class _SegmentBuilderScreenState extends ConsumerState<SegmentBuilderScreen> {
                       await ref
                           .read(segmentsProvider.notifier)
                           .addSegment(newSegment);
+                      ref
+                          .read(liveSegmentEngineProvider.notifier)
+                          .refreshSegments();
 
                       if (context.mounted) {
                         ScaffoldMessenger.of(context).showSnackBar(

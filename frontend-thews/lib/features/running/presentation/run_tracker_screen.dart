@@ -18,6 +18,7 @@ import 'widgets/cadence_metronome_sheet.dart';
 import 'widgets/heatmap_polyline_painter.dart';
 import 'widgets/leaflet_route_map.dart';
 import 'widgets/live_segment_hud.dart';
+import 'widgets/live_segment_picker_sheet.dart';
 import 'widgets/smartwatch_pairing_sheet.dart';
 
 class RunTrackerScreen extends ConsumerStatefulWidget {
@@ -52,6 +53,7 @@ class _RunTrackerScreenState extends ConsumerState<RunTrackerScreen> {
     final metronomeState = ref.watch(cadenceMetronomeProvider);
     final smartwatchState = ref.watch(smartwatchServiceProvider);
     final heatmapRoutes = ref.watch(heatmapRoutesProvider).valueOrNull ?? [];
+    final segmentEngineState = ref.watch(liveSegmentEngineProvider);
 
     // Listen to GPS stream to feed Live Segment Detection & Ghost Racing + Voice Splits
     ref.listen<RunTrackingState>(runTrackingProvider, (previous, next) {
@@ -268,6 +270,34 @@ class _RunTrackerScreenState extends ConsumerState<RunTrackerScreen> {
                 scrollDirection: Axis.horizontal,
                 child: Row(
                   children: [
+                    // Ghost Racer / Live Segment Selector Chip
+                    ActionChip(
+                      avatar: const Text('👻', style: TextStyle(fontSize: 14)),
+                      label: Text(
+                        segmentEngineState.selectedGhostSegment != null
+                            ? 'GHOST: ${segmentEngineState.selectedGhostSegment!.name}'
+                            : 'GHOST RACER',
+                        maxLines: 1,
+                        softWrap: false,
+                        style: TextStyle(
+                          fontSize: 11,
+                          fontWeight:
+                              segmentEngineState.selectedGhostSegment != null
+                                  ? FontWeight.bold
+                                  : FontWeight.normal,
+                          color: segmentEngineState.selectedGhostSegment != null
+                              ? AppColors.neonCyan
+                              : null,
+                        ),
+                      ),
+                      backgroundColor:
+                          segmentEngineState.selectedGhostSegment != null
+                              ? AppColors.neonCyan.withValues(alpha: 0.15)
+                              : null,
+                      onPressed: () => LiveSegmentPickerSheet.show(context),
+                    ),
+                    const SizedBox(width: 8),
+
                     // Cadence Metronome Chip
                     ActionChip(
                       avatar: Icon(
@@ -410,6 +440,11 @@ class _RunTrackerScreenState extends ConsumerState<RunTrackerScreen> {
                           headingDegrees: runState.headingDegrees,
                           isHeatmapVisible: _isHeatmapVisible,
                           heatmapRoutes: heatmapRoutes,
+                          ghostPosition:
+                              segmentEngineState.ghostTelemetry?.ghostPosition,
+                          activeGhostSegment:
+                              segmentEngineState.selectedGhostSegment ??
+                                  segmentEngineState.activeEffort?.segment,
                           onHeatmapTap: () {
                             setState(() {
                               _isHeatmapVisible = !_isHeatmapVisible;
@@ -479,7 +514,8 @@ class _RunTrackerScreenState extends ConsumerState<RunTrackerScreen> {
                           ),
                         ),
                       ),
-                    if (runState.isTracking)
+                    if (runState.isTracking ||
+                        segmentEngineState.selectedGhostSegment != null)
                       const Positioned(
                         top: 8,
                         left: 0,

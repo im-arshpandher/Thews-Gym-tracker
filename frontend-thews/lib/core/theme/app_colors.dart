@@ -10,6 +10,7 @@ class AppColors {
   static const Color primaryVoltDark = Color(0xFF506600);
   static const Color primaryVoltOn = Color(0xFF161E00);
   static const Color primaryGlow = Color(0x66C3F400); // 40% opacity glow
+  static const Color neonCyan = Color(0xFF00E5FF); // Electric Cyan Ghost Accent
 
   // Light Theme Dedicated High-Contrast Tokens
   static const Color lightPrimary = Color(

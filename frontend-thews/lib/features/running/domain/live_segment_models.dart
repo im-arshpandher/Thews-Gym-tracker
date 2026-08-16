@@ -164,3 +164,63 @@ class LiveSegmentEffort {
     return '$mins:$secs';
   }
 }
+
+/// Live real-time Ghost Racer telemetry comparing current runner to the Ghost PR.
+@immutable
+class GhostRunnerTelemetry {
+  final RunSegment segment;
+  final LatLng ghostPosition;
+  final double ghostDistanceMeters;
+  final double userDistanceMeters;
+  final double deltaDistanceMeters; // Positive = Runner is ahead (+15m), Negative = Ghost is ahead (-8m)
+  final double deltaTimeSeconds;     // Negative = Runner is faster (-2.5s), Positive = Behind (+1.8s)
+  final bool isRunnerAhead;
+  final double ghostSpeedMps;
+  final double ghostProgressFraction; // 0.0 to 1.0
+  final double userProgressFraction;  // 0.0 to 1.0
+  final int ghostTargetSeconds;
+  final int userElapsedSeconds;
+
+  const GhostRunnerTelemetry({
+    required this.segment,
+    required this.ghostPosition,
+    required this.ghostDistanceMeters,
+    required this.userDistanceMeters,
+    required this.deltaDistanceMeters,
+    required this.deltaTimeSeconds,
+    required this.isRunnerAhead,
+    required this.ghostSpeedMps,
+    required this.ghostProgressFraction,
+    required this.userProgressFraction,
+    required this.ghostTargetSeconds,
+    required this.userElapsedSeconds,
+  });
+
+  String get formattedDistanceDelta {
+    final absDist = deltaDistanceMeters.abs();
+    final sign = isRunnerAhead ? '+' : '-';
+    if (absDist >= 1000) {
+      return '$sign${(absDist / 1000).toStringAsFixed(2)} km';
+    }
+    return '$sign${absDist.toStringAsFixed(0)} m';
+  }
+
+  String get formattedTimeDelta {
+    final absSecs = deltaTimeSeconds.abs();
+    final sign = isRunnerAhead ? '-' : '+';
+    return '$sign${absSecs.toStringAsFixed(1)}s';
+  }
+
+  String get formattedGhostElapsed {
+    final secs = (ghostTargetSeconds * ghostProgressFraction).round();
+    final mins = (secs ~/ 60).toString().padLeft(2, '0');
+    final remSecs = (secs % 60).toString().padLeft(2, '0');
+    return '$mins:$remSecs';
+  }
+
+  String get formattedUserElapsed {
+    final mins = (userElapsedSeconds ~/ 60).toString().padLeft(2, '0');
+    final secs = (userElapsedSeconds % 60).toString().padLeft(2, '0');
+    return '$mins:$secs';
+  }
+}

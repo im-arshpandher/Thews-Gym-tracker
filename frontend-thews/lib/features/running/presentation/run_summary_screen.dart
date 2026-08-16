@@ -160,7 +160,7 @@ class RunSummaryScreen extends ConsumerWidget {
               children: [
                 // Route Map Preview Canvas
                 Container(
-                  height: 220,
+                  height: 240,
                   width: double.infinity,
                   decoration: BoxDecoration(
                     borderRadius: BorderRadius.circular(20),
@@ -175,6 +175,7 @@ class RunSummaryScreen extends ConsumerWidget {
                     child: LeafletRouteMap(
                       waypoints: points,
                       isDark: isDark,
+                      showHeatmapButton: false,
                     ),
                   ),
                 ),

@@ -189,38 +189,44 @@ class _SmartwatchPairingSheetState
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          Row(
-                            children: [
-                              if (isScanning)
-                                const SizedBox(
-                                  width: 16,
-                                  height: 16,
-                                  child: CircularProgressIndicator(
-                                    strokeWidth: 2,
+                          Expanded(
+                            child: Row(
+                              children: [
+                                if (isScanning)
+                                  const SizedBox(
+                                    width: 16,
+                                    height: 16,
+                                    child: CircularProgressIndicator(
+                                      strokeWidth: 2,
+                                      color: AppColors.primaryVolt,
+                                    ),
+                                  )
+                                else
+                                  const Icon(
+                                    Icons.bluetooth_searching,
+                                    size: 20,
                                     color: AppColors.primaryVolt,
                                   ),
-                                )
-                              else
-                                const Icon(
-                                  Icons.bluetooth_searching,
-                                  size: 20,
-                                  color: AppColors.primaryVolt,
+                                const SizedBox(width: 8),
+                                Expanded(
+                                  child: Text(
+                                    isScanning
+                                        ? 'SCANNING FOR SENSORS...'
+                                        : 'NEARBY SENSORS',
+                                    style: AppTypography.bodySm(
+                                      color: isDark
+                                          ? AppColors.darkTextPrimary
+                                          : AppColors.lightTextPrimary,
+                                    ).copyWith(fontWeight: FontWeight.bold),
+                                    maxLines: 1,
+                                    softWrap: false,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
                                 ),
-                              const SizedBox(width: 8),
-                              Text(
-                                isScanning
-                                    ? 'SCANNING FOR BLUETOOTH SENSORS...'
-                                    : 'NEARBY SENSORS',
-                                style: AppTypography.bodySm(
-                                  color: isDark
-                                      ? AppColors.darkTextPrimary
-                                      : AppColors.lightTextPrimary,
-                                ).copyWith(fontWeight: FontWeight.bold),
-                                maxLines: 1,
-                                softWrap: false,
-                              ),
-                            ],
+                              ],
+                            ),
                           ),
+                          const SizedBox(width: 8),
                           TextButton.icon(
                             onPressed: isScanning
                                 ? () => smartwatchNotifier.stopBleScan()

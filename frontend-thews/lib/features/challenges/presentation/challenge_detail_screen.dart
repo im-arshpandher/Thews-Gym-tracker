@@ -4,9 +4,12 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:latlong2/latlong.dart';
 
+import '../../../core/services/gps_tracking_service.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_spacing.dart';
 import '../../../core/theme/app_typography.dart';
+import '../../running/domain/live_segment_engine.dart';
+import '../../running/domain/live_segment_models.dart';
 import '../domain/challenge_models.dart';
 import 'challenges_provider.dart';
 
@@ -130,12 +133,16 @@ class _ChallengeDetailScreenState extends ConsumerState<ChallengeDetailScreen>
     }
 
     final bounds = LatLngBounds.fromPoints(waypoints);
-    _animatedMapMove(bounds.center, _mapController.camera.zoom);
     try {
       _mapController.fitCamera(
         CameraFit.bounds(
           bounds: bounds,
-          padding: const EdgeInsets.all(48.0),
+          padding: const EdgeInsets.only(
+            top: 90.0,
+            bottom: 330.0,
+            left: 48.0,
+            right: 48.0,
+          ),
         ),
       );
     } catch (_) {
@@ -272,6 +279,15 @@ class _ChallengeDetailScreenState extends ConsumerState<ChallengeDetailScreen>
       challenge.difficulty,
     );
 
+    final runState = ref.watch(runTrackingProvider);
+    final userLocation = (runState.waypoints.isNotEmpty)
+        ? LatLng(
+            runState.waypoints.last.latitude,
+            runState.waypoints.last.longitude,
+          )
+        : state.userLocation;
+    final heading = runState.headingDegrees;
+
     return Scaffold(
       body: Stack(
         children: [
@@ -282,6 +298,7 @@ class _ChallengeDetailScreenState extends ConsumerState<ChallengeDetailScreen>
               options: MapOptions(
                 initialCenter: _calculateCentroid(challenge.loopWaypoints),
                 initialZoom: _calculateZoomLevel(challenge.targetDistanceMeters),
+                onMapReady: () => _fitRoute(challenge.loopWaypoints),
                 interactionOptions: const InteractionOptions(
                   flags: InteractiveFlag.all,
                 ),
@@ -316,14 +333,16 @@ class _ChallengeDetailScreenState extends ConsumerState<ChallengeDetailScreen>
                       ),
                     ],
                   ),
-                // Start & Waypoint Markers
-                if (challenge.loopWaypoints.isNotEmpty)
-                  MarkerLayer(
-                    markers: [
+                // Start & Position Pointer Markers
+                MarkerLayer(
+                  markers: [
+                    // 1. Challenge Start Flag Marker
+                    if (challenge.loopWaypoints.isNotEmpty)
                       Marker(
                         point: challenge.loopWaypoints.first,
-                        width: 32,
-                        height: 32,
+                        width: 36,
+                        height: 36,
+                        rotate: false,
                         child: Container(
                           decoration: BoxDecoration(
                             color: isDark
@@ -334,23 +353,101 @@ class _ChallengeDetailScreenState extends ConsumerState<ChallengeDetailScreen>
                               color: Colors.white,
                               width: 2.5,
                             ),
-                            boxShadow: [
+                            boxShadow: const [
                               BoxShadow(
-                                color: Colors.black.withValues(alpha: 0.5),
+                                color: Colors.black45,
                                 blurRadius: 8,
-                                offset: const Offset(0, 3),
+                                offset: Offset(0, 3),
                               ),
                             ],
                           ),
-                          child: const Icon(
-                            Icons.flag,
-                            size: 16,
-                            color: Colors.black,
+                          child: const Center(
+                            child: Icon(
+                              Icons.flag_rounded,
+                              size: 18,
+                              color: Colors.black,
+                            ),
                           ),
                         ),
                       ),
-                    ],
-                  ),
+
+                    // 2. User Live Position Pointer Marker
+                    Marker(
+                      point: userLocation,
+                      width: 52,
+                      height: 52,
+                      rotate: false,
+                      child: Stack(
+                        alignment: Alignment.center,
+                        children: [
+                          // Outer Accuracy / Beacon Halo
+                          Container(
+                            width: 48,
+                            height: 48,
+                            decoration: BoxDecoration(
+                              color: const Color(0xFF2979FF)
+                                  .withValues(alpha: 0.22),
+                              shape: BoxShape.circle,
+                            ),
+                          ),
+                          // Inner Core Location Puck with Heading Arrow
+                          Transform.rotate(
+                            angle: heading * (3.141592653589793 / 180.0),
+                            child: Container(
+                              width: 26,
+                              height: 26,
+                              decoration: BoxDecoration(
+                                color: const Color(0xFF2979FF),
+                                shape: BoxShape.circle,
+                                border:
+                                    Border.all(color: Colors.white, width: 2.5),
+                                boxShadow: const [
+                                  BoxShadow(
+                                    color: Colors.black38,
+                                    blurRadius: 6,
+                                    offset: Offset(0, 2),
+                                  ),
+                                ],
+                              ),
+                              child: const Center(
+                                child: Icon(
+                                  Icons.navigation,
+                                  size: 13,
+                                  color: Colors.white,
+                                ),
+                              ),
+                            ),
+                          ),
+                          // High-contrast 'YOU' Identification Pill
+                          Positioned(
+                            top: 0,
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 5,
+                                vertical: 1,
+                              ),
+                              decoration: BoxDecoration(
+                                color: const Color(0xFF1E88E5),
+                                borderRadius: BorderRadius.circular(6),
+                                border:
+                                    Border.all(color: Colors.white, width: 1),
+                              ),
+                              child: const Text(
+                                'YOU',
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 7.5,
+                                  fontWeight: FontWeight.w900,
+                                  letterSpacing: 0.5,
+                                ),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
               ],
             ),
           ),
@@ -396,12 +493,19 @@ class _ChallengeDetailScreenState extends ConsumerState<ChallengeDetailScreen>
             ),
           ),
 
-          // Floating Map Zoom In / Out Controls
+          // Floating Map Zoom In / Out & My Location Controls
           Positioned(
             right: 16,
             bottom: 300,
             child: Column(
               children: [
+                _buildGlassIconButton(
+                  icon: Icons.my_location,
+                  onPressed: () => _animatedMapMove(userLocation, 16.5),
+                  isDark: isDark,
+                  tooltip: 'My Location',
+                ),
+                const SizedBox(height: 8),
                 _buildGlassIconButton(
                   icon: Icons.add,
                   onPressed: _zoomIn,
@@ -599,6 +703,41 @@ class _ChallengeDetailScreenState extends ConsumerState<ChallengeDetailScreen>
                   // Start Challenge Button (Single-line constraint adhered)
                   ElevatedButton.icon(
                     onPressed: () {
+                      if (challenge.loopWaypoints.isNotEmpty) {
+                        final challengeSegment = RunSegment(
+                          id: 'challenge_${challenge.id}',
+                          name: challenge.title,
+                          startPoint: SegmentCoordinate(
+                            latitude: challenge.loopWaypoints.first.latitude,
+                            longitude: challenge.loopWaypoints.first.longitude,
+                          ),
+                          endPoint: SegmentCoordinate(
+                            latitude: challenge.loopWaypoints.last.latitude,
+                            longitude: challenge.loopWaypoints.last.longitude,
+                          ),
+                          distanceMeters: challenge.targetDistanceMeters,
+                          bestTimeSeconds: (challenge.targetDistanceMeters /
+                                  1000.0 *
+                                  (challenge.difficulty ==
+                                          ChallengeDifficulty.easy
+                                      ? 360
+                                      : challenge.difficulty ==
+                                              ChallengeDifficulty.medium
+                                          ? 300
+                                          : 240))
+                              .round(),
+                          polyline: challenge.loopWaypoints
+                              .map((p) => SegmentCoordinate(
+                                    latitude: p.latitude,
+                                    longitude: p.longitude,
+                                  ))
+                              .toList(),
+                          createdAt: DateTime.now(),
+                        );
+                        ref
+                            .read(liveSegmentEngineProvider.notifier)
+                            .selectGhostSegment(challengeSegment);
+                      }
                       context.go('/running');
                     },
                     style: ElevatedButton.styleFrom(
@@ -615,8 +754,9 @@ class _ChallengeDetailScreenState extends ConsumerState<ChallengeDetailScreen>
                     ),
                     icon: const Icon(Icons.play_arrow, size: 24),
                     label: const Text(
-                      'START THIS CHALLENGE',
-                      style: TextStyle(fontWeight: FontWeight.w900, fontSize: 14),
+                      'START CHALLENGE & RACE GHOST',
+                      style:
+                          TextStyle(fontWeight: FontWeight.w900, fontSize: 14),
                       maxLines: 1,
                       softWrap: false,
                     ),
