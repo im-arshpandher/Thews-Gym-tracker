@@ -6,6 +6,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/database/app_database.dart';
 import '../../../core/database/database_provider.dart';
 import '../../../core/models/exercise_metric.dart';
+import '../../../core/models/smartwatch_models.dart';
+import '../../../core/services/health_platform_service.dart';
+import '../../../core/services/smartwatch_sync_service.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_typography.dart';
 import '../../../core/utils/metric_formatter.dart';
@@ -15,6 +18,7 @@ import 'rest_timer_provider.dart';
 import 'routines_provider.dart';
 import 'widgets/add_exercise_bottom_sheet.dart';
 import 'widgets/exercise_card_widget.dart';
+import 'widgets/live_heart_rate_hud.dart';
 import 'widgets/plate_calculator_sheet.dart';
 
 class ActiveSessionScreen extends ConsumerStatefulWidget {
@@ -40,10 +44,61 @@ class _ActiveSessionScreenState extends ConsumerState<ActiveSessionScreen> {
   DateTime? _workoutStartTime;
   DateTime? _pauseStartTime;
   Duration _totalPausedDuration = Duration.zero;
+  StreamSubscription<WristSetAction>? _wristSub;
 
   @override
   void initState() {
     super.initState();
+    _initWristSyncListener();
+  }
+
+  void _initWristSyncListener() {
+    _wristSub = ref
+        .read(smartwatchServiceProvider.notifier)
+        .wristActionStream
+        .listen((action) {
+      if (!mounted) return;
+      if (action.actionType == WristActionType.completeSet) {
+        for (final exDraft in _selectedExercises) {
+          if (action.exerciseName.isEmpty ||
+              exDraft.exercise.name.toLowerCase() ==
+                  action.exerciseName.toLowerCase()) {
+            final targetSet = exDraft.sets.firstWhere(
+              (s) => !s.isCompleted,
+              orElse: () => exDraft.sets.last,
+            );
+            setState(() {
+              targetSet.isCompleted = true;
+              if (action.weightKg != null) targetSet.weight = action.weightKg!;
+              if (action.reps != null) targetSet.reps = action.reps!;
+            });
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text(
+                  'Wrist logged: ${exDraft.exercise.name} (Set ${targetSet.setNumber})',
+                  style: const TextStyle(fontWeight: FontWeight.bold),
+                ),
+                backgroundColor: AppColors.primaryVolt,
+                duration: const Duration(seconds: 2),
+              ),
+            );
+            break;
+          }
+        }
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    _wristSub?.cancel();
+    _timer?.cancel();
+    _workoutTitleController.dispose();
+    _notesController.dispose();
+    for (final draft in _selectedExercises) {
+      draft.dispose();
+    }
+    super.dispose();
   }
 
   void _startTimer() {
@@ -65,7 +120,10 @@ class _ActiveSessionScreenState extends ConsumerState<ActiveSessionScreen> {
     _timer?.cancel();
     _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
       if (mounted && _isTimerRunning && _workoutStartTime != null) {
-        final activeSecs = DateTime.now().difference(_workoutStartTime!).inSeconds - _totalPausedDuration.inSeconds;
+        final activeSecs = DateTime.now()
+                .difference(_workoutStartTime!)
+                .inSeconds -
+            _totalPausedDuration.inSeconds;
         setState(() => _secondsElapsed = activeSecs < 0 ? 0 : activeSecs);
       }
     });
@@ -97,17 +155,6 @@ class _ActiveSessionScreenState extends ConsumerState<ActiveSessionScreen> {
         _secondsElapsed = 0;
       });
     }
-  }
-
-  @override
-  void dispose() {
-    _timer?.cancel();
-    _workoutTitleController.dispose();
-    _notesController.dispose();
-    for (final draft in _selectedExercises) {
-      draft.dispose();
-    }
-    super.dispose();
   }
 
   String _formatDuration(int totalSeconds) {
@@ -348,6 +395,33 @@ class _ActiveSessionScreenState extends ConsumerState<ActiveSessionScreen> {
         }
       }
 
+      // Calculate Volume and Export to Health Platform
+      double totalVolume = 0.0;
+      for (final ex in _selectedExercises) {
+        for (final s in ex.sets) {
+          if (s.isCompleted) {
+            totalVolume += (s.weight * s.reps);
+          }
+        }
+      }
+      final watchState = ref.read(smartwatchServiceProvider);
+      final activeCalories = watchState.activeCaloriesBurned > 0
+          ? watchState.activeCaloriesBurned
+          : (_secondsElapsed / 60.0) * 6.5;
+      final avgHr = watchState.currentBpm > 0 ? watchState.currentBpm : 125;
+
+      ref.read(healthPlatformServiceProvider.notifier).exportWorkoutSessionToHealth(
+        title: _workoutTitleController.text.trim().isNotEmpty
+            ? _workoutTitleController.text.trim()
+            : 'Strength Workout',
+        startTime: _workoutStartTime ??
+            DateTime.now().subtract(Duration(seconds: _secondsElapsed)),
+        endTime: DateTime.now(),
+        activeCalories: activeCalories,
+        averageHeartRate: avgHr,
+        totalVolumeKg: totalVolume,
+      );
+
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -548,6 +622,8 @@ class _ActiveSessionScreenState extends ConsumerState<ActiveSessionScreen> {
               ],
             ),
           ),
+
+          const LiveHeartRateHud(),
 
           Expanded(
             child: ListView(

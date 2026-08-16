@@ -1,0 +1,121 @@
+# ==========================================
+# Thews - Root Multi-Project Git Ignore
+# ==========================================
+
+# Miscellaneous & OS
+*.class
+*.log
+*.pyc
+*.swp
+*.orig
+*.rej
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+.history
+.svn/
+migrate_working_dir/
+
+# Environment & Secrets
+.env
+.env.*
+!.env.example
+*.keystore
+*.jks
+*.p12
+*.pem
+key.properties
+local.properties
+**/local.properties
+
+# IDE & Editors
+*.iml
+*.ipr
+*.iws
+.idea/
+.vscode/
+*.sublime-project
+*.sublime-workspace
+
+# Flutter / Dart / Pub (Root & Submodules)
+**/.dart_tool/
+**/.flutter-plugins
+**/.flutter-plugins-dependencies
+**/.pub-cache/
+**/.pub/
+**/build/
+**/coverage/
+**/doc/api/
+**/.packages
+
+# Android Build Artifacts & Caches
+**/.gradle/
+**/android/app/debug/
+**/android/app/profile/
+**/android/app/release/
+**/android/app/build/
+**/android/captures/
+**/android/.gradle/
+**/android/local.properties
+**/android/app/local.properties
+
+# iOS & macOS Build Artifacts
+**/ios/Flutter/.last_build_id
+**/ios/Flutter/App.framework
+**/ios/Flutter/Flutter.framework
+**/ios/Flutter/Flutter.podspec
+**/ios/Flutter/Generated.xcconfig
+**/ios/Flutter/app.flx
+**/ios/Flutter/app.zip
+**/ios/Flutter/flutter_assets/
+**/ios/Flutter/flutter_export_environment.sh
+**/ios/Pods/
+**/ios/.symlinks/
+**/ios/**/GeneratedPluginRegistrant.*
+**/ios/Runner.xcworkspace/
+**/macos/Flutter/ephemeral/
+**/macos/Pods/
+
+# Windows & Linux Ephemeral / Desktop Builds
+**/windows/flutter/ephemeral/
+**/linux/flutter/ephemeral/
+**/windows/flutter/generated_plugin_registrant.cc
+**/windows/flutter/generated_plugins.cmake
+**/linux/flutter/generated_plugin_registrant.cc
+**/linux/flutter/generated_plugins.cmake
+
+# Symbolication & Obfuscation
+app.*.symbols
+app.*.map.json
+**/app.*.symbols
+**/app.*.map.json
+
+# Executables & Packages
+*.apk
+*.aab
+*.ipa
+*.exe
+*.dll
+*.so
+*.dylib
+
+# Local Databases & SQLite Artifacts
+*.sqlite
+*.sqlite-journal
+*.sqlite3
+*.db
+*.db-journal
+*.db-wal
+*.db-shm
+
+# Backend / Node.js (Root & Submodules)
+**/node_modules/
+**/dist/
+**/npm-debug.log*
+**/yarn-debug.log*
+**/yarn-error.log*
+**/.pnpm-debug.log*

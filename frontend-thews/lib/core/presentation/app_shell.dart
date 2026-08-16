@@ -64,11 +64,9 @@ class _AppShellState extends State<AppShell> {
             ),
           ),
           child: SafeArea(
-            child: Container(
+            child: SizedBox(
               height: 64,
-              padding: const EdgeInsets.symmetric(horizontal: 12),
               child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceAround,
                 children: [
                   _buildNavItem(
                     context,
@@ -118,61 +116,68 @@ class _AppShellState extends State<AppShell> {
     final isSelected = widget.navigationShell.currentIndex == index;
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
-    return InkWell(
-      onTap: () => widget.navigationShell.goBranch(
-        index,
-        initialLocation: index == widget.navigationShell.currentIndex,
-      ),
-      borderRadius: BorderRadius.circular(16),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Container(
-              decoration: isSelected
-                  ? BoxDecoration(
-                      boxShadow: [
-                        BoxShadow(
-                          color: isDark
-                              ? AppColors.primaryGlow
-                              : AppColors.lightPrimary.withValues(alpha: 0.18),
-                          blurRadius: 10,
-                          spreadRadius: 1,
-                        ),
-                      ],
-                    )
-                  : null,
-              child: Icon(
-                icon,
-                color: isSelected
-                    ? (isDark ? AppColors.primaryVolt : AppColors.lightPrimary)
-                    : (isDark
-                          ? AppColors.darkTextSecondary
-                          : AppColors.lightTextSecondary),
-                size: 24,
+    return Expanded(
+      child: InkWell(
+        onTap: () => widget.navigationShell.goBranch(
+          index,
+          initialLocation: index == widget.navigationShell.currentIndex,
+        ),
+        borderRadius: BorderRadius.circular(16),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 8),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Container(
+                decoration: isSelected
+                    ? BoxDecoration(
+                        boxShadow: [
+                          BoxShadow(
+                            color: isDark
+                                ? AppColors.primaryGlow
+                                : AppColors.lightPrimary.withValues(alpha: 0.18),
+                            blurRadius: 10,
+                            spreadRadius: 1,
+                          ),
+                        ],
+                      )
+                    : null,
+                child: Icon(
+                  icon,
+                  color: isSelected
+                      ? (isDark ? AppColors.primaryVolt : AppColors.lightPrimary)
+                      : (isDark
+                            ? AppColors.darkTextSecondary
+                            : AppColors.lightTextSecondary),
+                  size: 24,
+                ),
               ),
-            ),
-            const SizedBox(height: 4),
-            Text(
-              label,
-              style:
-                  AppTypography.labelCaps(
-                    color: isSelected
-                        ? (isDark
-                              ? AppColors.primaryVolt
-                              : AppColors.lightPrimary)
-                        : (isDark
-                              ? AppColors.darkTextSecondary
-                              : AppColors.lightTextSecondary),
-                  ).copyWith(
-                    fontSize: 10,
-                    fontWeight: isSelected ? FontWeight.w800 : FontWeight.w700,
-                  ),
-              maxLines: 1,
-              softWrap: false,
-            ),
-          ],
+              const SizedBox(height: 4),
+              FittedBox(
+                fit: BoxFit.scaleDown,
+                child: Text(
+                  label,
+                  style:
+                      AppTypography.labelCaps(
+                        color: isSelected
+                            ? (isDark
+                                  ? AppColors.primaryVolt
+                                  : AppColors.lightPrimary)
+                            : (isDark
+                                  ? AppColors.darkTextSecondary
+                                  : AppColors.lightTextSecondary),
+                      ).copyWith(
+                        fontSize: 10,
+                        fontWeight: isSelected ? FontWeight.w800 : FontWeight.w700,
+                      ),
+                  maxLines: 1,
+                  softWrap: false,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );

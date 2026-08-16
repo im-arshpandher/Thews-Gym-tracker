@@ -41,6 +41,8 @@ class SettingsScreen extends ConsumerWidget {
             isDark: isDark,
           ),
           const SizedBox(height: 24),
+          WearableHealthSection(isDark: isDark),
+          const SizedBox(height: 24),
           DataManagementSection(isDark: isDark),
           const SizedBox(height: 24),
           AboutSection(isDark: isDark),

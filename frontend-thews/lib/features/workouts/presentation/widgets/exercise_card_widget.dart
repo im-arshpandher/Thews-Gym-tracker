@@ -7,6 +7,7 @@ import '../../../../core/presentation/widgets/muscle_group_icon.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_typography.dart';
 import '../../../../core/utils/metric_formatter.dart';
+import '../../../ai_coach/presentation/widgets/adaptive_set_coach_banner.dart';
 import '../../../settings/presentation/settings_provider.dart';
 import '../rest_timer_provider.dart';
 import '../../domain/workout_draft_models.dart';
@@ -36,6 +37,7 @@ class _ExerciseCardWidgetState extends ConsumerState<ExerciseCardWidget> {
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final draft = widget.draft;
+    final settings = ref.watch(settingsProvider);
     final enabledMetrics = ExerciseMetric.parseMetrics(
       draft.exercise.enabledMetrics,
     );
@@ -117,14 +119,19 @@ class _ExerciseCardWidgetState extends ConsumerState<ExerciseCardWidget> {
               Container(
                 margin: const EdgeInsets.only(top: 8, bottom: 8),
                 padding: const EdgeInsets.symmetric(
-                  horizontal: 10,
-                  vertical: 6,
+                  horizontal: 12,
+                  vertical: 8,
                 ),
                 decoration: BoxDecoration(
                   color: isDark
-                      ? AppColors.darkSurfaceContainer
+                      ? AppColors.darkSurfaceContainerLow.withValues(alpha: 0.6)
                       : AppColors.lightSurfaceContainerLow,
                   borderRadius: BorderRadius.circular(8),
+                  border: Border.all(
+                    color: isDark
+                        ? AppColors.darkOutline
+                        : AppColors.lightOutline,
+                  ),
                 ),
                 child: Row(
                   children: [
@@ -165,6 +172,27 @@ class _ExerciseCardWidgetState extends ConsumerState<ExerciseCardWidget> {
                   ],
                 ),
               ),
+
+            // AI Adaptive Progressive Overload Coach Target Banner
+            AdaptiveSetCoachBanner(
+              exerciseId: draft.exercise.id,
+              weightUnit: settings.weightUnit.label,
+              onApplyTarget: (recommendedWeight, recommendedReps) {
+                setState(() {
+                  final targetSet = draft.sets.firstWhere(
+                    (s) => !s.isCompleted,
+                    orElse: () => draft.sets.last,
+                  );
+                  targetSet.weight = recommendedWeight;
+                  targetSet.weightController.text = recommendedWeight
+                      .toStringAsFixed(1)
+                      .replaceAll(RegExp(r'\.0$'), '');
+                  targetSet.reps = recommendedReps;
+                  targetSet.repsController.text = recommendedReps.toString();
+                });
+                widget.onStateChanged();
+              },
+            ),
 
             const SizedBox(height: 12),
 

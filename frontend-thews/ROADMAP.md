@@ -1,149 +1,149 @@
-# Thews — Feature Roadmap & Implementation Phases
+# Thews — Feature Roadmap (Outperforming Strava & Hybrid Training Pro)
 
-This document details the multi-phase implementation roadmap for **Thews**, including core features, upcoming wearable integrations, outdoor GPS tracking modules, AI vision capabilities, and detailed technical specifications.
+This document details the multi-phase technical roadmap for **Thews**, engineered to surpass traditional platforms like Strava by unifying outdoor endurance tracking with pro-level resistance training, local-first live segments, personal glowing route heatmaps, biometric cardiac decoupling, and 3D cinematic route visualization.
 
 ---
 
 ```mermaid
 graph TD
-    P1_5["Phases 1-5: Core Logging, Analytics & Sync - COMPLETED"] --> P6["Phase 6: Dedicated Workout Session Details Page"]
-    P6 --> P7["Phase 7: Outdoor Running & Activity Tracking Module"]
-    P7 --> P8["Phase 8: Smartwatch Companion & Health Integration"]
-    P8 --> P9["Phase 9: AI Computer Vision Rep & Form Recognition"]
+    P1["Phase 1: Live Segments, Real-Time Ghost Racing & Personal Route Heatmaps"]
+    P2["Phase 2: Grade-Adjusted Pace (GAP), Aerobic Decoupling & TRIMP Training Load"]
+    P3["Phase 3: Real-Time Audio Coach, Voice Splits & Running Cadence Metronome"]
+    P4["Phase 4: 3D Route Contour Flyover & High-Impact Social Reel Exporter"]
+    P5["Phase 5: Hybrid Athlete Engine — Strength + Endurance Interference Optimizer"]
 
-    subgraph Phase 6: Session History Detail View
-        P6_1["Dedicated Workout Session Screen"]
-        P6_2["Set Breakdown & PR Badges"]
-        P6_3["Social Workout Share Card Generator"]
+    P1 --> P2
+    P2 --> P3
+    P3 --> P4
+    P4 --> P5
+
+    subgraph Phase 1: Live Segments & Personal Heatmaps
+        P1_1["All-Time Glowing GPS Route Heatmap Explorer"]
+        P1_2["Local GPS Polygon Segment Detector"]
+        P1_3["Real-Time Live Delta HUD (+2.4s Ahead of PR)"]
+        P1_4["Interactive Route-to-Segment Creator"]
     end
 
-    subgraph Phase 7: GPS Running & Activity Tracking
-        P7_1["Live GPS Route Tracking & Map Polyline"]
-        P7_2["Pace, Split Times & Elevation Profile"]
-        P7_3["GPX Import/Export & Track Sharing Card"]
+    subgraph Phase 2: Pro Biomechanics & Training Load
+        P2_1["Minetti Grade-Adjusted Pace (GAP) Engine"]
+        P2_2["Aerobic Decoupling & Cardiac Drift Ratio"]
+        P2_3["Bannister TRIMP & Acute-to-Chronic Workload Ratio"]
     end
 
-    subgraph Phase 8: Smartwatch & Biometrics
-        P8_1["Wear OS & WatchOS Native Connectivity"]
-        P8_2["Real-Time Wrist Set Logging & Heart Rate Sync"]
-        P8_3["Apple Health & Health Connect Platform Sync"]
+    subgraph Phase 3: Hands-Free Voice Coaching
+        P3_1["Customizable TTS Audio Split Announcer"]
+        P3_2["Rhythmic Cadence Metronome (160-190 SPM)"]
+        P3_3["Heart Rate Zone Target Voice Alerts"]
     end
 
-    subgraph Phase 9: AI Pose & Vision Rep Counter
-        P9_1["On-Device Pose Landmark Kinematics"]
-        P9_2["Automatic Rep Counting & Depth Detection"]
-        P9_3["Real-time Skeleton Overlay & Privacy First"]
+    subgraph Phase 4: 3D Visualization & Reel Exporter
+        P4_1["Interactive 3D Elevation Gradient Heatmap"]
+        P4_2["Animated 60 FPS Route Flyover Generator"]
+        P4_3["High-Contrast Social Story / Reel Snapshots"]
+    end
+
+    subgraph Phase 5: Hybrid Athlete Intelligence
+        P5_1["Neuromuscular vs Aerobic Fatigue Cross-Index"]
+        P5_2["Interference Effect Minimizer & Run Scheduling"]
+        P5_3["Unified Strength + Cardio Readiness Score"]
     end
 ```
 
 ---
 
-## Active Roadmap & Upcoming Phases
+## Active & Upcoming Roadmap Phases
 
-### [x] Phase 6: Dedicated Workout Session History Details Page
-* **Status:** Completed
-* **Goal:** Create a dedicated, rich workout summary page (`/history/workout/:id`) providing complete analytical insight into past completed sessions.
-* **UI & UX Specifications:**
-  * Hero session metrics header: date/time, total duration, total working volume, total sets completed, and PR badge callouts.
-  * Set-by-set table grouped by exercise with set type badges (`Warmup`, `Normal`, `Drop`, `Failure`) and performance metrics.
-  * Interactive muscle group breakdown chart for the session.
-  * Social Workout Share Card Generator (`workout_share_card.dart`) allowing users to generate and export an image card of their workout summary.
-* **Database & Architecture Need:**
-  * Add query `watchWorkoutSessionDetails(int workoutId)` in `app_database.dart` joining workout metadata, exercise definitions, set entries, and PR flags.
-* **Key File Pointers:**
-  * [`workout_session_detail_screen.dart`](file:///D:/androidProjects/Thews/lib/features/history/presentation/workout_session_detail_screen.dart)
-  * [`workout_share_card.dart`](file:///D:/androidProjects/Thews/lib/features/history/presentation/widgets/workout_share_card.dart)
-  * [`app_database.dart`](file:///D:/androidProjects/Thews/lib/core/database/app_database.dart)
-  * [`app_router.dart`](file:///D:/androidProjects/Thews/lib/core/router/app_router.dart)
-
-### [x] Phase 7: Outdoor Running & Activity Module with Live Tracking & Route Sharing (Strava-like)
-* **Status:** Completed
-* **Goal:** Full outdoor activity tracker for running, walking, and cycling with live GPS mapping, split calculations, elevation profile, GPX export/import, and graphic route sharing.
-* **UI & UX Specifications:**
-  * Live Map Screen with interactive vector polyline (`flutter_map` / OpenStreetMap / Mapbox tiles).
-  * Real-time telemetry overlay: current pace (min/km), average pace, distance, duration, and elevation gain.
-  * Auto-pause detection when stationary and voice/haptic split prompts every kilometer or mile.
-  * Post-run summary view with pace graph, elevation curve, split table, and Strava-style map snapshot card for social sharing via `share_plus`.
-  * Import and export workouts in standard `.gpx` file format.
-* **Database Schema Expansion:**
-  ```dart
-  @DataClassName('RunActivityData')
-  class RunActivities extends Table {
-    IntColumn get id => integer().autoIncrement()();
-    IntColumn get workoutId => integer().nullable().references(Workouts, #id, onDelete: KeyAction.cascade)();
-    DateTimeColumn get startTime => dateTime()();
-    RealColumn get distanceMeters => real()();
-    IntColumn get durationSeconds => integer()();
-    RealColumn get avgPaceSecondsPerKm => real()();
-    RealColumn get elevationGainMeters => real().withDefault(const Constant(0.0))();
-    TextColumn get gpxPolyline => text().nullable()(); // Encoded polyline or raw GPX JSON
-  }
-  ```
-* **Dependencies:** `geolocator`, `flutter_map`, `latlong2`, `gpx`, `share_plus`.
-* **Key File Pointers:**
-  * `lib/features/running/presentation/run_tracker_screen.dart`
-  * `lib/features/running/presentation/run_summary_screen.dart`
-  * `lib/core/services/gps_tracking_service.dart`
-  * `lib/core/utils/gpx_parser.dart`
-  * [`tables.dart`](file:///D:/androidProjects/Thews/lib/core/database/tables.dart)
-
-### Phase 8: Smartwatch Companion & Biometric Integration (Wear OS & Apple Watch)
-* **Goal:** Seamless bi-directional wrist companion sync with Android Wear OS and Apple Watch OS for real-time heart rate monitoring, live set logging, rest timer vibration on wrist, and Health App data synchronization.
+### Phase 1: Live Segments, Real-Time Ghost Racing & Personal Route Heatmaps
+* **Goal:** Deliver an entirely offline, local-first segment racing and all-time glowing route heatmap experience superior to Strava's paywalled Live Segments & Personal Heatmap ($80/yr).
 * **Technical Specifications:**
-  * **Wear OS & WatchOS Native App Channel:** Implement native channels bridging Flutter to Kotlin (Wearable Data Layer API / Health Connect) and Swift (WatchConnectivity framework / HealthKit).
-  * **Real-time Wrist Sync:**
-    * Stream current exercise name, target reps/weight, and rest countdown timer directly to watch face.
-    * Wrist interaction: complete sets, adjust weights/reps, and trigger rest timer directly from watch.
-    * Stream live Heart Rate (BPM) and active calorie burn from watch biometrics into active workout session.
-  * **Health Platform Sync:** Dual integration writing workouts and reading daily activity metrics from **Apple Health** (`HealthKit`) and **Android Health Connect**.
-* **Dependencies:** `flutter_watch_connectivity` / native method channels, `health` / `health_connect`.
-* **Key File Pointers:**
-  * `lib/core/services/smartwatch_service.dart`
-  * `lib/core/services/health_platform_service.dart`
-  * `android/app/src/main/kotlin/.../WearableDataService.kt`
-  * `ios/WatchApp/WatchConnectivityManager.swift`
-
-### Phase 9: AI/ML Exercise Visual Rep Recognition & Form Analysis (Future Integration)
-* **Goal:** Camera-assisted automatic rep counting and live biomechanical form guidance using real-time on-device pose landmark detection.
-* **Technical Specifications:**
-  * **Camera & ML Pipeline:** Process camera frame stream locally using `camera` and `google_mlkit_pose_detection` (or custom TFLite / MediaPipe pose landmarks).
-  * **Kinematics Rep Counting Engine:**
-    * Track key skeletal joint angles in real time (e.g. knee/hip angles for squats, elbow angle for bicep curls & bench press).
-    * State machine algorithm tracking movement phases (setup → eccentric phase → inflection bottom → concentric phase → lockout completion) to increment set reps automatically.
-  * **Visual Feedback & Privacy:**
-    * Render real-time skeleton overlay on camera viewfinder with green/red joint alignment indicators.
-    * 100% local on-device computation—no camera stream data leaves the user's phone.
-* **Dependencies:** `google_mlkit_pose_detection`, `camera`, `tflite_flutter`.
-* **Key File Pointers:**
-  * `lib/features/ai_vision/presentation/camera_rep_counter_screen.dart`
-  * `lib/features/ai_vision/domain/pose_detector_service.dart`
-  * `lib/features/ai_vision/domain/kinematics_rep_calculator.dart`
+  * **Personal All-Time GPS Route Heatmap (`run_heatmap_screen.dart`):**
+    * High-contrast Dark/Midnight basemap aggregating every recorded run, walk, and cycle in the local database.
+    * Multi-pass glowing density renderer (`heatmap_polyline_painter.dart`) where repeatedly traversed streets and trails accumulate luminous electric volt / amber glow intensity.
+    * Filterable by activity type (`jog, cycle`) and time window (`All Time`, `This Year`, `Last 30 Days`).
+    * Explorer telemetry: Total territory distance, total elevation ascended, and exportable map territory snapshot.
+  * **Local Segment Detection Engine:** Pre-compute bounding geo-boxes on GPX routes; trigger real-time audio and visual HUD notification upon crossing a segment start line.
+  * **Real-time Live Ghost HUD:** Real-time distance and time delta comparison against personal record ($\Delta t = t_{\text{current}} - t_{\text{PR\_at\_distance}}$) with pulsing green/red pacing bar.
+  * **Interactive Custom Segment Builder:** Select any segment of a past recorded run on the polyline map to instantly name and create a new local segment.
+  * **Segment Leaderboards & Wind / Weather Tagging:** Track local personal history, PR crowns, and elevation profiles.
+* **Target Dependencies:** `latlong2`, `flutter_map`, `drift`.
+* **Key Target Files:**
+  * `lib/features/running/presentation/run_heatmap_screen.dart`
+  * `lib/features/running/presentation/widgets/heatmap_polyline_painter.dart`
+  * `lib/features/running/domain/live_segment_engine.dart`
+  * `lib/features/running/presentation/widgets/live_segment_hud.dart`
+  * `lib/features/running/presentation/segment_builder_screen.dart`
 
 ---
 
-## Completed Milestones (Phases 1–5)
+### Phase 2: Grade-Adjusted Pace (GAP), Aerobic Decoupling & TRIMP Training Load
+* **Goal:** State-of-the-art endurance physiology algorithms providing pro-grade telemetry without subscriptions.
+* **Technical Specifications:**
+  * **Minetti Grade-Adjusted Pace (GAP):** Real-time metabolic cost pace normalization using the Minetti polynomial equation based on instantaneous slope gradient $i = \frac{\Delta \text{elevation}}{\Delta \text{distance}}$:
+    $$C_r(i) = 155.4 i^5 - 30.4 i^4 - 43.3 i^3 + 46.3 i^2 + 19.5 i + 3.6$$
+    $$\text{GAP} = \text{Pace}_{\text{actual}} \times \frac{C_r(0)}{C_r(i)}$$
+  * **Cardiac Drift & Aerobic Decoupling ($EF$):** Compare the Efficiency Factor ($EF = \frac{\text{Pace}}{\text{HR}}$) between the first half and second half of long runs to quantify aerobic endurance breakdown:
+    $$\text{Decoupling Rate} = \frac{EF_{\text{half1}} - EF_{\text{half2}}}{EF_{\text{half1}}} \times 100\%$$
+  * **Bannister TRIMP & Acute-to-Chronic Workload Ratio (ACWR):** Quantify cardiovascular training load stress scores ($TSS$) and overtraining/injury risk zones.
+* **Target Dependencies:** `drift`, `fl_chart`.
+* **Key Target Files:**
+  * `lib/features/running/domain/gap_calculator.dart`
+  * `lib/features/running/domain/aerobic_decoupling_engine.dart`
+  * `lib/features/running/domain/trimp_workload_calculator.dart`
 
-- **Phase 1: Core Logging & In-Session UX**
-  - Previous Session Ghost Data (Target Guidance)
-  - Integrated Rest Timer Bar & Haptics
-  - Form Keyboard Focus Traversal & Auto-Next Focus
-  - Barbell Plate Calculator Helper Modal
+---
 
-- **Phase 2: DB Schema, Set Types & Routine Templates**
-  - Set Types Migration (Warmup, Normal, Drop, Failure)
-  - Routine Templates & Preset Launcher UI
+### Phase 3: Real-Time Audio Coach, Voice Splits & Running Cadence Metronome
+* **Goal:** 100% hands-free running experience with intelligent audio feedback and cadence optimization.
+* **Technical Specifications:**
+  * **Customizable Audio Voice Announcer:** Text-to-speech voice splits announced into Bluetooth headphones every km, mile, or custom interval (current pace, split pace, average heart rate, distance remaining).
+  * **Rhythmic Audio Cadence Metronome:** Built-in customizable rhythm generator (160–190 SPM) with subtle audio clicks or haptic pulses to train stride rate and reduce knee impact stress.
+  * **Heart Rate Zone Audio Boundary Alerts:** Voice prompts when drifting outside target training zone (e.g. *"Exiting Zone 2 — Heart Rate 154 BPM, slow down pace"*).
+* **Target Dependencies:** `flutter_tts`, `audioplayers` / native audio synthesizer.
+* **Key Target Files:**
+  * `lib/core/services/audio_coach_service.dart`
+  * `lib/features/running/presentation/widgets/cadence_metronome_sheet.dart`
 
-- **Phase 3: Visual Analytics, PR Detection & Anatomy Map**
-  - Interactive Progress Charts (`fl_chart`)
-  - Muscle Heatmap & Volume Distribution
-  - Automatic PR Detection & Toast Celebration
-  - Interactive Body Anatomy Map
+---
 
-- **Phase 4: Data Management, Import/Export & System Integration**
-  - Full JSON & CSV Data Backup / Import / Export
-  - Active Workout Ongoing System Notifications
-  - Remote Sync Provider Abstraction Layer
+### Phase 4: 3D Route Contour Flyover & High-Impact Social Reel Exporter
+* **Goal:** Visual superiority over Strava and Relive by generating stunning 3D elevation maps and animated video route reels.
+* **Technical Specifications:**
+  * **Interactive Elevation Gradient Heatmap:** Multi-color dynamic polyline on map reflecting gradient steepness (🟢 Flat $\to$ 🟡 Rolling $\to$ 🔴 Steep incline).
+  * **Animated 60 FPS Route Flyover:** Render smoothed 3D route fly-through with moving athlete marker, dynamic pace graphs, and split achievement callouts.
+  * **Pro Social Share Cards:** Exportable vertical 9:16 and square 1:1 image/video cards formatted for Instagram Stories, TikTok, and Strava with map snapshot, elevation profile, and biometrics.
+* **Target Dependencies:** `flutter_map`, `screenshot`, `path_provider`, `share_plus`.
+* **Key Target Files:**
+  * `lib/features/running/presentation/widgets/gradient_route_painter.dart`
+  * `lib/features/running/presentation/widgets/animated_run_flyover_view.dart`
+  * `lib/features/running/presentation/widgets/pro_run_share_card.dart`
 
-- **Phase 5: Quality Assurance & CI/CD Pipeline**
-  - In-Memory Drift DB Unit Tests
-  - GitHub Actions CI Workflow
+---
+
+### Phase 5: Hybrid Athlete Engine — Strength + Endurance Interference Optimizer
+* **Goal:** The ultimate competitive edge — the first app designed specifically for hybrid athletes who both lift heavy and run hard.
+* **Technical Specifications:**
+  * **Neuromuscular vs Aerobic Fatigue Matrix:** Unified dashboard combining weight room tonnage (squats, deadlifts) with running mileage and elevation.
+  * **Interference Effect Minimizer:** Algorithmic schedule advisor optimizing the temporal spacing between heavy lower-body hypertrophy workouts and high-intensity running intervals to prevent mTOR/AMPK cellular signaling interference.
+  * **Unified Athlete Readiness Score:** Comprehensive recovery score blending strength fatigue, running volume, sleep, and resting heart rate.
+* **Target Dependencies:** `drift`, `riverpod`, `fl_chart`.
+* **Key Target Files:**
+  * `lib/features/hybrid/domain/interference_optimizer.dart`
+  * `lib/features/hybrid/presentation/hybrid_dashboard_card.dart`
+  * `lib/features/hybrid/domain/unified_athlete_readiness_engine.dart`
+
+---
+
+## Future Horizons & Long-Term Backlog
+
+### Future Phase: Community, Async Challenges & Social Live Gym Battles
+* **Status:** Saved for Future Exploration
+* **Goal:** Connected fitness community with live ghost athlete running race overlays, synchronized gym rest timer battle lobbies, and community-verified routine marketplace.
+* **Technical Specifications:**
+  * **Ghost Athlete Race Overlay:** Render real-time ghost avatar on GPS run map representing a friend's past run or personal PR pacing.
+  * **Live Gym Battle Rest Timer Lobbies:** Real-time WebRTC / WebSocket room synchronizing workout timers and live set counts among training partners.
+  * **Verified Coach Routine Marketplace:** Share, rate, and fork structured workout routines with verified cryptographic 1RM proof cards.
+* **Target Dependencies:** `web_socket_channel`, `qr_flutter`, `share_plus`.
+* **Key Target Files:**
+  * `lib/features/community/presentation/live_battle_lobby_screen.dart`
+  * `lib/features/community/presentation/routine_marketplace_screen.dart`
+  * `lib/features/community/domain/ghost_athlete_engine.dart`
