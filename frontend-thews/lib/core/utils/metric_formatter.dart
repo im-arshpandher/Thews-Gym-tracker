@@ -3,14 +3,19 @@ import '../models/exercise_metric.dart';
 
 /// Central utility for formatting exercise set metrics dynamically based on enabled metrics.
 class MetricFormatter {
+  /// Formats weight value with unit.
+  static String formatWeight(double weight, String unit) {
+    final wStr = weight % 1 == 0
+        ? weight.toInt().toString()
+        : weight.toString();
+    return '$wStr $unit';
+  }
+
   /// Returns a clean formatted string for a specific metric from a [SetEntryData].
   static String getMetricValueString(SetEntryData set, ExerciseMetric metric) {
     switch (metric) {
       case ExerciseMetric.weight:
-        final wStr = set.weight % 1 == 0
-            ? set.weight.toInt().toString()
-            : set.weight.toString();
-        return '$wStr ${set.unit}';
+        return formatWeight(set.weight, set.unit);
       case ExerciseMetric.reps:
         return '${set.reps} reps';
       case ExerciseMetric.distance:

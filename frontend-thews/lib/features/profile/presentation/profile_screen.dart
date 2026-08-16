@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../core/animations/app_animations.dart';
 import '../../../core/database/app_database.dart';
 import '../../../core/database/database_provider.dart';
 import '../../../core/theme/app_colors.dart';
@@ -69,33 +70,45 @@ class ProfileScreen extends ConsumerWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 // 1. Athlete Identity & Rank Card
-                _buildAthleteIdentityCard(challengeState, isDark),
+                FadeSlideEntrance(
+                  delay: const Duration(milliseconds: 40),
+                  child: _buildAthleteIdentityCard(challengeState, isDark),
+                ),
                 const SizedBox(height: 20),
 
                 // 2. Trophy Room & Showcase Section
-                _buildTrophyShowcaseSection(
-                  context,
-                  challengeState.trophies,
-                  isDark,
+                FadeSlideEntrance(
+                  delay: const Duration(milliseconds: 100),
+                  child: _buildTrophyShowcaseSection(
+                    context,
+                    challengeState.trophies,
+                    isDark,
+                  ),
                 ),
                 const SizedBox(height: 24),
 
                 // 3. Weekly Volume & Performance Charts (Strava-style)
-                _buildPerformanceVolumeChart(
-                  runActivities,
-                  statsAsync.value?.recentWorkouts ?? [],
-                  isDark,
+                FadeSlideEntrance(
+                  delay: const Duration(milliseconds: 160),
+                  child: _buildPerformanceVolumeChart(
+                    runActivities,
+                    statsAsync.value?.recentWorkouts ?? [],
+                    isDark,
+                  ),
                 ),
                 const SizedBox(height: 24),
 
                 // 4. Lifetime Career Statistics & PRs
-                _buildCareerStatsSection(
-                  stats: statsAsync.value,
-                  totalRunDistanceKm: totalRunDistanceKm,
-                  totalElevationMeters: totalElevationGainMeters,
-                  totalRunDurationSeconds: totalRunDurationSeconds,
-                  weightUnit: settings.weightUnit.label,
-                  isDark: isDark,
+                FadeSlideEntrance(
+                  delay: const Duration(milliseconds: 220),
+                  child: _buildCareerStatsSection(
+                    stats: statsAsync.value,
+                    totalRunDistanceKm: totalRunDistanceKm,
+                    totalElevationMeters: totalElevationGainMeters,
+                    totalRunDurationSeconds: totalRunDurationSeconds,
+                    weightUnit: settings.weightUnit.label,
+                    isDark: isDark,
+                  ),
                 ),
                 const SizedBox(height: 32),
               ],
@@ -283,13 +296,18 @@ class ProfileScreen extends ConsumerWidget {
           const SizedBox(height: 6),
           ClipRRect(
             borderRadius: BorderRadius.circular(6),
-            child: LinearProgressIndicator(
-              value: progressInLevel,
-              minHeight: 8,
-              backgroundColor: isDark
-                  ? AppColors.darkSurfaceContainerHighest
-                  : AppColors.lightSurfaceContainerHigh,
-              color: isDark ? AppColors.primaryVolt : AppColors.lightPrimary,
+            child: TweenAnimationBuilder<double>(
+              tween: Tween<double>(begin: 0.0, end: progressInLevel),
+              duration: const Duration(milliseconds: 800),
+              curve: Curves.easeOutCubic,
+              builder: (context, animVal, _) => LinearProgressIndicator(
+                value: animVal,
+                minHeight: 8,
+                backgroundColor: isDark
+                    ? AppColors.darkSurfaceContainerHighest
+                    : AppColors.lightSurfaceContainerHigh,
+                color: isDark ? AppColors.primaryVolt : AppColors.lightPrimary,
+              ),
             ),
           ),
         ],
@@ -373,7 +391,7 @@ class ProfileScreen extends ConsumerWidget {
     final tierColor = _getTrophyColor(trophy.tier);
     final isUnlocked = trophy.isUnlocked;
 
-    return GestureDetector(
+    return BouncingButton(
       onTap: () => _showTrophyDetailDialog(context, trophy, isDark),
       child: Container(
         padding: const EdgeInsets.all(10),
@@ -688,6 +706,8 @@ class ProfileScreen extends ConsumerWidget {
           SizedBox(
             height: 180,
             child: BarChart(
+              duration: const Duration(milliseconds: 650),
+              curve: Curves.easeOutCubic,
               BarChartData(
                 maxY: 15.0,
                 barGroups: barGroups,
@@ -832,55 +852,57 @@ class ProfileScreen extends ConsumerWidget {
     required IconData icon,
     required bool isDark,
   }) {
-    return Container(
-      padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(
-        color: isDark
-            ? AppColors.darkSurfaceContainerLow
-            : AppColors.lightSurfaceContainerLowest,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: (isDark ? AppColors.darkOutline : AppColors.lightOutline)
-              .withValues(alpha: 0.25),
+    return BouncingButton(
+      child: Container(
+        padding: const EdgeInsets.all(14),
+        decoration: BoxDecoration(
+          color: isDark
+              ? AppColors.darkSurfaceContainerLow
+              : AppColors.lightSurfaceContainerLowest,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(
+            color: (isDark ? AppColors.darkOutline : AppColors.lightOutline)
+                .withValues(alpha: 0.25),
+          ),
         ),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Icon(
-                icon,
-                size: 16,
-                color: isDark ? AppColors.primaryVolt : AppColors.lightPrimary,
-              ),
-              const SizedBox(width: 6),
-              Expanded(
-                child: Text(
-                  title,
-                  style: AppTypography.labelCaps(
-                    color: isDark
-                        ? AppColors.darkTextSecondary
-                        : AppColors.lightTextSecondary,
-                  ).copyWith(fontSize: 10),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Icon(
+                  icon,
+                  size: 16,
+                  color: isDark ? AppColors.primaryVolt : AppColors.lightPrimary,
                 ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 8),
-          Text(
-            value,
-            style: AppTypography.headlineMd(
-              color: isDark
-                  ? AppColors.darkTextPrimary
-                  : AppColors.lightTextPrimary,
-            ).copyWith(fontWeight: FontWeight.w900),
-            maxLines: 1,
-            softWrap: false,
-          ),
-        ],
+                const SizedBox(width: 6),
+                Expanded(
+                  child: Text(
+                    title,
+                    style: AppTypography.labelCaps(
+                      color: isDark
+                          ? AppColors.darkTextSecondary
+                          : AppColors.lightTextSecondary,
+                    ).copyWith(fontSize: 10),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 8),
+            Text(
+              value,
+              style: AppTypography.headlineMd(
+                color: isDark
+                    ? AppColors.darkTextPrimary
+                    : AppColors.lightTextPrimary,
+              ).copyWith(fontWeight: FontWeight.w900),
+              maxLines: 1,
+              softWrap: false,
+            ),
+          ],
+        ),
       ),
     );
   }

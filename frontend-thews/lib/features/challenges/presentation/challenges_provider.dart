@@ -134,10 +134,12 @@ class ChallengesNotifier extends StateNotifier<ChallengesState> {
     }
 
     final isNewDay = savedDate != today;
+    final customChallenges = loadedChallenges.where((c) => c.isCustom).toList();
 
     if (loadedChallenges.isEmpty || isNewDay) {
-      loadedChallenges =
+      final defaultCh =
           _generateDefaultChallenges(initialLocation, savedLocality, today);
+      loadedChallenges = [...customChallenges, ...defaultCh];
       _prefs.setString(_dailyDateKey, today);
     }
 
@@ -322,22 +324,26 @@ class ChallengesNotifier extends StateNotifier<ChallengesState> {
         ),
       ];
 
-      // Retain completion status if completed on the same date
-      final mergedChallenges = updatedChallenges.map((newCh) {
-        final existing = state.challenges.cast<LocalChallenge?>().firstWhere(
-              (c) => c?.id == newCh.id,
-              orElse: () => null,
+      // Retain custom challenges and completion status if completed on the same date
+      final customChallenges = state.challenges.where((c) => c.isCustom).toList();
+      final mergedChallenges = [
+        ...customChallenges,
+        ...updatedChallenges.map((newCh) {
+          final existing = state.challenges.cast<LocalChallenge?>().firstWhere(
+                (c) => c?.id == newCh.id,
+                orElse: () => null,
+              );
+          if (existing != null &&
+              existing.isCompleted &&
+              existing.dateKey == today) {
+            return newCh.copyWith(
+              isCompleted: true,
+              completedAt: existing.completedAt,
             );
-        if (existing != null &&
-            existing.isCompleted &&
-            existing.dateKey == today) {
-          return newCh.copyWith(
-            isCompleted: true,
-            completedAt: existing.completedAt,
-          );
-        }
-        return newCh;
-      }).toList();
+          }
+          return newCh;
+        }),
+      ];
 
       state = state.copyWith(
         userLocation: location,
@@ -353,16 +359,34 @@ class ChallengesNotifier extends StateNotifier<ChallengesState> {
       await _saveChallenges();
     } catch (_) {
       // Fallback
+      final customChallenges = state.challenges.where((c) => c.isCustom).toList();
       final fallbackList = _generateDefaultChallenges(location, newLocality, today);
       state = state.copyWith(
         userLocation: location,
         localityName: newLocality,
-        challenges: fallbackList,
+        challenges: [...customChallenges, ...fallbackList],
         isLoading: false,
         todayDateKey: today,
       );
       await _saveChallenges();
     }
+  }
+
+  /// Adds a user-created custom challenge to the front of the challenge list.
+  Future<void> addCustomChallenge(LocalChallenge challenge) async {
+    final updated = [
+      challenge,
+      ...state.challenges.where((c) => c.id != challenge.id),
+    ];
+    state = state.copyWith(challenges: updated);
+    await _saveChallenges();
+  }
+
+  /// Deletes a challenge by its id.
+  Future<void> deleteChallenge(String challengeId) async {
+    final updated = state.challenges.where((c) => c.id != challengeId).toList();
+    state = state.copyWith(challenges: updated);
+    await _saveChallenges();
   }
 
   Future<void> completeChallenge(String challengeId) async {

@@ -95,8 +95,8 @@ class _AppShellState extends State<AppShell> {
                   _buildNavItem(
                     context,
                     index: 4,
-                    icon: Icons.settings,
-                    label: 'SETTINGS',
+                    icon: Icons.person,
+                    label: 'PROFILE',
                   ),
                 ],
               ),
@@ -124,56 +124,68 @@ class _AppShellState extends State<AppShell> {
         ),
         borderRadius: BorderRadius.circular(16),
         child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 8),
+          padding: const EdgeInsets.symmetric(horizontal: 2, vertical: 6),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Container(
-                decoration: isSelected
-                    ? BoxDecoration(
-                        boxShadow: [
-                          BoxShadow(
-                            color: isDark
-                                ? AppColors.primaryGlow
-                                : AppColors.lightPrimary.withValues(alpha: 0.18),
-                            blurRadius: 10,
-                            spreadRadius: 1,
-                          ),
-                        ],
-                      )
-                    : null,
-                child: Icon(
-                  icon,
+              AnimatedContainer(
+                duration: const Duration(milliseconds: 240),
+                curve: Curves.easeOutCubic,
+                padding: EdgeInsets.symmetric(
+                  horizontal: isSelected ? 14 : 0,
+                  vertical: isSelected ? 3 : 0,
+                ),
+                decoration: BoxDecoration(
                   color: isSelected
-                      ? (isDark ? AppColors.primaryVolt : AppColors.lightPrimary)
-                      : (isDark
+                      ? (isDark
+                          ? AppColors.primaryVolt.withValues(alpha: 0.14)
+                          : AppColors.lightPrimary.withValues(alpha: 0.12))
+                      : Colors.transparent,
+                  borderRadius: BorderRadius.circular(14),
+                ),
+                child: AnimatedScale(
+                  scale: isSelected ? 1.12 : 1.0,
+                  duration: const Duration(milliseconds: 220),
+                  curve: Curves.easeOutBack,
+                  child: Icon(
+                    icon,
+                    color: isSelected
+                        ? (isDark
+                            ? AppColors.primaryVolt
+                            : AppColors.lightPrimary)
+                        : (isDark
                             ? AppColors.darkTextSecondary
                             : AppColors.lightTextSecondary),
-                  size: 24,
+                    size: 22,
+                  ),
                 ),
               ),
-              const SizedBox(height: 4),
+              const SizedBox(height: 3),
               FittedBox(
                 fit: BoxFit.scaleDown,
-                child: Text(
-                  label,
-                  style:
-                      AppTypography.labelCaps(
-                        color: isSelected
-                            ? (isDark
-                                  ? AppColors.primaryVolt
-                                  : AppColors.lightPrimary)
-                            : (isDark
-                                  ? AppColors.darkTextSecondary
-                                  : AppColors.lightTextSecondary),
-                      ).copyWith(
-                        fontSize: 10,
-                        fontWeight: isSelected ? FontWeight.w800 : FontWeight.w700,
-                      ),
-                  maxLines: 1,
-                  softWrap: false,
-                  overflow: TextOverflow.ellipsis,
+                child: AnimatedDefaultTextStyle(
+                  duration: const Duration(milliseconds: 200),
+                  style: AppTypography.labelCaps(
+                    color: isSelected
+                        ? (isDark
+                            ? AppColors.primaryVolt
+                            : AppColors.lightPrimary)
+                        : (isDark
+                            ? AppColors.darkTextSecondary
+                            : AppColors.lightTextSecondary),
+                  ).copyWith(
+                    fontSize: 9.5,
+                    fontWeight:
+                        isSelected ? FontWeight.w900 : FontWeight.w600,
+                    letterSpacing: isSelected ? 0.6 : 0.2,
+                  ),
+                  child: Text(
+                    label,
+                    maxLines: 1,
+                    softWrap: false,
+                    overflow: TextOverflow.ellipsis,
+                  ),
                 ),
               ),
             ],

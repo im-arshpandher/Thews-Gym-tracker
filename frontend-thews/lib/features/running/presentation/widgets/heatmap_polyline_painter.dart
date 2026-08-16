@@ -1,6 +1,31 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:latlong2/latlong.dart';
+
+import '../../../../core/database/database_provider.dart';
 import '../../../../core/theme/app_colors.dart';
+import '../../../../core/utils/gpx_parser.dart';
+
+/// StreamProvider providing all parsed GPS routes across all historical activities for heatmap rendering.
+final heatmapRoutesProvider =
+    StreamProvider.autoDispose<List<List<LatLng>>>((ref) {
+  final db = ref.watch(databaseProvider);
+  return db.watchAllRunActivities().map((activities) {
+    final List<List<LatLng>> routes = [];
+    for (final act in activities) {
+      if (act.gpxData != null && act.gpxData!.isNotEmpty) {
+        final gpxPoints = GpxParser.parseGpxXml(act.gpxData!);
+        final latLngs =
+            gpxPoints.map((p) => LatLng(p.latitude, p.longitude)).toList();
+        if (latLngs.isNotEmpty) {
+          routes.add(latLngs);
+        }
+      }
+    }
+    return routes;
+  });
+});
 
 /// Renders glowing multi-pass neon polylines for the running route heatmap.
 class HeatmapPolylineLayer extends StatelessWidget {

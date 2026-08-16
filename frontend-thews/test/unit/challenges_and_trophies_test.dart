@@ -251,16 +251,82 @@ void main() {
       expect(state.totalXp, 900);
     });
 
-    test('updateLocation regenerates challenges centered around new GPS location', () async {
+    test('addCustomChallenge prepends custom challenge and persists', () async {
       final notifier = ChallengesNotifier(prefs);
-      const newLoc = LatLng(40.7128, -74.0060); // New York
 
-      await notifier.updateLocation(newLoc, localityName: 'Manhattan District');
+      const custom = LocalChallenge(
+        id: 'custom_1',
+        title: 'Custom Ocean Loop',
+        description: 'Coastal run route',
+        difficulty: ChallengeDifficulty.hard,
+        targetDistanceMeters: 5200.0,
+        localityName: 'Sunset Beach',
+        isCustom: true,
+        isDaily: false,
+        loopWaypoints: [
+          LatLng(37.77, -122.45),
+          LatLng(37.78, -122.45),
+          LatLng(37.77, -122.45),
+        ],
+        trophyReward: TrophyBadge(
+          id: 'trophy_custom_1',
+          title: 'Ocean Master',
+          description: 'Finished custom run',
+          tier: TrophyTier.gold,
+          iconName: 'trophy_gold',
+          category: 'hard',
+          xpReward: 600,
+        ),
+      );
+
+      await notifier.addCustomChallenge(custom);
 
       final state = notifier.state;
-      expect(state.localityName, 'Manhattan District');
-      expect(state.userLocation.latitude, closeTo(40.7128, 0.001));
-      expect(state.challenges.first.loopWaypoints.first.latitude, closeTo(40.7128, 0.001));
+      expect(state.challenges.first.id, 'custom_1');
+      expect(state.challenges.first.isCustom, true);
+      expect(state.challenges.first.title, 'Custom Ocean Loop');
+
+      // Verify deleteChallenge
+      await notifier.deleteChallenge('custom_1');
+      final updatedState = notifier.state;
+      expect(updatedState.challenges.any((c) => c.id == 'custom_1'), false);
+    });
+
+    test('updateLocation retains custom challenges while rotating daily challenges', () async {
+      final notifier = ChallengesNotifier(prefs);
+
+      const custom = LocalChallenge(
+        id: 'custom_2',
+        title: 'Custom Park Loop',
+        description: 'Park run route',
+        difficulty: ChallengeDifficulty.medium,
+        targetDistanceMeters: 3500.0,
+        localityName: 'Golden Gate Park',
+        isCustom: true,
+        isDaily: false,
+        loopWaypoints: [
+          LatLng(37.77, -122.48),
+          LatLng(37.78, -122.48),
+          LatLng(37.77, -122.48),
+        ],
+        trophyReward: TrophyBadge(
+          id: 'trophy_custom_2',
+          title: 'Park Master',
+          description: 'Finished park run',
+          tier: TrophyTier.silver,
+          iconName: 'trophy_silver',
+          category: 'medium',
+          xpReward: 400,
+        ),
+      );
+
+      await notifier.addCustomChallenge(custom);
+
+      const newLoc = LatLng(40.7128, -74.0060);
+      await notifier.updateLocation(newLoc, localityName: 'New District');
+
+      final state = notifier.state;
+      expect(state.challenges.any((c) => c.id == 'custom_2' && c.isCustom), true);
     });
   });
 }

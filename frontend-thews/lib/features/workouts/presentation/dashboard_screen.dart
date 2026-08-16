@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../core/animations/app_animations.dart';
 import '../../../core/database/app_database.dart';
 import '../../../core/presentation/widgets/interactive_body_map.dart';
 import '../../../core/theme/app_colors.dart';
@@ -133,174 +134,192 @@ class DashboardScreen extends ConsumerWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               // Welcome Header & Unique Streak Pill
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          'Welcome Back',
-                          style: AppTypography.headlineLg(
-                            color: isDark
-                                ? AppColors.darkTextPrimary
-                                : AppColors.lightTextPrimary,
+              FadeSlideEntrance(
+                delay: const Duration(milliseconds: 40),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Welcome Back',
+                            style: AppTypography.headlineLg(
+                              color: isDark
+                                  ? AppColors.darkTextPrimary
+                                  : AppColors.lightTextPrimary,
+                            ),
+                          ),
+                          const SizedBox(height: 2),
+                          Text(
+                            _formatDate(now),
+                            style: AppTypography.labelCaps(
+                              color: isDark
+                                  ? AppColors.darkTextSecondary
+                                  : AppColors.lightTextSecondary,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    statsAsync.maybeWhen(
+                      data: (stats) => PulsingBeacon(
+                        glowColor: Colors.amber,
+                        maxRadius: 28.0,
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 12,
+                            vertical: 6,
+                          ),
+                          decoration: BoxDecoration(
+                            color: (isDark
+                                    ? AppColors.primaryVolt
+                                    : AppColors.lightPrimary)
+                                .withValues(alpha: 0.15),
+                            borderRadius: BorderRadius.circular(20),
+                            border: Border.all(
+                              color: (isDark
+                                      ? AppColors.primaryVolt
+                                      : AppColors.lightPrimary)
+                                  .withValues(alpha: 0.4),
+                            ),
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              const FireGradientIcon(size: 18),
+                              const SizedBox(width: 4),
+                              AnimatedCountText(
+                                value: stats.streakDays.toDouble(),
+                                suffix: ' STREAK',
+                                style: AppTypography.labelCaps(
+                                  color: isDark
+                                      ? AppColors.primaryVolt
+                                      : AppColors.lightPrimary,
+                                ).copyWith(fontWeight: FontWeight.bold),
+                              ),
+                            ],
                           ),
                         ),
-                        const SizedBox(height: 2),
-                        Text(
-                          _formatDate(now),
-                          style: AppTypography.labelCaps(
-                            color: isDark
-                                ? AppColors.darkTextSecondary
-                                : AppColors.lightTextSecondary,
-                          ),
+                      ),
+                      orElse: () => const SizedBox(),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 16),
+
+              // Hero Primary Action Button: START WORKOUT LOG
+              FadeSlideEntrance(
+                delay: const Duration(milliseconds: 90),
+                child: BouncingButton(
+                  onTap: () => context.go('/log'),
+                  child: Container(
+                    width: double.infinity,
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(16),
+                      boxShadow: const [
+                        BoxShadow(
+                          color: AppColors.primaryGlow,
+                          blurRadius: 20,
+                          offset: Offset(0, 6),
                         ),
                       ],
                     ),
-                  ),
-                  statsAsync.maybeWhen(
-                    data: (stats) => Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 12,
-                        vertical: 6,
-                      ),
-                      decoration: BoxDecoration(
-                        color: (isDark
-                                ? AppColors.primaryVolt
-                                : AppColors.lightPrimary)
-                            .withValues(alpha: 0.15),
-                        borderRadius: BorderRadius.circular(20),
-                        border: Border.all(
-                          color: (isDark
-                                  ? AppColors.primaryVolt
-                                  : AppColors.lightPrimary)
-                              .withValues(alpha: 0.4),
+                    child: ElevatedButton(
+                      onPressed: () => context.go('/log'),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppColors.primaryVolt,
+                        foregroundColor: AppColors.primaryVoltOn,
+                        padding: const EdgeInsets.symmetric(vertical: 16),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(16),
                         ),
+                        elevation: 4,
                       ),
                       child: Row(
-                        mainAxisSize: MainAxisSize.min,
+                        mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          const FireGradientIcon(size: 18),
-                          const SizedBox(width: 4),
+                          const Icon(
+                            Icons.bolt,
+                            size: 24,
+                            color: AppColors.primaryVoltOn,
+                          ),
+                          const SizedBox(width: 8),
                           Text(
-                            '${stats.streakDays} STREAK',
-                            style: AppTypography.labelCaps(
-                              color: isDark
-                                  ? AppColors.primaryVolt
-                                  : AppColors.lightPrimary,
-                            ).copyWith(fontWeight: FontWeight.bold),
+                            'START WORKOUT LOG',
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w900,
+                              color: AppColors.primaryVoltOn,
+                              letterSpacing: 0.8,
+                            ),
                             maxLines: 1,
                             softWrap: false,
                           ),
                         ],
                       ),
                     ),
-                    orElse: () => const SizedBox(),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 16),
-
-              // Hero Primary Action Button: START WORKOUT LOG
-              Container(
-                width: double.infinity,
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(16),
-                  boxShadow: const [
-                    BoxShadow(
-                      color: AppColors.primaryGlow,
-                      blurRadius: 20,
-                      offset: Offset(0, 6),
-                    ),
-                  ],
-                ),
-                child: ElevatedButton(
-                  onPressed: () => context.go('/log'),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.primaryVolt,
-                    foregroundColor: AppColors.primaryVoltOn,
-                    padding: const EdgeInsets.symmetric(vertical: 16),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(16),
-                    ),
-                    elevation: 4,
-                  ),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      const Icon(
-                        Icons.bolt,
-                        size: 24,
-                        color: AppColors.primaryVoltOn,
-                      ),
-                      const SizedBox(width: 8),
-                      Text(
-                        'START WORKOUT LOG',
-                        style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w900,
-                          color: AppColors.primaryVoltOn,
-                          letterSpacing: 0.8,
-                        ),
-                        maxLines: 1,
-                        softWrap: false,
-                      ),
-                    ],
                   ),
                 ),
               ),
               const SizedBox(height: 16),
 
               // Quick Access Grid (2x2 Unique Shortcuts)
-              Row(
-                children: [
-                  Expanded(
-                    child: _buildQuickActionCard(
-                      context,
-                      icon: Icons.assignment_outlined,
-                      title: 'ROUTINES',
-                      subtitle: 'Workout Templates',
-                      onTap: () => context.push('/routines'),
+              FadeSlideEntrance(
+                delay: const Duration(milliseconds: 140),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: _buildQuickActionCard(
+                        context,
+                        icon: Icons.assignment_outlined,
+                        title: 'ROUTINES',
+                        subtitle: 'Workout Templates',
+                        onTap: () => context.push('/routines'),
+                      ),
                     ),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: _buildQuickActionCard(
-                      context,
-                      icon: Icons.fitness_center_outlined,
-                      title: 'EXERCISES',
-                      subtitle: 'Library & Custom',
-                      onTap: () => context.push('/exercises'),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: _buildQuickActionCard(
+                        context,
+                        icon: Icons.fitness_center_outlined,
+                        title: 'EXERCISES',
+                        subtitle: 'Library & Custom',
+                        onTap: () => context.push('/exercises'),
+                      ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
               const SizedBox(height: 12),
-              Row(
-                children: [
-                  Expanded(
-                    child: _buildQuickActionCard(
-                      context,
-                      icon: Icons.directions_run_outlined,
-                      title: 'GPS RUN',
-                      subtitle: 'Outdoor Tracking',
-                      onTap: () => context.go('/running'),
+              FadeSlideEntrance(
+                delay: const Duration(milliseconds: 180),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: _buildQuickActionCard(
+                        context,
+                        icon: Icons.directions_run_outlined,
+                        title: 'GPS RUN',
+                        subtitle: 'Outdoor Tracking',
+                        onTap: () => context.go('/running'),
+                      ),
                     ),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: _buildQuickActionCard(
-                      context,
-                      icon: Icons.emoji_events_outlined,
-                      title: 'CHALLENGES',
-                      subtitle: 'Loop Routes & Trophies',
-                      onTap: () => context.push('/challenges'),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: _buildQuickActionCard(
+                        context,
+                        icon: Icons.emoji_events_outlined,
+                        title: 'CHALLENGES',
+                        subtitle: 'Loop Routes & Trophies',
+                        onTap: () => context.push('/challenges'),
+                      ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
               const SizedBox(height: 24),
 
@@ -328,145 +347,156 @@ class DashboardScreen extends ConsumerWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       // Weekly Target Bento Card
-                      _buildBentoCard(
-                        context,
-                        title: 'WEEKLY WORKOUT TARGET',
-                        icon: Icons.flag_outlined,
-                        valueWidget: Row(
-                          crossAxisAlignment: CrossAxisAlignment.baseline,
-                          textBaseline: TextBaseline.alphabetic,
-                          children: [
-                            Text(
-                              '${stats.workoutsThisWeek}',
-                              style: AppTypography.displayMetrics(
-                                color: isDark
-                                    ? AppColors.darkTextPrimary
-                                    : AppColors.lightTextPrimary,
+                      FadeSlideEntrance(
+                        delay: const Duration(milliseconds: 220),
+                        child: _buildBentoCard(
+                          context,
+                          title: 'WEEKLY WORKOUT TARGET',
+                          icon: Icons.flag_outlined,
+                          valueWidget: Row(
+                            crossAxisAlignment: CrossAxisAlignment.baseline,
+                            textBaseline: TextBaseline.alphabetic,
+                            children: [
+                              AnimatedCountText(
+                                value: stats.workoutsThisWeek.toDouble(),
+                                style: AppTypography.displayMetrics(
+                                  color: isDark
+                                      ? AppColors.darkTextPrimary
+                                      : AppColors.lightTextPrimary,
+                                ),
                               ),
-                            ),
-                            const SizedBox(width: 4),
-                            Text(
-                              '/ ${stats.weeklyGoal} workouts',
-                              style: AppTypography.headlineMd(
-                                color: isDark
-                                    ? AppColors.darkTextSecondary
-                                    : AppColors.lightTextSecondary,
+                              const SizedBox(width: 4),
+                              Text(
+                                '/ ${stats.weeklyGoal} workouts',
+                                style: AppTypography.headlineMd(
+                                  color: isDark
+                                      ? AppColors.darkTextSecondary
+                                      : AppColors.lightTextSecondary,
+                                ),
                               ),
-                            ),
-                          ],
-                        ),
-                        bottomWidget: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            ClipRRect(
-                              borderRadius: BorderRadius.circular(6),
-                              child: LinearProgressIndicator(
-                                value: progress,
-                                minHeight: 10,
-                                backgroundColor: isDark
-                                    ? AppColors.darkSurfaceContainerHighest
-                                    : AppColors.lightSurfaceContainerHigh,
-                                color: isDark
-                                    ? AppColors.primaryVolt
-                                    : AppColors.lightPrimary,
-                              ),
-                            ),
-                            const SizedBox(height: 8),
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                              children: [
-                                Text(
-                                  '${(progress * 100).toInt()}% completed',
-                                  style: AppTypography.bodySm(
+                            ],
+                          ),
+                          bottomWidget: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              ClipRRect(
+                                borderRadius: BorderRadius.circular(6),
+                                child: TweenAnimationBuilder<double>(
+                                  tween: Tween<double>(begin: 0.0, end: progress),
+                                  duration: const Duration(milliseconds: 700),
+                                  curve: Curves.easeOutCubic,
+                                  builder: (context, animVal, _) => LinearProgressIndicator(
+                                    value: animVal,
+                                    minHeight: 10,
+                                    backgroundColor: isDark
+                                        ? AppColors.darkSurfaceContainerHighest
+                                        : AppColors.lightSurfaceContainerHigh,
                                     color: isDark
                                         ? AppColors.primaryVolt
                                         : AppColors.lightPrimary,
-                                  ).copyWith(fontWeight: FontWeight.bold),
+                                  ),
                                 ),
-                                Text(
-                                  settings.dailyCountingMode ==
-                                          DailyWorkoutCountingMode.groupedByDay
-                                      ? 'Mode: 1 per day'
-                                      : 'Mode: Individual',
-                                  style: AppTypography.bodySm(
-                                    color: isDark
-                                        ? AppColors.darkTextSecondary
-                                        : AppColors.lightTextSecondary,
-                                  ).copyWith(fontSize: 11),
-                                ),
-                              ],
-                            ),
-                          ],
+                              ),
+                              const SizedBox(height: 8),
+                              Row(
+                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                children: [
+                                  Text(
+                                    '${(progress * 100).toInt()}% completed',
+                                    style: AppTypography.bodySm(
+                                      color: isDark
+                                          ? AppColors.primaryVolt
+                                          : AppColors.lightPrimary,
+                                    ).copyWith(fontWeight: FontWeight.bold),
+                                  ),
+                                  Text(
+                                    settings.dailyCountingMode ==
+                                            DailyWorkoutCountingMode.groupedByDay
+                                        ? 'Mode: 1 per day'
+                                        : 'Mode: Individual',
+                                    style: AppTypography.bodySm(
+                                      color: isDark
+                                          ? AppColors.darkTextSecondary
+                                          : AppColors.lightTextSecondary,
+                                    ).copyWith(fontSize: 11),
+                                  ),
+                                ],
+                              ),
+                            ],
+                          ),
                         ),
                       ),
                       const SizedBox(height: 12),
 
                       // Volume & Workout Time Bento Cards (Distinct non-redundant metrics)
-                      Row(
-                        children: [
-                          Expanded(
-                            child: _buildBentoCard(
-                              context,
-                              title: 'TOTAL VOLUME',
-                              icon: Icons.bar_chart,
-                              valueWidget: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    _formatVolume(
-                                      stats.totalVolume,
-                                      settings.weightUnit.label,
+                      FadeSlideEntrance(
+                        delay: const Duration(milliseconds: 260),
+                        child: Row(
+                          children: [
+                            Expanded(
+                              child: _buildBentoCard(
+                                context,
+                                title: 'TOTAL VOLUME',
+                                icon: Icons.bar_chart,
+                                valueWidget: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      _formatVolume(
+                                        stats.totalVolume,
+                                        settings.weightUnit.label,
+                                      ),
+                                      style: AppTypography.headlineLg(
+                                        color: isDark
+                                            ? AppColors.darkTextPrimary
+                                            : AppColors.lightTextPrimary,
+                                      ),
                                     ),
-                                    style: AppTypography.headlineLg(
-                                      color: isDark
-                                          ? AppColors.darkTextPrimary
-                                          : AppColors.lightTextPrimary,
+                                    const SizedBox(height: 2),
+                                    Text(
+                                      'Lifetime lifted',
+                                      style: AppTypography.bodySm(
+                                        color: isDark
+                                            ? AppColors.darkTextSecondary
+                                            : AppColors.lightTextSecondary,
+                                      ),
                                     ),
-                                  ),
-                                  const SizedBox(height: 2),
-                                  Text(
-                                    'Lifetime lifted',
-                                    style: AppTypography.bodySm(
-                                      color: isDark
-                                          ? AppColors.darkTextSecondary
-                                          : AppColors.lightTextSecondary,
-                                    ),
-                                  ),
-                                ],
+                                  ],
+                                ),
                               ),
                             ),
-                          ),
-                          const SizedBox(width: 12),
-                          Expanded(
-                            child: _buildBentoCard(
-                              context,
-                              title: 'WORKOUT TIME',
-                              icon: Icons.timer_outlined,
-                              valueWidget: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    _formatDuration(stats.totalTimeSeconds),
-                                    style: AppTypography.headlineLg(
-                                      color: isDark
-                                          ? AppColors.darkTextPrimary
-                                          : AppColors.lightTextPrimary,
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: _buildBentoCard(
+                                context,
+                                title: 'WORKOUT TIME',
+                                icon: Icons.timer_outlined,
+                                valueWidget: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      _formatDuration(stats.totalTimeSeconds),
+                                      style: AppTypography.headlineLg(
+                                        color: isDark
+                                            ? AppColors.darkTextPrimary
+                                            : AppColors.lightTextPrimary,
+                                      ),
                                     ),
-                                  ),
-                                  const SizedBox(height: 2),
-                                  Text(
-                                    '${stats.totalWorkoutsCount} sessions logged',
-                                    style: AppTypography.bodySm(
-                                      color: isDark
-                                          ? AppColors.darkTextSecondary
-                                          : AppColors.lightTextSecondary,
+                                    const SizedBox(height: 2),
+                                    Text(
+                                      'Time under tension',
+                                      style: AppTypography.bodySm(
+                                        color: isDark
+                                            ? AppColors.darkTextSecondary
+                                            : AppColors.lightTextSecondary,
+                                      ),
                                     ),
-                                  ),
-                                ],
+                                  ],
+                                ),
                               ),
                             ),
-                          ),
-                        ],
+                          ],
+                        ),
                       ),
                       const SizedBox(height: 24),
 
@@ -597,13 +627,15 @@ class DashboardScreen extends ConsumerWidget {
   }) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
-    return Card(
-      margin: EdgeInsets.zero,
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(16),
-        child: Padding(
-          padding: const EdgeInsets.all(14.0),
+    return BouncingButton(
+      onTap: onTap,
+      child: Card(
+        margin: EdgeInsets.zero,
+        child: InkWell(
+          onTap: onTap,
+          borderRadius: BorderRadius.circular(16),
+          child: Padding(
+            padding: const EdgeInsets.all(14.0),
           child: Row(
             children: [
               Container(
@@ -663,8 +695,9 @@ class DashboardScreen extends ConsumerWidget {
           ),
         ),
       ),
-    );
-  }
+    ),
+  );
+}
 
   Widget _buildBentoCard(
     BuildContext context, {

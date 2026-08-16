@@ -5,13 +5,13 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/database/database_provider.dart';
 import '../../../../core/models/smartwatch_models.dart';
 import '../../../../core/models/weight_unit.dart';
-import '../../../../core/services/health_platform_service.dart';
 import '../../../../core/services/smartwatch_sync_service.dart';
 import '../../../../core/services/tile_cache_service.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_typography.dart';
 import '../../../../core/utils/backup_export_service.dart';
 import '../../domain/app_settings.dart';
+import '../../../running/presentation/widgets/smartwatch_pairing_sheet.dart';
 import '../settings_provider.dart';
 
 class AppearanceSection extends StatelessWidget {
@@ -964,8 +964,6 @@ class WearableHealthSection extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final watchState = ref.watch(smartwatchServiceProvider);
     final watchNotifier = ref.read(smartwatchServiceProvider.notifier);
-    final healthState = ref.watch(healthPlatformServiceProvider);
-    final healthNotifier = ref.read(healthPlatformServiceProvider.notifier);
 
     final isWatchConnected =
         watchState.status == SmartwatchConnectionStatus.connected;
@@ -974,7 +972,7 @@ class WearableHealthSection extends ConsumerWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          'WEARABLES & HEALTH PLATFORMS',
+          'WEARABLES & SENSORS',
           style: AppTypography.labelCaps(
             color: isDark
                 ? AppColors.darkTextSecondary
@@ -983,7 +981,7 @@ class WearableHealthSection extends ConsumerWidget {
         ),
         const SizedBox(height: 8),
 
-        // Smartwatch Companion Card
+        // Heart Rate Monitor & Smartwatch Card
         Card(
           child: Padding(
             padding: const EdgeInsets.all(16.0),
@@ -1004,7 +1002,7 @@ class WearableHealthSection extends ConsumerWidget {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            'Smartwatch Companion',
+                            'Heart Rate & Smartwatch',
                             style: AppTypography.bodyLg(
                               color: isDark
                                   ? AppColors.darkTextPrimary
@@ -1015,7 +1013,7 @@ class WearableHealthSection extends ConsumerWidget {
                           Text(
                             isWatchConnected
                                 ? '${watchState.device?.name} • Connected (${watchState.device?.batteryLevelPercent}% Batt)'
-                                : 'Wear OS / Apple Watch bi-directional sync',
+                                : 'Bluetooth LE, Polar, Garmin & Smartwatches',
                             style: AppTypography.bodySm(
                               color: isWatchConnected
                                   ? Colors.greenAccent.shade700
@@ -1047,8 +1045,8 @@ class WearableHealthSection extends ConsumerWidget {
                           fontSize: 10,
                           fontWeight: FontWeight.bold,
                           color: isWatchConnected
-                              ? Colors.green
-                              : (isDark ? Colors.grey : Colors.black54),
+                            ? Colors.green
+                            : (isDark ? Colors.grey : Colors.black54),
                         ),
                         maxLines: 1,
                         softWrap: false,
@@ -1073,10 +1071,10 @@ class WearableHealthSection extends ConsumerWidget {
                             )
                           : ElevatedButton.icon(
                               onPressed: () =>
-                                  watchNotifier.connectSmartwatch(simulated: true),
-                              icon: const Icon(Icons.link, size: 16),
+                                  SmartwatchPairingSheet.show(context),
+                              icon: const Icon(Icons.bluetooth_searching, size: 16),
                               label: const Text(
-                                'Connect Watch',
+                                'Pair Sensor / Watch',
                                 maxLines: 1,
                                 softWrap: false,
                               ),
@@ -1089,29 +1087,10 @@ class WearableHealthSection extends ConsumerWidget {
                     if (isWatchConnected) ...[
                       const SizedBox(width: 8),
                       OutlinedButton.icon(
-                        onPressed: () {
-                          watchNotifier.syncWorkoutPayload(
-                            const SmartwatchWorkoutPayload(
-                              workoutTitle: 'Sample Push Workout',
-                              currentExerciseName: 'Barbell Bench Press',
-                              currentSetIndex: 1,
-                              totalSets: 4,
-                              targetWeightKg: 85.0,
-                              targetReps: 8,
-                              restTimerSecondsRemaining: 90,
-                              isRestTimerActive: true,
-                            ),
-                          );
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(
-                              content: Text('Test workout packet sent to watch!'),
-                              duration: Duration(seconds: 2),
-                            ),
-                          );
-                        },
-                        icon: const Icon(Icons.send_to_mobile, size: 16),
+                        onPressed: () => SmartwatchPairingSheet.show(context),
+                        icon: const Icon(Icons.tune, size: 16),
                         label: const Text(
-                          'Test Sync',
+                          'Manage',
                           maxLines: 1,
                           softWrap: false,
                         ),
@@ -1123,187 +1102,7 @@ class WearableHealthSection extends ConsumerWidget {
             ),
           ),
         ),
-
-        const SizedBox(height: 12),
-
-        // Health Platform Integration Card
-        Card(
-          child: Padding(
-            padding: const EdgeInsets.all(16.0),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  children: [
-                    Icon(
-                      Icons.health_and_safety,
-                      color: isDark
-                          ? AppColors.primaryVoltDim
-                          : AppColors.lightPrimary,
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            'Apple Health & Health Connect',
-                            style: AppTypography.bodyLg(
-                              color: isDark
-                                  ? AppColors.darkTextPrimary
-                                  : AppColors.lightTextPrimary,
-                            ),
-                          ),
-                          const SizedBox(height: 2),
-                          Text(
-                            'Export workout calories & sync daily steps',
-                            style: AppTypography.bodySm(
-                              color: isDark
-                                  ? AppColors.darkTextSecondary
-                                  : AppColors.lightTextSecondary,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    Switch(
-                      value: healthState.isAutoSyncEnabled,
-                      onChanged: (val) => healthNotifier.setAutoSyncEnabled(val),
-                    ),
-                  ],
-                ),
-                const Divider(height: 20),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Row(
-                      children: [
-                        const Icon(
-                          Icons.directions_walk,
-                          size: 18,
-                          color: Colors.blueAccent,
-                        ),
-                        const SizedBox(width: 6),
-                        Text(
-                          '${healthState.dailySteps} steps today',
-                          style: AppTypography.bodySm(
-                            color: isDark
-                                ? AppColors.darkTextPrimary
-                                : AppColors.lightTextPrimary,
-                          ),
-                        ),
-                      ],
-                    ),
-                    Row(
-                      children: [
-                        const Icon(
-                          Icons.favorite,
-                          size: 16,
-                          color: Colors.redAccent,
-                        ),
-                        const SizedBox(width: 6),
-                        Text(
-                          '${healthState.restingHeartRateBpm} BPM resting',
-                          style: AppTypography.bodySm(
-                            color: isDark
-                                ? AppColors.darkTextPrimary
-                                : AppColors.lightTextPrimary,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 14),
-                Row(
-                  children: [
-                    Expanded(
-                      child: OutlinedButton.icon(
-                        onPressed: () async {
-                          await healthNotifier.refreshDailyBiometrics();
-                          if (context.mounted) {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(
-                                content: Text('Daily biometrics refreshed!'),
-                                duration: Duration(seconds: 2),
-                              ),
-                            );
-                          }
-                        },
-                        icon: const Icon(Icons.sync, size: 16),
-                        label: const Text(
-                          'Sync Daily Data',
-                          maxLines: 1,
-                          softWrap: false,
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                    OutlinedButton.icon(
-                      onPressed: () => _showSyncLogsDialog(context, healthState.syncLogs),
-                      icon: const Icon(Icons.history, size: 16),
-                      label: const Text(
-                        'Audit Log',
-                        maxLines: 1,
-                        softWrap: false,
-                      ),
-                    ),
-                  ],
-                ),
-              ],
-            ),
-          ),
-        ),
       ],
-    );
-  }
-
-  void _showSyncLogsDialog(BuildContext context, List<HealthSyncLog> logs) {
-    showDialog(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text('Health Platform Sync History'),
-        content: SizedBox(
-          width: double.maxFinite,
-          child: logs.isEmpty
-              ? const Padding(
-                  padding: EdgeInsets.symmetric(vertical: 24),
-                  child: Center(
-                    child: Text('No sync operations recorded yet.'),
-                  ),
-                )
-              : ListView.separated(
-                  shrinkWrap: true,
-                  itemCount: logs.length,
-                  separatorBuilder: (c, i) => const Divider(height: 1),
-                  itemBuilder: (c, i) {
-                    final log = logs[i];
-                    return ListTile(
-                      dense: true,
-                      leading: Icon(
-                        log.success ? Icons.check_circle : Icons.error,
-                        color: log.success ? Colors.green : Colors.red,
-                        size: 20,
-                      ),
-                      title: Text(
-                        log.message,
-                        style: const TextStyle(fontSize: 13),
-                      ),
-                      subtitle: Text(
-                        log.timestamp.toLocal().toString().split('.').first,
-                        style: const TextStyle(fontSize: 11),
-                      ),
-                    );
-                  },
-                ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx),
-            child: const Text('Close', maxLines: 1, softWrap: false),
-          ),
-        ],
-      ),
     );
   }
 }

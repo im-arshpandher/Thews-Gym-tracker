@@ -1,8 +1,9 @@
 import 'dart:async';
 import 'package:drift/drift.dart' show Value;
 import 'package:flutter/material.dart';
-
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+
+import '../../../core/animations/app_animations.dart';
 import '../../../core/database/app_database.dart';
 import '../../../core/database/database_provider.dart';
 import '../../../core/models/exercise_metric.dart';
@@ -830,16 +831,33 @@ class _ActiveSessionScreenState extends ConsumerState<ActiveSessionScreen> {
               ),
               child: Row(
                 children: [
-                  Icon(
-                    restTimerState.isExpired ? Icons.alarm_on : Icons.timer,
-                    color: restTimerState.isExpired
-                        ? Colors.white
-                        : (isDark
+                  if (restTimerState.isExpired)
+                    const Icon(
+                      Icons.alarm_on,
+                      color: Colors.white,
+                      size: 28,
+                    )
+                  else
+                    AnimatedProgressRing(
+                      progress: restTimerState.progress,
+                      size: 32,
+                      strokeWidth: 3.5,
+                      progressColor: isDark
+                          ? AppColors.primaryVolt
+                          : AppColors.lightPrimary,
+                      backgroundColor: (isDark
                               ? AppColors.primaryVolt
-                              : AppColors.lightPrimary),
-                    size: 24,
-                  ),
-                  const SizedBox(width: 10),
+                              : AppColors.lightPrimary)
+                          .withValues(alpha: 0.2),
+                      centerChild: Icon(
+                        Icons.timer,
+                        size: 16,
+                        color: isDark
+                            ? AppColors.primaryVolt
+                            : AppColors.lightPrimary,
+                      ),
+                    ),
+                  const SizedBox(width: 12),
                   Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     mainAxisSize: MainAxisSize.min,
@@ -925,27 +943,30 @@ class _ActiveSessionScreenState extends ConsumerState<ActiveSessionScreen> {
             ),
             child: SizedBox(
               width: double.infinity,
-              child: ElevatedButton(
-                onPressed: _isSaving ? null : _finishWorkout,
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.primaryVolt,
-                  foregroundColor: AppColors.primaryVoltOn,
-                  padding: const EdgeInsets.symmetric(vertical: 10),
-                  shape: const StadiumBorder(),
-                ),
-                child: _isSaving
-                    ? const CircularProgressIndicator(
-                        color: AppColors.primaryVoltOn,
-                      )
-                    : const Text(
-                        'FINISH WORKOUT',
-                        style: TextStyle(
-                          fontSize: 14,
-                          fontWeight: FontWeight.bold,
+              child: BouncingButton(
+                onTap: _isSaving ? null : _finishWorkout,
+                child: ElevatedButton(
+                  onPressed: _isSaving ? null : _finishWorkout,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.primaryVolt,
+                    foregroundColor: AppColors.primaryVoltOn,
+                    padding: const EdgeInsets.symmetric(vertical: 10),
+                    shape: const StadiumBorder(),
+                  ),
+                  child: _isSaving
+                      ? const CircularProgressIndicator(
                           color: AppColors.primaryVoltOn,
-                          letterSpacing: 0.5,
+                        )
+                      : const Text(
+                          'FINISH WORKOUT',
+                          style: TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.bold,
+                            color: AppColors.primaryVoltOn,
+                            letterSpacing: 0.5,
+                          ),
                         ),
-                      ),
+                ),
               ),
             ),
           ),

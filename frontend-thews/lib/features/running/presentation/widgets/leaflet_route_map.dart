@@ -6,6 +6,7 @@ import 'package:latlong2/latlong.dart';
 import '../../../../core/services/tile_cache_service.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/utils/gpx_parser.dart';
+import 'heatmap_polyline_painter.dart';
 
 class LeafletRouteMap extends StatefulWidget {
   final List<GpxPoint> waypoints;
@@ -14,6 +15,8 @@ class LeafletRouteMap extends StatefulWidget {
   final bool isTracking;
   final double headingDegrees;
   final bool showHeatmapButton;
+  final bool isHeatmapVisible;
+  final List<List<LatLng>>? heatmapRoutes;
   final VoidCallback? onHeatmapTap;
 
   const LeafletRouteMap({
@@ -24,6 +27,8 @@ class LeafletRouteMap extends StatefulWidget {
     this.isTracking = false,
     this.headingDegrees = 0.0,
     this.showHeatmapButton = true,
+    this.isHeatmapVisible = false,
+    this.heatmapRoutes,
     this.onHeatmapTap,
   });
 
@@ -31,9 +36,11 @@ class LeafletRouteMap extends StatefulWidget {
   State<LeafletRouteMap> createState() => _LeafletRouteMapState();
 }
 
-class _LeafletRouteMapState extends State<LeafletRouteMap> {
+class _LeafletRouteMapState extends State<LeafletRouteMap>
+    with TickerProviderStateMixin {
   late final MapController _mapController;
   bool _hasInitialCentered = false;
+  AnimationController? _animController;
 
   @override
   void initState() {
@@ -65,8 +72,66 @@ class _LeafletRouteMapState extends State<LeafletRouteMap> {
     }
   }
 
+  /// Smoothly animates the map center and zoom level to [destLocation] and [destZoom]
+  void _animatedMapMove(
+    LatLng destLocation,
+    double destZoom, {
+    Duration duration = const Duration(milliseconds: 650),
+    Curve curve = Curves.fastOutSlowIn,
+  }) {
+    _animController?.stop();
+    _animController?.dispose();
+    _animController = null;
+
+    final camera = _mapController.camera;
+    final latTween = Tween<double>(
+      begin: camera.center.latitude,
+      end: destLocation.latitude,
+    );
+    final lngTween = Tween<double>(
+      begin: camera.center.longitude,
+      end: destLocation.longitude,
+    );
+    final zoomTween = Tween<double>(
+      begin: camera.zoom,
+      end: destZoom,
+    );
+
+    final controller = AnimationController(
+      duration: duration,
+      vsync: this,
+    );
+    _animController = controller;
+
+    final animation = CurvedAnimation(
+      parent: controller,
+      curve: curve,
+    );
+
+    controller.addListener(() {
+      try {
+        _mapController.move(
+          LatLng(latTween.evaluate(animation), lngTween.evaluate(animation)),
+          zoomTween.evaluate(animation),
+        );
+      } catch (_) {}
+    });
+
+    animation.addStatusListener((status) {
+      if (status == AnimationStatus.completed ||
+          status == AnimationStatus.dismissed) {
+        if (_animController == controller) {
+          controller.dispose();
+          _animController = null;
+        }
+      }
+    });
+
+    controller.forward();
+  }
+
   /// Automatically zooms and centers the map based on the geographic distance covered by the waypoints.
-  void _autoZoomAndCenterMap() {
+  void _autoZoomAndCenterMap({bool animate = false}) {
     if (widget.waypoints.isEmpty) return;
 
     final latLngPoints = widget.waypoints
@@ -74,9 +139,13 @@ class _LeafletRouteMapState extends State<LeafletRouteMap> {
         .toList();
 
     if (latLngPoints.length < 2) {
-      try {
-        _mapController.move(latLngPoints.first, 16.5);
-      } catch (_) {}
+      if (animate) {
+        _animatedMapMove(latLngPoints.first, 16.5);
+      } else {
+        try {
+          _mapController.move(latLngPoints.first, 16.5);
+        } catch (_) {}
+      }
       return;
     }
 
@@ -86,12 +155,19 @@ class _LeafletRouteMapState extends State<LeafletRouteMap> {
 
     // If points are practically at the same location (< 10 meters distance)
     if (latDiff < 0.0001 && lngDiff < 0.0001) {
-      try {
-        _mapController.move(latLngPoints.last, 16.5);
-      } catch (_) {}
+      if (animate) {
+        _animatedMapMove(latLngPoints.last, 16.5);
+      } else {
+        try {
+          _mapController.move(latLngPoints.last, 16.5);
+        } catch (_) {}
+      }
       return;
     }
 
+    if (animate) {
+      _animatedMapMove(bounds.center, _mapController.camera.zoom);
+    }
     try {
       _mapController.fitCamera(
         CameraFit.bounds(
@@ -109,19 +185,32 @@ class _LeafletRouteMapState extends State<LeafletRouteMap> {
   void _zoomIn() {
     try {
       final currentZoom = _mapController.camera.zoom;
-      _mapController.move(_mapController.camera.center, (currentZoom + 1.0).clamp(3.0, 19.0));
+      final nextZoom = (currentZoom + 1.0).clamp(3.0, 19.0);
+      _animatedMapMove(
+        _mapController.camera.center,
+        nextZoom,
+        duration: const Duration(milliseconds: 300),
+      );
     } catch (_) {}
   }
 
   void _zoomOut() {
     try {
       final currentZoom = _mapController.camera.zoom;
-      _mapController.move(_mapController.camera.center, (currentZoom - 1.0).clamp(3.0, 19.0));
+      final nextZoom = (currentZoom - 1.0).clamp(3.0, 19.0);
+      _animatedMapMove(
+        _mapController.camera.center,
+        nextZoom,
+        duration: const Duration(milliseconds: 300),
+      );
     } catch (_) {}
   }
 
   @override
   void dispose() {
+    _animController?.stop();
+    _animController?.dispose();
+    _animController = null;
     _mapController.dispose();
     super.dispose();
   }
@@ -198,6 +287,17 @@ class _LeafletRouteMapState extends State<LeafletRouteMap> {
                 );
               },
             ),
+
+            // Heatmap Polylines Layer when toggled on
+            if (widget.isHeatmapVisible &&
+                widget.heatmapRoutes != null &&
+                widget.heatmapRoutes!.isNotEmpty)
+              HeatmapPolylineLayer(
+                polylineRoutes: widget.heatmapRoutes!,
+                baseGlowColor: widget.isDark
+                    ? AppColors.chestAccent
+                    : const Color(0xFFE65100),
+              ),
 
             // Route Polyline outlining the whole activity route
             if (showRoute && latLngPoints.length >= 2)
@@ -283,14 +383,23 @@ class _LeafletRouteMapState extends State<LeafletRouteMap> {
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                // Territory Heatmap Button (Direct shortcut above Zoom In +)
+                // Territory Heatmap Toggle Button (Direct toggle on this map)
                 if (widget.showHeatmapButton) ...[
                   _buildControlButton(
                     icon: Icons.local_fire_department_rounded,
-                    tooltip: 'Territory Heatmap',
-                    iconColor: widget.isDark
-                        ? AppColors.chestAccent
-                        : const Color(0xFFE65100),
+                    tooltip: widget.isHeatmapVisible
+                        ? 'Hide Heatmap Overlay'
+                        : 'Show Heatmap Overlay',
+                    iconColor: widget.isHeatmapVisible
+                        ? Colors.white
+                        : (widget.isDark
+                            ? AppColors.chestAccent
+                            : const Color(0xFFE65100)),
+                    backgroundColor: widget.isHeatmapVisible
+                        ? (widget.isDark
+                            ? AppColors.chestAccent
+                            : const Color(0xFFE65100))
+                        : null,
                     borderColor: widget.isDark
                         ? AppColors.chestAccent
                         : const Color(0xFFE65100),
@@ -326,12 +435,12 @@ class _LeafletRouteMapState extends State<LeafletRouteMap> {
                   _buildControlButton(
                     icon: Icons.zoom_out_map,
                     tooltip: 'Fit Entire Route',
-                    onTap: _autoZoomAndCenterMap,
+                    onTap: () => _autoZoomAndCenterMap(animate: true),
                   ),
                   const SizedBox(height: 8),
                 ],
 
-                // Recenter to Last / Current Position
+                // Recenter to Last / Current Position (Smoothly animated)
                 _buildControlButton(
                   icon: Icons.navigation_rounded,
                   tooltip: 'Recenter Location',
@@ -339,9 +448,7 @@ class _LeafletRouteMapState extends State<LeafletRouteMap> {
                     final target = latLngPoints.isNotEmpty
                         ? latLngPoints.last
                         : const LatLng(0.0, 0.0);
-                    try {
-                      _mapController.move(target, 16.5);
-                    } catch (_) {}
+                    _animatedMapMove(target, 16.5);
                   },
                 ),
               ],
@@ -356,6 +463,7 @@ class _LeafletRouteMapState extends State<LeafletRouteMap> {
     required String tooltip,
     required VoidCallback onTap,
     Color? iconColor,
+    Color? backgroundColor,
     Color? borderColor,
   }) {
     final defaultColor =
@@ -373,13 +481,14 @@ class _LeafletRouteMapState extends State<LeafletRouteMap> {
             width: 42,
             height: 42,
             decoration: BoxDecoration(
-              color: (widget.isDark
-                      ? AppColors.darkSurfaceContainerHighest
-                      : Colors.white)
-                  .withValues(alpha: 0.95),
+              color: backgroundColor ??
+                  (widget.isDark
+                          ? AppColors.darkSurfaceContainerHighest
+                          : Colors.white)
+                      .withValues(alpha: 0.95),
               shape: BoxShape.circle,
               border: Border.all(
-                color: (borderColor ?? defaultColor).withValues(alpha: 0.5),
+                color: (borderColor ?? defaultColor).withValues(alpha: 0.8),
                 width: 1.5,
               ),
             ),

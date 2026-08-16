@@ -128,6 +128,7 @@ class LocalChallenge {
   final String localityName;
   final String? dateKey;
   final bool isDaily;
+  final bool isCustom;
 
   const LocalChallenge({
     required this.id,
@@ -143,6 +144,7 @@ class LocalChallenge {
     required this.localityName,
     this.dateKey,
     this.isDaily = true,
+    this.isCustom = false,
   });
 
   double get targetDistanceKm => targetDistanceMeters / 1000.0;
@@ -161,6 +163,7 @@ class LocalChallenge {
     String? localityName,
     String? dateKey,
     bool? isDaily,
+    bool? isCustom,
   }) {
     return LocalChallenge(
       id: id ?? this.id,
@@ -178,6 +181,7 @@ class LocalChallenge {
       localityName: localityName ?? this.localityName,
       dateKey: dateKey ?? this.dateKey,
       isDaily: isDaily ?? this.isDaily,
+      isCustom: isCustom ?? this.isCustom,
     );
   }
 
@@ -198,6 +202,7 @@ class LocalChallenge {
       'localityName': localityName,
       'dateKey': dateKey,
       'isDaily': isDaily,
+      'isCustom': isCustom,
     };
   }
 
@@ -232,6 +237,7 @@ class LocalChallenge {
       localityName: json['localityName'] as String? ?? 'Local Area',
       dateKey: json['dateKey'] as String?,
       isDaily: json['isDaily'] as bool? ?? true,
+      isCustom: json['isCustom'] as bool? ?? false,
     );
   }
 }

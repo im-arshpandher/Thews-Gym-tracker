@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:latlong2/latlong.dart';
 
+import '../../../core/animations/app_animations.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_typography.dart';
 import '../domain/challenge_models.dart';
@@ -54,6 +55,15 @@ class _ChallengesScreenState extends ConsumerState<ChallengesScreen>
           softWrap: false,
         ),
         actions: [
+          IconButton(
+            tooltip: 'Create Custom Challenge',
+            icon: Icon(
+              Icons.add_circle_outline,
+              color: isDark ? AppColors.primaryVolt : AppColors.lightPrimary,
+              size: 24,
+            ),
+            onPressed: () => context.push('/challenges/create'),
+          ),
           IconButton(
             tooltip: 'Athlete Trophy Room',
             icon: const Icon(Icons.emoji_events, color: Colors.amber),
@@ -227,11 +237,7 @@ class _ChallengesScreenState extends ConsumerState<ChallengesScreen>
             ),
           ),
           ElevatedButton.icon(
-            onPressed: state.isLoading
-                ? null
-                : () => ref
-                    .read(challengesProvider.notifier)
-                    .syncWithUserLocation(),
+            onPressed: () => context.push('/challenges/create'),
             style: ElevatedButton.styleFrom(
               backgroundColor:
                   isDark ? AppColors.primaryVolt : AppColors.lightPrimary,
@@ -242,22 +248,33 @@ class _ChallengesScreenState extends ConsumerState<ChallengesScreen>
                 borderRadius: BorderRadius.circular(8),
               ),
             ),
-            icon: state.isLoading
-                ? const SizedBox(
-                    width: 12,
-                    height: 12,
-                    child: CircularProgressIndicator(
-                      strokeWidth: 2,
-                      color: AppColors.primaryVoltOn,
-                    ),
-                  )
-                : const Icon(Icons.refresh, size: 14),
+            icon: const Icon(Icons.add, size: 14),
             label: const Text(
-              'SNAP TO GPS',
+              'NEW ROUTE',
               style: TextStyle(fontWeight: FontWeight.w900, fontSize: 10),
               maxLines: 1,
               softWrap: false,
             ),
+          ),
+          const SizedBox(width: 4),
+          IconButton(
+            tooltip: 'Snap to GPS Location',
+            padding: EdgeInsets.zero,
+            constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
+            onPressed: state.isLoading
+                ? null
+                : () => ref
+                    .read(challengesProvider.notifier)
+                    .syncWithUserLocation(),
+            icon: state.isLoading
+                ? const SizedBox(
+                    width: 14,
+                    height: 14,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                    ),
+                  )
+                : const Icon(Icons.refresh, size: 18),
           ),
         ],
       ),
@@ -283,7 +300,18 @@ class _ChallengesScreenState extends ConsumerState<ChallengesScreen>
       itemCount: challenges.length,
       separatorBuilder: (context, index) => const SizedBox(height: 18),
       itemBuilder: (context, index) {
-        return _buildChallengeCard(context, challenges[index], isDark);
+        return FadeSlideEntrance(
+          delay: Duration(milliseconds: (index * 50).clamp(0, 400)),
+          child: BouncingButton(
+            onTap: () {
+              context.push(
+                '/challenges/detail/${challenges[index].id}',
+                extra: challenges[index],
+              );
+            },
+            child: _buildChallengeCard(context, challenges[index], isDark),
+          ),
+        );
       },
     );
   }
@@ -296,30 +324,38 @@ class _ChallengesScreenState extends ConsumerState<ChallengesScreen>
     final tierColor = _getDifficultyColor(challenge.difficulty);
     final trophyTierColor = _getTrophyTierColor(challenge.trophyReward.tier);
 
-    return Container(
-      decoration: BoxDecoration(
-        color: isDark
-            ? AppColors.darkSurfaceContainerLow
-            : AppColors.lightSurfaceContainerLowest,
+    return Material(
+      color: Colors.transparent,
+      borderRadius: BorderRadius.circular(20),
+      child: InkWell(
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(
-          color: challenge.isCompleted
-              ? AppColors.primaryVolt.withValues(alpha: 0.6)
-              : (isDark ? AppColors.darkOutline : AppColors.lightOutline)
-                  .withValues(alpha: 0.3),
-          width: challenge.isCompleted ? 1.5 : 1.0,
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: isDark ? 0.4 : 0.06),
-            blurRadius: 16,
-            offset: const Offset(0, 6),
+        onTap: () {
+          context.push('/challenges/detail/${challenge.id}', extra: challenge);
+        },
+        child: Container(
+          decoration: BoxDecoration(
+            color: isDark
+                ? AppColors.darkSurfaceContainerLow
+                : AppColors.lightSurfaceContainerLowest,
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(
+              color: challenge.isCompleted
+                  ? AppColors.primaryVolt.withValues(alpha: 0.6)
+                  : (isDark ? AppColors.darkOutline : AppColors.lightOutline)
+                      .withValues(alpha: 0.3),
+              width: challenge.isCompleted ? 1.5 : 1.0,
+            ),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: isDark ? 0.4 : 0.06),
+                blurRadius: 16,
+                offset: const Offset(0, 6),
+              ),
+            ],
           ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
           // Header: Difficulty Pill & Distance
           Padding(
             padding: const EdgeInsets.fromLTRB(16, 16, 16, 12),
@@ -503,53 +539,60 @@ class _ChallengesScreenState extends ConsumerState<ChallengesScreen>
             padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
             child: Row(
               children: [
-                // Trophy badge preview
-                Container(
-                  padding: const EdgeInsets.all(8),
-                  decoration: BoxDecoration(
-                    color: trophyTierColor.withValues(alpha: 0.15),
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(
-                      color: trophyTierColor.withValues(alpha: 0.5),
+                // Trophy badge preview (Expanded to prevent overflow)
+                Expanded(
+                  child: Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: trophyTierColor.withValues(alpha: 0.15),
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(
+                        color: trophyTierColor.withValues(alpha: 0.5),
+                      ),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(Icons.emoji_events, size: 20, color: trophyTierColor),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                challenge.trophyReward.title,
+                                style: AppTypography.labelCaps(
+                                  color: isDark
+                                      ? AppColors.darkTextPrimary
+                                      : AppColors.lightTextPrimary,
+                                ).copyWith(fontWeight: FontWeight.bold, fontSize: 10),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                              Text(
+                                '+${challenge.trophyReward.xpReward} XP REWARD',
+                                style: AppTypography.labelCaps(
+                                  color: trophyTierColor,
+                                ).copyWith(fontWeight: FontWeight.w900, fontSize: 9),
+                                maxLines: 1,
+                                softWrap: false,
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
                     ),
                   ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(Icons.emoji_events, size: 20, color: trophyTierColor),
-                      const SizedBox(width: 8),
-                      Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            challenge.trophyReward.title,
-                            style: AppTypography.labelCaps(
-                              color: isDark
-                                  ? AppColors.darkTextPrimary
-                                  : AppColors.lightTextPrimary,
-                            ).copyWith(fontWeight: FontWeight.bold, fontSize: 10),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                          Text(
-                            '+${challenge.trophyReward.xpReward} XP REWARD',
-                            style: AppTypography.labelCaps(
-                              color: trophyTierColor,
-                            ).copyWith(fontWeight: FontWeight.w900, fontSize: 9),
-                            maxLines: 1,
-                            softWrap: false,
-                          ),
-                        ],
-                      ),
-                    ],
-                  ),
                 ),
-                const Spacer(),
+                const SizedBox(width: 8),
 
-                // Start loop challenge button
+                // View Map / Start loop challenge button
                 ElevatedButton(
                   onPressed: () {
-                    context.go('/running');
+                    context.push(
+                      '/challenges/detail/${challenge.id}',
+                      extra: challenge,
+                    );
                   },
                   style: ElevatedButton.styleFrom(
                     backgroundColor: isDark
@@ -560,13 +603,13 @@ class _ChallengesScreenState extends ConsumerState<ChallengesScreen>
                       borderRadius: BorderRadius.circular(12),
                     ),
                     padding: const EdgeInsets.symmetric(
-                      horizontal: 16,
+                      horizontal: 14,
                       vertical: 12,
                     ),
                   ),
                   child: const Text(
-                    'START CHALLENGE',
-                    style: TextStyle(fontWeight: FontWeight.w900),
+                    'VIEW MAP',
+                    style: TextStyle(fontWeight: FontWeight.w900, fontSize: 12),
                     maxLines: 1,
                     softWrap: false,
                   ),
@@ -576,8 +619,10 @@ class _ChallengesScreenState extends ConsumerState<ChallengesScreen>
           ),
         ],
       ),
-    );
-  }
+    ),
+  ),
+);
+}
 
   LatLng _calculateCentroid(List<LatLng> points) {
     if (points.isEmpty) return const LatLng(0, 0);

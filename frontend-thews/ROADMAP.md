@@ -36,16 +36,20 @@ graph TD
 
 ## Active & Upcoming Roadmap Phases
 
-### Phase 3: Real-Time Audio Coach, Voice Splits & Running Cadence Metronome
+### ✅ Phase 3: Real-Time Audio Coach, Voice Splits & Running Cadence Metronome (COMPLETED)
 * **Goal:** 100% hands-free running experience with intelligent audio feedback and cadence optimization.
-* **Technical Specifications:**
-  * **Customizable Audio Voice Announcer:** Text-to-speech voice splits announced into Bluetooth headphones every km, mile, or custom interval (current pace, split pace, average heart rate, distance remaining).
-  * **Rhythmic Audio Cadence Metronome:** Built-in customizable rhythm generator (160–190 SPM) with subtle audio clicks or haptic pulses to train stride rate and reduce knee impact stress.
-  * **Heart Rate Zone Audio Boundary Alerts:** Voice prompts when drifting outside target training zone (e.g. *"Exiting Zone 2 — Heart Rate 154 BPM, slow down pace"*).
-* **Target Dependencies:** `flutter_tts`, `audioplayers` / native audio synthesizer.
-* **Key Target Files:**
+* **Delivered Specifications:**
+  * [x] **Customizable Audio Voice Announcer:** Text-to-speech voice splits announced into Bluetooth headphones every km, mile, or custom interval (current pace, split pace, average heart rate, distance remaining).
+  * [x] **Rhythmic Audio Cadence Metronome:** Built-in customizable rhythm generator (120–220 SPM) with audio click and haptic pulse modes, stride subdivisions, and live 4-beat visual pulse animation.
+  * [x] **Heart Rate Zone Audio Boundary Alerts:** Voice prompts when drifting outside target training zone with intelligent debounce timers (e.g. *"Warning: Exiting Zone 2: Aerobic Base. Current heart rate is 158 BPM. Ease your pace."*).
+  * [x] **Quick-Access Toolbar Chips & Full Settings Modal Sheets:** Instant toggle and adjustment directly from the active GPS tracking screen.
+* **Dependencies Added:** `flutter_tts: ^4.2.5`.
+* **Implemented Files:**
   * `lib/core/services/audio_coach_service.dart`
+  * `lib/core/services/cadence_metronome_service.dart`
   * `lib/features/running/presentation/widgets/cadence_metronome_sheet.dart`
+  * `lib/features/running/presentation/widgets/audio_coach_settings_sheet.dart`
+  * `lib/features/running/presentation/run_tracker_screen.dart`
 
 ---
 

@@ -1,0 +1,63 @@
+00:00 +0: loading D:/androidProjects/Thews/frontend-thews/test/unit/custom_challenge_widgets_test.dart
+00:00 +0: CreateCustomChallengeScreen Widget Tests Renders map canvas, plots waypoints, updates distance and creates challenge
+ClientException: Request to https://c.basemaps.cartocdn.com/light_all/15/5241/12665@2x.png failed with status 400: ., uri=https://c.basemaps.cartocdn.com/light_all/15/5241/12665@2x.png
+ClientException: Request to https://b.basemaps.cartocdn.com/light_all/15/5241/12664@2x.png failed with status 400: ., uri=https://b.basemaps.cartocdn.com/light_all/15/5241/12664@2x.png
+ClientException: Request to https://b.basemaps.cartocdn.com/light_all/15/5240/12665@2x.png failed with status 400: ., uri=https://b.basemaps.cartocdn.com/light_all/15/5240/12665@2x.png
+ClientException: Request to https://d.basemaps.cartocdn.com/light_all/15/5241/12666@2x.png failed with status 400: ., uri=https://d.basemaps.cartocdn.com/light_all/15/5241/12666@2x.png
+ClientException: Request to https://d.basemaps.cartocdn.com/light_all/15/5242/12665@2x.png failed with status 400: ., uri=https://d.basemaps.cartocdn.com/light_all/15/5242/12665@2x.png
+ClientException: Request to https://a.basemaps.cartocdn.com/light_all/15/5240/12664@2x.png failed with status 400: ., uri=https://a.basemaps.cartocdn.com/light_all/15/5240/12664@2x.png
+ClientException: Request to https://c.basemaps.cartocdn.com/light_all/15/5242/12664@2x.png failed with status 400: ., uri=https://c.basemaps.cartocdn.com/light_all/15/5242/12664@2x.png
+ClientException: Request to https://c.basemaps.cartocdn.com/light_all/15/5240/12666@2x.png failed with status 400: ., uri=https://c.basemaps.cartocdn.com/light_all/15/5240/12666@2x.png
+ClientException: Request to https://a.basemaps.cartocdn.com/light_all/15/5242/12666@2x.png failed with status 400: ., uri=https://a.basemaps.cartocdn.com/light_all/15/5242/12666@2x.png
+ClientException: Request to https://a.basemaps.cartocdn.com/light_all/15/5241/12667@2x.png failed with status 400: ., uri=https://a.basemaps.cartocdn.com/light_all/15/5241/12667@2x.png
+ClientException: Request to https://a.basemaps.cartocdn.com/light_all/15/5241/12663@2x.png failed with status 400: ., uri=https://a.basemaps.cartocdn.com/light_all/15/5241/12663@2x.png
+ClientException: Request to https://a.basemaps.cartocdn.com/light_all/15/5239/12665@2x.png failed with status 400: ., uri=https://a.basemaps.cartocdn.com/light_all/15/5239/12665@2x.png
+ClientException: Request to https://a.basemaps.cartocdn.com/light_all/15/5243/12665@2x.png failed with status 400: ., uri=https://a.basemaps.cartocdn.com/light_all/15/5243/12665@2x.png
+ClientException: Request to https://b.basemaps.cartocdn.com/light_all/15/5242/12667@2x.png failed with status 400: ., uri=https://b.basemaps.cartocdn.com/light_all/15/5242/12667@2x.png
+ClientException: Request to https://d.basemaps.cartocdn.com/light_all/15/5240/12667@2x.png failed with status 400: ., uri=https://d.basemaps.cartocdn.com/light_all/15/5240/12667@2x.png
+ClientException: Request to https://d.basemaps.cartocdn.com/light_all/15/5240/12663@2x.png failed with status 400: ., uri=https://d.basemaps.cartocdn.com/light_all/15/5240/12663@2x.png
+ClientException: Request to https://b.basemaps.cartocdn.com/light_all/15/5242/12663@2x.png failed with status 400: ., uri=https://b.basemaps.cartocdn.com/light_all/15/5242/12663@2x.png
+ClientException: Request to https://d.basemaps.cartocdn.com/light_all/15/5239/12664@2x.png failed with status 400: ., uri=https://d.basemaps.cartocdn.com/light_all/15/5239/12664@2x.png
+ClientException: Request to https://d.basemaps.cartocdn.com/light_all/15/5243/12664@2x.png failed with status 400: ., uri=https://d.basemaps.cartocdn.com/light_all/15/5243/12664@2x.png
+ClientException: Request to https://b.basemaps.cartocdn.com/light_all/15/5239/12666@2x.png failed with status 400: ., uri=https://b.basemaps.cartocdn.com/light_all/15/5239/12666@2x.png
+ClientException: Request to https://b.basemaps.cartocdn.com/light_all/15/5243/12666@2x.png failed with status 400: ., uri=https://b.basemaps.cartocdn.com/light_all/15/5243/12666@2x.png
+ClientException: Request to https://c.basemaps.cartocdn.com/light_all/15/5243/12667@2x.png failed with status 400: ., uri=https://c.basemaps.cartocdn.com/light_all/15/5243/12667@2x.png
+ClientException: Request to https://c.basemaps.cartocdn.com/light_all/15/5243/12663@2x.png failed with status 400: ., uri=https://c.basemaps.cartocdn.com/light_all/15/5243/12663@2x.png
+ClientException: Request to https://c.basemaps.cartocdn.com/light_all/15/5239/12667@2x.png failed with status 400: ., uri=https://c.basemaps.cartocdn.com/light_all/15/5239/12667@2x.png
+ClientException: Request to https://c.basemaps.cartocdn.com/light_all/15/5239/12663@2x.png failed with status 400: ., uri=https://c.basemaps.cartocdn.com/light_all/15/5239/12663@2x.png
+ClientException: Request to https://d.basemaps.cartocdn.com/light_all/15/5241/12662@2x.png failed with status 400: ., uri=https://d.basemaps.cartocdn.com/light_all/15/5241/12662@2x.png
+ClientException: Request to https://b.basemaps.cartocdn.com/light_all/15/5241/12668@2x.png failed with status 400: ., uri=https://b.basemaps.cartocdn.com/light_all/15/5241/12668@2x.png
+ClientException: Request to https://a.basemaps.cartocdn.com/light_all/15/5242/12662@2x.png failed with status 400: ., uri=https://a.basemaps.cartocdn.com/light_all/15/5242/12662@2x.png
+ClientException: Request to https://c.basemaps.cartocdn.com/light_all/15/5240/12662@2x.png failed with status 400: ., uri=https://c.basemaps.cartocdn.com/light_all/15/5240/12662@2x.png
+ClientException: Request to https://a.basemaps.cartocdn.com/light_all/15/5240/12668@2x.png failed with status 400: ., uri=https://a.basemaps.cartocdn.com/light_all/15/5240/12668@2x.png
+ClientException: Request to https://c.basemaps.cartocdn.com/light_all/15/5242/12668@2x.png failed with status 400: ., uri=https://c.basemaps.cartocdn.com/light_all/15/5242/12668@2x.png
+ClientException: Request to https://b.basemaps.cartocdn.com/light_all/15/5239/12662@2x.png failed with status 400: ., uri=https://b.basemaps.cartocdn.com/light_all/15/5239/12662@2x.png
+ClientException: Request to https://b.basemaps.cartocdn.com/light_all/15/5243/12662@2x.png failed with status 400: ., uri=https://b.basemaps.cartocdn.com/light_all/15/5243/12662@2x.png
+ClientException: Request to https://d.basemaps.cartocdn.com/light_all/15/5239/12668@2x.png failed with status 400: ., uri=https://d.basemaps.cartocdn.com/light_all/15/5239/12668@2x.png
+ClientException: Request to https://d.basemaps.cartocdn.com/light_all/15/5243/12668@2x.png failed with status 400: ., uri=https://d.basemaps.cartocdn.com/light_all/15/5243/12668@2x.png
+══╡ EXCEPTION CAUGHT BY FLUTTER TEST FRAMEWORK ╞════════════════════════════════════════════════════
+The following assertion was thrown running a test:
+No GoRouter found in context
+
+When the exception was thrown, this was the stack:
+#0      GoRouter.of (package:go_router/src/router.dart:582:7)
+#1      GoRouterHelper.canPop (package:go_router/src/misc/extensions.dart:68:29)
+#2      _CreateCustomChallengeScreenState._saveChallenge (package:thews/features/challenges/presentation/create_custom_challenge_screen.dart:193:19)
+<asynchronous suspension>
+
+The test description was:
+  Renders map canvas, plots waypoints, updates distance and creates challenge
+════════════════════════════════════════════════════════════════════════════════════════════════════
+00:01 +0 -1: CreateCustomChallengeScreen Widget Tests Renders map canvas, plots waypoints, updates distance and creates challenge [E]
+  Test failed. See exception logs above.
+  The test description was: Renders map canvas, plots waypoints, updates distance and creates challenge
+  
+Warning: At least one test in this suite creates an HttpClient. When running a test suite that uses
+TestWidgetsFlutterBinding, all HTTP requests will return status code 400, and no network request
+will actually be made. Any test expecting a real network connection and status code will fail.
+To test code that needs an HttpClient, provide your own HttpClient implementation to the code under
+test, so that your test can consistently provide a testable response to the code under test.
+00:01 +0 -1: Some tests failed.
+
+Failing tests:
+  D:/androidProjects/Thews/frontend-thews/test/unit/custom_challenge_widgets_test.dart: CreateCustomChallengeScreen Widget Tests Renders map canvas, plots waypoints, updates distance and creates challenge

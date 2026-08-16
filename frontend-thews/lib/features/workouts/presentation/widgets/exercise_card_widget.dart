@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../../../core/animations/app_animations.dart';
 import '../../../../core/database/database_provider.dart';
 import '../../../../core/models/exercise_metric.dart';
 import '../../../../core/presentation/widgets/muscle_group_icon.dart';
@@ -386,20 +387,9 @@ class _ExerciseCardWidgetState extends ConsumerState<ExerciseCardWidget> {
                       );
                     }),
                     const SizedBox(width: 4),
-                    IconButton(
-                      icon: Icon(
-                        setDraft.isCompleted
-                            ? Icons.check_circle
-                            : Icons.check_circle_outline,
-                        color: setDraft.isCompleted
-                            ? (isDark
-                                  ? AppColors.primaryVolt
-                                  : AppColors.lightPrimary)
-                            : (isDark
-                                  ? AppColors.darkOutlineVariant
-                                  : AppColors.lightOutline),
-                      ),
-                      onPressed: () async {
+                    BouncingButton(
+                      scaleFactor: 0.88,
+                      onTap: () async {
                         final wasCompleted = setDraft.isCompleted;
                         setState(() {
                           setDraft.isCompleted = !setDraft.isCompleted;
@@ -449,19 +439,18 @@ class _ExerciseCardWidgetState extends ConsumerState<ExerciseCardWidget> {
                                       const SizedBox(width: 10),
                                       Expanded(
                                         child: Text(
-                                          'NEW WEIGHT PR! ${setDraft.weight % 1 == 0 ? setDraft.weight.toInt() : setDraft.weight} ${setDraft.unit} on ${draft.exercise.name}!',
+                                          'NEW PR! ${MetricFormatter.formatWeight(setDraft.weight, settings.weightUnit.label)} on ${draft.exercise.name}!',
                                           style: const TextStyle(
                                             fontWeight: FontWeight.bold,
                                           ),
+                                          maxLines: 1,
+                                          softWrap: false,
                                         ),
                                       ),
                                     ],
                                   ),
-                                  backgroundColor: Colors.purple.shade900,
-                                  behavior: SnackBarBehavior.floating,
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(12),
-                                  ),
+                                  backgroundColor:
+                                      AppColors.darkSurfaceContainerHighest,
                                   duration: const Duration(seconds: 3),
                                 ),
                               );
@@ -471,6 +460,26 @@ class _ExerciseCardWidgetState extends ConsumerState<ExerciseCardWidget> {
                           }
                         }
                       },
+                      child: Padding(
+                        padding: const EdgeInsets.all(8.0),
+                        child: AnimatedScale(
+                          scale: setDraft.isCompleted ? 1.15 : 1.0,
+                          duration: const Duration(milliseconds: 220),
+                          curve: Curves.easeOutBack,
+                          child: Icon(
+                            setDraft.isCompleted
+                                ? Icons.check_circle
+                                : Icons.check_circle_outline,
+                            color: setDraft.isCompleted
+                                ? (isDark
+                                    ? AppColors.primaryVolt
+                                    : AppColors.lightPrimary)
+                                : (isDark
+                                    ? AppColors.darkOutlineVariant
+                                    : AppColors.lightOutline),
+                          ),
+                        ),
+                      ),
                     ),
                     IconButton(
                       icon: const Icon(

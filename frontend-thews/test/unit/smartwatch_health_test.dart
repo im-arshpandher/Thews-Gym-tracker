@@ -56,6 +56,31 @@ void main() {
       expect(map['restTimerSecondsRemaining'], equals(60));
       expect(map['isRestTimerActive'], isTrue);
     });
+
+    test('HeartRateSample parseGattBytes decodes 8-bit and 16-bit Bluetooth packets', () {
+      // 8-bit format: flags = 0x00, bpm = 142
+      final bytes8Bit = [0x00, 142];
+      expect(HeartRateSample.parseGattBytes(bytes8Bit), equals(142));
+
+      // 16-bit format: flags = 0x01, bpm = 168 (0x00A8 -> byte1=0xA8=168, byte2=0x00)
+      final bytes16Bit = [0x01, 0xA8, 0x00];
+      expect(HeartRateSample.parseGattBytes(bytes16Bit), equals(168));
+
+      // Empty or invalid payload
+      expect(HeartRateSample.parseGattBytes([]), equals(0));
+    });
+
+    test('HeartRateSample calculateKeytelCaloriesPerMinute calculates accurate burn rate', () {
+      final calMale = HeartRateSample.calculateKeytelCaloriesPerMinute(
+        bpm: 150,
+        age: 25,
+        weightKg: 75.0,
+        isMale: true,
+      );
+      // Keytel: ((-55.0969 + (0.6309*150) + (0.1988*75) + (0.2017*25)) / 4.184) = ((-55.0969 + 94.635 + 14.91 + 5.0425) / 4.184) = 59.49 / 4.184 ~= 14.2 kcal/min
+      expect(calMale, greaterThan(12.0));
+      expect(calMale, lessThan(16.0));
+    });
   });
 
   group('SmartwatchSyncService Unit Tests', () {

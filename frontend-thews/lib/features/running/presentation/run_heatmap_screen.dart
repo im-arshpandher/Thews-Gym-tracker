@@ -18,11 +18,160 @@ class RunHeatmapScreen extends ConsumerStatefulWidget {
   ConsumerState<RunHeatmapScreen> createState() => _RunHeatmapScreenState();
 }
 
-class _RunHeatmapScreenState extends ConsumerState<RunHeatmapScreen> {
-  final MapController _mapController = MapController();
+class _RunHeatmapScreenState extends ConsumerState<RunHeatmapScreen>
+    with TickerProviderStateMixin {
+  late final MapController _mapController;
+  AnimationController? _animController;
+  bool _isMapReady = false;
+  String _lastFittedSignature = '';
 
   String _selectedActivityFilter = 'all'; // 'all', 'jog', 'cycle'
   String _selectedDateFilter = 'all_time'; // 'all_time', 'this_year', 'last_30_days'
+
+  @override
+  void initState() {
+    super.initState();
+    _mapController = MapController();
+  }
+
+  @override
+  void dispose() {
+    _animController?.stop();
+    _animController?.dispose();
+    _animController = null;
+    _mapController.dispose();
+    super.dispose();
+  }
+
+  void _animatedMapMove(
+    LatLng destLocation,
+    double destZoom, {
+    Duration duration = const Duration(milliseconds: 650),
+    Curve curve = Curves.fastOutSlowIn,
+  }) {
+    _animController?.stop();
+    _animController?.dispose();
+    _animController = null;
+
+    final camera = _mapController.camera;
+    final latTween = Tween<double>(
+      begin: camera.center.latitude,
+      end: destLocation.latitude,
+    );
+    final lngTween = Tween<double>(
+      begin: camera.center.longitude,
+      end: destLocation.longitude,
+    );
+    final zoomTween = Tween<double>(
+      begin: camera.zoom,
+      end: destZoom,
+    );
+
+    final controller = AnimationController(
+      duration: duration,
+      vsync: this,
+    );
+    _animController = controller;
+
+    final animation = CurvedAnimation(
+      parent: controller,
+      curve: curve,
+    );
+
+    controller.addListener(() {
+      try {
+        _mapController.move(
+          LatLng(latTween.evaluate(animation), lngTween.evaluate(animation)),
+          zoomTween.evaluate(animation),
+        );
+      } catch (_) {}
+    });
+
+    animation.addStatusListener((status) {
+      if (status == AnimationStatus.completed ||
+          status == AnimationStatus.dismissed) {
+        if (_animController == controller) {
+          controller.dispose();
+          _animController = null;
+        }
+      }
+    });
+
+    controller.forward();
+  }
+
+  void _fitTerritory(List<List<LatLng>> routes, {bool animate = false}) {
+    final allPoints = routes.expand((r) => r).toList();
+    if (allPoints.isEmpty) return;
+
+    if (allPoints.length < 2) {
+      if (animate) {
+        _animatedMapMove(allPoints.first, 16.5);
+      } else {
+        try {
+          _mapController.move(allPoints.first, 16.5);
+        } catch (_) {}
+      }
+      return;
+    }
+
+    final bounds = LatLngBounds.fromPoints(allPoints);
+    final latDiff = (bounds.north - bounds.south).abs();
+    final lngDiff = (bounds.east - bounds.west).abs();
+
+    if (latDiff < 0.0001 && lngDiff < 0.0001) {
+      if (animate) {
+        _animatedMapMove(bounds.center, 16.5);
+      } else {
+        try {
+          _mapController.move(bounds.center, 16.5);
+        } catch (_) {}
+      }
+      return;
+    }
+
+    if (animate) {
+      _animatedMapMove(bounds.center, _mapController.camera.zoom);
+    }
+
+    try {
+      _mapController.fitCamera(
+        CameraFit.bounds(
+          bounds: bounds,
+          padding: const EdgeInsets.only(
+            top: 130.0,
+            bottom: 120.0,
+            left: 36.0,
+            right: 36.0,
+          ),
+        ),
+      );
+    } catch (_) {
+      try {
+        _mapController.move(bounds.center, 16.0);
+      } catch (_) {}
+    }
+  }
+
+  void _zoomIn() {
+    final currentZoom = _mapController.camera.zoom;
+    final nextZoom = (currentZoom + 1.0).clamp(3.0, 19.0);
+    _animatedMapMove(
+      _mapController.camera.center,
+      nextZoom,
+      duration: const Duration(milliseconds: 300),
+    );
+  }
+
+  void _zoomOut() {
+    final currentZoom = _mapController.camera.zoom;
+    final nextZoom = (currentZoom - 1.0).clamp(3.0, 19.0);
+    _animatedMapMove(
+      _mapController.camera.center,
+      nextZoom,
+      duration: const Duration(milliseconds: 300),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -54,7 +203,6 @@ class _RunHeatmapScreenState extends ConsumerState<RunHeatmapScreen> {
           final List<List<LatLng>> routes = [];
           double totalDistanceMeters = 0.0;
           double totalElevationGainMeters = 0.0;
-          LatLng? initialCenter;
 
           for (final act in filteredActivities) {
             totalDistanceMeters += act.distanceMeters;
@@ -65,12 +213,25 @@ class _RunHeatmapScreenState extends ConsumerState<RunHeatmapScreen> {
               final latLngs = gpxPoints.map((p) => LatLng(p.latitude, p.longitude)).toList();
               if (latLngs.isNotEmpty) {
                 routes.add(latLngs);
-                initialCenter ??= latLngs.first;
               }
             }
           }
 
-          final defaultCenter = initialCenter ?? const LatLng(37.7749, -122.4194);
+          final allPoints = routes.expand((r) => r).toList();
+          final defaultCenter = allPoints.isNotEmpty
+              ? (allPoints.length >= 2
+                  ? LatLngBounds.fromPoints(allPoints).center
+                  : allPoints.first)
+              : const LatLng(37.7749, -122.4194);
+
+          final currentSignature =
+              '${routes.length}_${_selectedActivityFilter}_${_selectedDateFilter}_${allPoints.length}';
+          if (currentSignature != _lastFittedSignature && _isMapReady && routes.isNotEmpty) {
+            _lastFittedSignature = currentSignature;
+            WidgetsBinding.instance.addPostFrameCallback((_) {
+              _fitTerritory(routes, animate: true);
+            });
+          }
 
           return Stack(
             children: [
@@ -79,10 +240,17 @@ class _RunHeatmapScreenState extends ConsumerState<RunHeatmapScreen> {
                 mapController: _mapController,
                 options: MapOptions(
                   initialCenter: defaultCenter,
-                  initialZoom: 13.0,
+                  initialZoom: allPoints.isNotEmpty ? 16.0 : 13.0,
                   interactionOptions: const InteractionOptions(
                     flags: InteractiveFlag.all,
                   ),
+                  onMapReady: () {
+                    _isMapReady = true;
+                    if (routes.isNotEmpty) {
+                      _lastFittedSignature = currentSignature;
+                      _fitTerritory(routes, animate: false);
+                    }
+                  },
                 ),
                 children: [
                   TileLayer(
@@ -169,7 +337,38 @@ class _RunHeatmapScreenState extends ConsumerState<RunHeatmapScreen> {
                 ),
               ),
 
-              // 3. Floating Explorer Telemetry Card (Bottom)
+              // 3. Floating Map Controls (Zoom In, Zoom Out, Fit Territory)
+              Positioned(
+                right: 14,
+                bottom: 110,
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    _buildGlassControlButton(
+                      icon: Icons.add,
+                      tooltip: 'Zoom In',
+                      isDark: isDark,
+                      onTap: _zoomIn,
+                    ),
+                    const SizedBox(height: 8),
+                    _buildGlassControlButton(
+                      icon: Icons.remove,
+                      tooltip: 'Zoom Out',
+                      isDark: isDark,
+                      onTap: _zoomOut,
+                    ),
+                    const SizedBox(height: 8),
+                    _buildGlassControlButton(
+                      icon: Icons.center_focus_strong,
+                      tooltip: 'Fit Heatmap Territory',
+                      isDark: isDark,
+                      onTap: () => _fitTerritory(routes, animate: true),
+                    ),
+                  ],
+                ),
+              ),
+
+              // 4. Floating Explorer Telemetry Card (Bottom)
               Positioned(
                 bottom: 20,
                 left: 16,
@@ -228,6 +427,47 @@ class _RunHeatmapScreenState extends ConsumerState<RunHeatmapScreen> {
             ],
           );
         },
+      ),
+    );
+  }
+
+  Widget _buildGlassControlButton({
+    required IconData icon,
+    required String tooltip,
+    required bool isDark,
+    required VoidCallback onTap,
+  }) {
+    final defaultColor = isDark ? AppColors.primaryVolt : AppColors.lightPrimary;
+    return Material(
+      color: Colors.transparent,
+      elevation: 4,
+      shape: const CircleBorder(),
+      child: Tooltip(
+        message: tooltip,
+        child: InkWell(
+          customBorder: const CircleBorder(),
+          onTap: onTap,
+          child: Container(
+            width: 42,
+            height: 42,
+            decoration: BoxDecoration(
+              color: (isDark
+                      ? AppColors.darkSurfaceContainerHighest
+                      : Colors.white)
+                  .withValues(alpha: 0.95),
+              shape: BoxShape.circle,
+              border: Border.all(
+                color: defaultColor.withValues(alpha: 0.8),
+                width: 1.5,
+              ),
+            ),
+            child: Icon(
+              icon,
+              color: defaultColor,
+              size: 20,
+            ),
+          ),
+        ),
       ),
     );
   }

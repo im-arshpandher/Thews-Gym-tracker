@@ -2,12 +2,14 @@ import 'package:flutter/material.dart';
 
 enum SmartwatchConnectionStatus {
   disconnected,
+  scanning,
   connecting,
   connected,
   syncing,
 }
 
 enum SmartwatchPlatform {
+  bleHeartRate,
   wearOs,
   appleWatch,
   simulated,
@@ -120,6 +122,54 @@ class HeartRateSample {
       orElse: () => HeartRateZoneType.warmup,
     ),
   );
+
+  /// Standard Bluetooth SIG GATT 0x2A37 Heart Rate Measurement parser.
+  static int parseGattBytes(List<int> data) {
+    if (data.isEmpty) return 0;
+    final flags = data[0];
+    final is16Bit = (flags & 0x01) != 0;
+    if (is16Bit) {
+      if (data.length >= 3) {
+        return data[1] + (data[2] << 8);
+      }
+    } else {
+      if (data.length >= 2) {
+        return data[1];
+      }
+    }
+    return 0;
+  }
+
+  /// Calculates metabolic calorie burn per minute using the scientific Keytel Formula.
+  static double calculateKeytelCaloriesPerMinute({
+    required int bpm,
+    int age = 25,
+    double weightKg = 70.0,
+    bool isMale = true,
+  }) {
+    if (bpm <= 50) return 0.02;
+    if (isMale) {
+      final caloriesPerMin = ((-55.0969 + (0.6309 * bpm) + (0.1988 * weightKg) + (0.2017 * age)) / 4.184).clamp(0.1, 35.0);
+      return caloriesPerMin;
+    } else {
+      final caloriesPerMin = ((-20.4022 + (0.4472 * bpm) - (0.1263 * weightKg) + (0.074 * age)) / 4.184).clamp(0.1, 35.0);
+      return caloriesPerMin;
+    }
+  }
+}
+
+class DiscoveredBleDevice {
+  final String id;
+  final String name;
+  final int rssi;
+  final bool isHeartRateService;
+
+  const DiscoveredBleDevice({
+    required this.id,
+    required this.name,
+    required this.rssi,
+    this.isHeartRateService = true,
+  });
 }
 
 class SmartwatchDevice {
@@ -127,6 +177,7 @@ class SmartwatchDevice {
   final String name;
   final SmartwatchPlatform platform;
   final int batteryLevelPercent;
+  final int? rssi;
   final bool isConnected;
   final DateTime? lastSyncTime;
 
@@ -135,6 +186,7 @@ class SmartwatchDevice {
     required this.name,
     required this.platform,
     this.batteryLevelPercent = 85,
+    this.rssi,
     this.isConnected = false,
     this.lastSyncTime,
   });
@@ -144,6 +196,7 @@ class SmartwatchDevice {
     String? name,
     SmartwatchPlatform? platform,
     int? batteryLevelPercent,
+    int? rssi,
     bool? isConnected,
     DateTime? lastSyncTime,
   }) {
@@ -152,6 +205,7 @@ class SmartwatchDevice {
       name: name ?? this.name,
       platform: platform ?? this.platform,
       batteryLevelPercent: batteryLevelPercent ?? this.batteryLevelPercent,
+      rssi: rssi ?? this.rssi,
       isConnected: isConnected ?? this.isConnected,
       lastSyncTime: lastSyncTime ?? this.lastSyncTime,
     );

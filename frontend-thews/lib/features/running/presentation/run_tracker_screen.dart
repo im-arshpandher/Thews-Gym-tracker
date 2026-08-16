@@ -2,14 +2,23 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../core/animations/app_animations.dart';
+import '../../../core/models/smartwatch_models.dart';
+import '../../../core/services/audio_coach_service.dart';
+import '../../../core/services/cadence_metronome_service.dart';
 import '../../../core/services/gps_tracking_service.dart';
+import '../../../core/services/smartwatch_sync_service.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_spacing.dart';
 import '../../../core/theme/app_typography.dart';
 import '../domain/gap_calculator.dart';
 import '../domain/live_segment_engine.dart';
+import 'widgets/audio_coach_settings_sheet.dart';
+import 'widgets/cadence_metronome_sheet.dart';
+import 'widgets/heatmap_polyline_painter.dart';
 import 'widgets/leaflet_route_map.dart';
 import 'widgets/live_segment_hud.dart';
+import 'widgets/smartwatch_pairing_sheet.dart';
 
 class RunTrackerScreen extends ConsumerStatefulWidget {
   const RunTrackerScreen({super.key});
@@ -19,6 +28,8 @@ class RunTrackerScreen extends ConsumerStatefulWidget {
 }
 
 class _RunTrackerScreenState extends ConsumerState<RunTrackerScreen> {
+  bool _isHeatmapVisible = false;
+
   @override
   void initState() {
     super.initState();
@@ -37,7 +48,12 @@ class _RunTrackerScreenState extends ConsumerState<RunTrackerScreen> {
     final runState = ref.watch(runTrackingProvider);
     final runNotifier = ref.read(runTrackingProvider.notifier);
 
-    // Listen to GPS stream to feed Live Segment Detection & Ghost Racing
+    final audioCoach = ref.watch(audioCoachServiceProvider);
+    final metronomeState = ref.watch(cadenceMetronomeProvider);
+    final smartwatchState = ref.watch(smartwatchServiceProvider);
+    final heatmapRoutes = ref.watch(heatmapRoutesProvider).valueOrNull ?? [];
+
+    // Listen to GPS stream to feed Live Segment Detection & Ghost Racing + Voice Splits
     ref.listen<RunTrackingState>(runTrackingProvider, (previous, next) {
       if (next.isTracking && next.waypoints.isNotEmpty) {
         final last = next.waypoints.last;
@@ -48,6 +64,40 @@ class _RunTrackerScreenState extends ConsumerState<RunTrackerScreen> {
             );
       } else if (!next.isTracking && (previous?.isTracking ?? false)) {
         ref.read(liveSegmentEngineProvider.notifier).resetSegmentTracking();
+      }
+
+      // 1. Voice Coach Split Announcements
+      if (next.isTracking &&
+          next.splits.length > (previous?.splits.length ?? 0)) {
+        final newSplit = next.splits.last;
+        final currentHr = ref.read(smartwatchServiceProvider).currentBpm;
+        ref.read(audioCoachServiceProvider.notifier).announceSplit(
+              splitIndex: newSplit.splitIndex,
+              totalDistanceMeters: next.distanceMeters,
+              totalDurationSeconds: next.durationSeconds,
+              splitPaceSecondsPerKm: newSplit.paceSecondsPerKm,
+              currentPaceSecondsPerKm: next.currentPaceSecondsPerKm,
+              currentHeartRateBpm: currentHr > 0 ? currentHr : null,
+            );
+      }
+
+      // 2. Voice Workout State Milestones
+      if (next.isTracking && !(previous?.isTracking ?? false)) {
+        ref.read(audioCoachServiceProvider.notifier).announceActivityEvent('Activity started.');
+      } else if (next.isPaused && !(previous?.isPaused ?? false)) {
+        ref.read(audioCoachServiceProvider.notifier).announceActivityEvent('Activity paused.');
+      } else if (!next.isPaused && (previous?.isPaused ?? false)) {
+        ref.read(audioCoachServiceProvider.notifier).announceActivityEvent('Activity resumed.');
+      }
+    });
+
+    // Listen to Smartwatch Heart Rate for HR Zone boundary voice alerts
+    ref.listen<SmartwatchState>(smartwatchServiceProvider, (previous, next) {
+      if (runState.isTracking && !runState.isPaused && next.currentBpm > 0) {
+        ref.read(audioCoachServiceProvider.notifier).evaluateHeartRateZone(
+              currentBpm: next.currentBpm,
+              currentZone: next.currentZone,
+            );
       }
     });
 
@@ -79,14 +129,47 @@ class _RunTrackerScreenState extends ConsumerState<RunTrackerScreen> {
         ),
         actions: [
           IconButton(
+            icon: Icon(
+              audioCoach.config.isVoiceEnabled
+                  ? Icons.record_voice_over
+                  : Icons.voice_over_off,
+              color: audioCoach.config.isVoiceEnabled
+                  ? (isDark ? AppColors.primaryVolt : AppColors.lightPrimary)
+                  : null,
+            ),
+            tooltip: 'Audio Coach & Voice Splits',
+            onPressed: () => AudioCoachSettingsSheet.show(context),
+          ),
+          IconButton(
+            icon: Icon(
+              Icons.timelapse,
+              color: metronomeState.isPlaying
+                  ? (isDark ? AppColors.primaryVolt : AppColors.lightPrimary)
+                  : null,
+            ),
+            tooltip: 'Cadence Metronome',
+            onPressed: () => CadenceMetronomeSheet.show(context),
+          ),
+          IconButton(
             icon: const Icon(Icons.emoji_events_outlined),
             tooltip: 'Loop Challenges & Trophies',
             onPressed: () => context.push('/challenges'),
           ),
           IconButton(
-            icon: const Icon(Icons.local_fire_department),
-            tooltip: 'Territory Heatmap',
-            onPressed: () => context.push('/running/heatmap'),
+            icon: Icon(
+              Icons.local_fire_department,
+              color: _isHeatmapVisible
+                  ? (isDark ? AppColors.chestAccent : const Color(0xFFE65100))
+                  : null,
+            ),
+            tooltip: _isHeatmapVisible
+                ? 'Hide Territory Heatmap'
+                : 'Show Territory Heatmap',
+            onPressed: () {
+              setState(() {
+                _isHeatmapVisible = !_isHeatmapVisible;
+              });
+            },
           ),
           IconButton(
             icon: const Icon(Icons.history),
@@ -178,7 +261,131 @@ class _RunTrackerScreenState extends ConsumerState<RunTrackerScreen> {
                   ),
                 ),
 
-              const SizedBox(height: AppSpacing.md),
+              const SizedBox(height: AppSpacing.sm),
+
+              // Quick Coach & Cadence Status Chips Bar
+              SingleChildScrollView(
+                scrollDirection: Axis.horizontal,
+                child: Row(
+                  children: [
+                    // Cadence Metronome Chip
+                    ActionChip(
+                      avatar: Icon(
+                        Icons.timelapse,
+                        size: 16,
+                        color: metronomeState.isPlaying
+                            ? (isDark
+                                ? AppColors.primaryVolt
+                                : AppColors.lightPrimary)
+                            : (isDark
+                                ? AppColors.darkTextSecondary
+                                : AppColors.lightTextSecondary),
+                      ),
+                      label: Text(
+                        metronomeState.isPlaying
+                            ? '${metronomeState.targetBpm} SPM'
+                            : 'CADENCE',
+                        maxLines: 1,
+                        softWrap: false,
+                        style: TextStyle(
+                          fontSize: 11,
+                          fontWeight: metronomeState.isPlaying
+                              ? FontWeight.bold
+                              : FontWeight.normal,
+                          color: metronomeState.isPlaying
+                              ? (isDark
+                                  ? AppColors.primaryVolt
+                                  : AppColors.lightPrimary)
+                              : null,
+                        ),
+                      ),
+                      backgroundColor: metronomeState.isPlaying
+                          ? (isDark
+                              ? AppColors.primaryVolt.withValues(alpha: 0.15)
+                              : AppColors.lightPrimary.withValues(alpha: 0.15))
+                          : null,
+                      onPressed: () => CadenceMetronomeSheet.show(context),
+                    ),
+                    const SizedBox(width: 8),
+
+                    // Audio Voice Coach Chip
+                    ActionChip(
+                      avatar: Icon(
+                        audioCoach.config.isVoiceEnabled
+                            ? Icons.record_voice_over
+                            : Icons.voice_over_off,
+                        size: 16,
+                        color: audioCoach.config.isVoiceEnabled
+                            ? (isDark
+                                ? AppColors.primaryVolt
+                                : AppColors.lightPrimary)
+                            : (isDark
+                                ? AppColors.darkTextSecondary
+                                : AppColors.lightTextSecondary),
+                      ),
+                      label: Text(
+                        audioCoach.config.isVoiceEnabled
+                            ? (audioCoach.config.targetHrZone != null
+                                ? 'VOICE (Z${audioCoach.config.targetHrZone!.index + 1})'
+                                : 'VOICE ON')
+                            : 'VOICE OFF',
+                        maxLines: 1,
+                        softWrap: false,
+                        style: TextStyle(
+                          fontSize: 11,
+                          fontWeight: audioCoach.config.isVoiceEnabled
+                              ? FontWeight.bold
+                              : FontWeight.normal,
+                          color: audioCoach.config.isVoiceEnabled
+                              ? (isDark
+                                  ? AppColors.primaryVolt
+                                  : AppColors.lightPrimary)
+                              : null,
+                        ),
+                      ),
+                      backgroundColor: audioCoach.config.isVoiceEnabled
+                          ? (isDark
+                              ? AppColors.primaryVolt.withValues(alpha: 0.15)
+                              : AppColors.lightPrimary.withValues(alpha: 0.15))
+                          : null,
+                      onPressed: () => AudioCoachSettingsSheet.show(context),
+                    ),
+                    const SizedBox(width: 8),
+
+                    // Live Heart Rate / Companion Wearable Status Chip
+                    ActionChip(
+                      avatar: Icon(
+                        Icons.favorite,
+                        size: 16,
+                        color: smartwatchState.currentBpm > 0
+                            ? AppColors.error
+                            : (isDark
+                                ? AppColors.darkTextSecondary
+                                : AppColors.lightTextSecondary),
+                      ),
+                      label: Text(
+                        smartwatchState.currentBpm > 0
+                            ? '${smartwatchState.currentBpm} BPM'
+                            : (smartwatchState.status ==
+                                    SmartwatchConnectionStatus.connected
+                                ? 'WATCH READY'
+                                : 'PAIR WATCH'),
+                        maxLines: 1,
+                        softWrap: false,
+                        style: TextStyle(
+                          fontSize: 11,
+                          fontWeight: smartwatchState.currentBpm > 0
+                              ? FontWeight.bold
+                              : FontWeight.normal,
+                        ),
+                      ),
+                      onPressed: () => SmartwatchPairingSheet.show(context),
+                    ),
+                  ],
+                ),
+              ),
+
+              const SizedBox(height: AppSpacing.sm),
 
               // Live Map Canvas & Live Segment HUD Overlay
               Expanded(
@@ -201,9 +408,77 @@ class _RunTrackerScreenState extends ConsumerState<RunTrackerScreen> {
                           isDark: isDark,
                           isTracking: runState.isTracking,
                           headingDegrees: runState.headingDegrees,
+                          isHeatmapVisible: _isHeatmapVisible,
+                          heatmapRoutes: heatmapRoutes,
+                          onHeatmapTap: () {
+                            setState(() {
+                              _isHeatmapVisible = !_isHeatmapVisible;
+                            });
+                          },
                         ),
                       ),
                     ),
+                    // Floating active Heatmap indicator badge
+                    if (_isHeatmapVisible)
+                      Positioned(
+                        top: 10,
+                        left: 10,
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 8,
+                            vertical: 4,
+                          ),
+                          decoration: BoxDecoration(
+                            color: (isDark
+                                    ? AppColors.darkSurfaceContainerHighest
+                                    : Colors.white)
+                                .withValues(alpha: 0.92),
+                            borderRadius: BorderRadius.circular(10),
+                            border: Border.all(
+                              color: (isDark
+                                      ? AppColors.chestAccent
+                                      : const Color(0xFFE65100))
+                                  .withValues(alpha: 0.8),
+                              width: 1.2,
+                            ),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black.withValues(alpha: 0.2),
+                                blurRadius: 6,
+                                offset: const Offset(0, 2),
+                              ),
+                            ],
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(
+                                Icons.local_fire_department_rounded,
+                                size: 14,
+                                color: isDark
+                                    ? AppColors.chestAccent
+                                    : const Color(0xFFE65100),
+                              ),
+                              const SizedBox(width: 4),
+                              Text(
+                                heatmapRoutes.isNotEmpty
+                                    ? 'HEATMAP (${heatmapRoutes.length} ROUTES)'
+                                    : 'HEATMAP ON',
+                                style: AppTypography.tinyLabel(
+                                  color: isDark
+                                      ? AppColors.darkTextPrimary
+                                      : AppColors.lightTextPrimary,
+                                ).copyWith(
+                                  fontSize: 9,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                                maxLines: 1,
+                                softWrap: false,
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
                     if (runState.isTracking)
                       const Positioned(
                         top: 8,
@@ -437,62 +712,73 @@ class _RunTrackerScreenState extends ConsumerState<RunTrackerScreen> {
                 children: [
                   if (!runState.isTracking)
                     Expanded(
-                      child: ElevatedButton.icon(
-                        style: ElevatedButton.styleFrom(
-                          padding: const EdgeInsets.symmetric(vertical: 16),
-                          backgroundColor: isDark
-                              ? AppColors.primaryVolt
-                              : AppColors.lightPrimary,
-                          foregroundColor: isDark
-                              ? AppColors.darkBackground
-                              : Colors.white,
-                        ),
-                        onPressed: () {
+                      child: BouncingButton(
+                        onTap: () {
                           runNotifier.startTracking(
                             activityType: runState.activityType,
                           );
                         },
-                        icon: const Icon(Icons.play_arrow, size: 24),
-                        label: const Text(
-                          'START ACTIVITY',
-                          maxLines: 1,
-                          softWrap: false,
+                        child: ElevatedButton.icon(
+                          style: ElevatedButton.styleFrom(
+                            padding: const EdgeInsets.symmetric(vertical: 16),
+                            backgroundColor: isDark
+                                ? AppColors.primaryVolt
+                                : AppColors.lightPrimary,
+                            foregroundColor: isDark
+                                ? AppColors.darkBackground
+                                : Colors.white,
+                          ),
+                          onPressed: () {
+                            runNotifier.startTracking(
+                              activityType: runState.activityType,
+                            );
+                          },
+                          icon: const Icon(Icons.play_arrow, size: 24),
+                          label: const Text(
+                            'START ACTIVITY',
+                            maxLines: 1,
+                            softWrap: false,
+                          ),
                         ),
                       ),
                     )
                   else ...[
                     Expanded(
-                      child: OutlinedButton.icon(
-                        style: OutlinedButton.styleFrom(
-                          padding: const EdgeInsets.symmetric(vertical: 16),
-                        ),
-                        onPressed: () {
+                      child: BouncingButton(
+                        onTap: () {
                           if (runState.isPaused) {
                             runNotifier.resumeTracking();
                           } else {
                             runNotifier.pauseTracking();
                           }
                         },
-                        icon: Icon(
-                          runState.isPaused ? Icons.play_arrow : Icons.pause,
-                          size: 24,
-                        ),
-                        label: Text(
-                          runState.isPaused ? 'RESUME' : 'PAUSE',
-                          maxLines: 1,
-                          softWrap: false,
+                        child: OutlinedButton.icon(
+                          style: OutlinedButton.styleFrom(
+                            padding: const EdgeInsets.symmetric(vertical: 16),
+                          ),
+                          onPressed: () {
+                            if (runState.isPaused) {
+                              runNotifier.resumeTracking();
+                            } else {
+                              runNotifier.pauseTracking();
+                            }
+                          },
+                          icon: Icon(
+                            runState.isPaused ? Icons.play_arrow : Icons.pause,
+                            size: 24,
+                          ),
+                          label: Text(
+                            runState.isPaused ? 'RESUME' : 'PAUSE',
+                            maxLines: 1,
+                            softWrap: false,
+                          ),
                         ),
                       ),
                     ),
                     const SizedBox(width: 12),
                     Expanded(
-                      child: ElevatedButton.icon(
-                        style: ElevatedButton.styleFrom(
-                          padding: const EdgeInsets.symmetric(vertical: 16),
-                          backgroundColor: AppColors.error,
-                          foregroundColor: Colors.white,
-                        ),
-                        onPressed: () async {
+                      child: BouncingButton(
+                        onTap: () async {
                           final activityId =
                               await runNotifier.finishAndSaveActivity();
                           if (activityId != null && context.mounted) {
@@ -509,11 +795,35 @@ class _RunTrackerScreenState extends ConsumerState<RunTrackerScreen> {
                             );
                           }
                         },
-                        icon: const Icon(Icons.stop, size: 24),
-                        label: const Text(
-                          'FINISH RUN',
-                          maxLines: 1,
-                          softWrap: false,
+                        child: ElevatedButton.icon(
+                          style: ElevatedButton.styleFrom(
+                            padding: const EdgeInsets.symmetric(vertical: 16),
+                            backgroundColor: AppColors.error,
+                            foregroundColor: Colors.white,
+                          ),
+                          onPressed: () async {
+                            final activityId =
+                                await runNotifier.finishAndSaveActivity();
+                            if (activityId != null && context.mounted) {
+                              context
+                                  .pushReplacement('/running/summary/$activityId');
+                            } else if (context.mounted) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(
+                                  content: Text(
+                                    'Activity discarded (under 10 meters recorded)',
+                                  ),
+                                  duration: Duration(seconds: 2),
+                                ),
+                              );
+                            }
+                          },
+                          icon: const Icon(Icons.stop, size: 24),
+                          label: const Text(
+                            'FINISH RUN',
+                            maxLines: 1,
+                            softWrap: false,
+                          ),
                         ),
                       ),
                     ),
