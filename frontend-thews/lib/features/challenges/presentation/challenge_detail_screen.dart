@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import 'package:latlong2/latlong.dart';
 
 import '../../../core/services/gps_tracking_service.dart';
+import '../../../core/services/tile_cache_service.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_spacing.dart';
 import '../../../core/theme/app_typography.dart';
@@ -89,7 +90,9 @@ class _ChallengeDetailScreenState extends ConsumerState<ChallengeDetailScreen>
           LatLng(latTween.evaluate(animation), lngTween.evaluate(animation)),
           zoomTween.evaluate(animation),
         );
-      } catch (_) {}
+      } catch (e) {
+        debugPrint('Challenge map move notice: $e');
+      }
     });
 
     animation.addStatusListener((status) {
@@ -311,6 +314,7 @@ class _ChallengeDetailScreenState extends ConsumerState<ChallengeDetailScreen>
                   subdomains: const ['a', 'b', 'c', 'd'],
                   retinaMode: RetinaMode.isHighDensity(context),
                   userAgentPackageName: 'com.thews.fitnessapp',
+                  tileProvider: PersistentDiskTileProvider(),
                 ),
                 // Glowing background polyline for rich aesthetics
                 if (challenge.loopWaypoints.isNotEmpty)

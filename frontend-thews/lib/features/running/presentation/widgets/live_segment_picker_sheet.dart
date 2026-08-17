@@ -304,65 +304,19 @@ class LiveSegmentPickerSheet extends ConsumerWidget {
                                       overflow: TextOverflow.ellipsis,
                                     ),
                                     const SizedBox(height: 2),
-                                    Row(
-                                      children: [
-                                        Text(
-                                          seg.formattedDistance,
-                                          style: AppTypography.bodySm(
-                                            color: isDark
-                                                ? AppColors.darkTextSecondary
-                                                : AppColors.lightTextSecondary,
-                                          ).copyWith(
-                                            fontSize: 12,
-                                            fontWeight: FontWeight.w600,
-                                          ),
-                                          maxLines: 1,
-                                          softWrap: false,
-                                        ),
-                                        const SizedBox(width: 8),
-                                        Text('•',
-                                            style: TextStyle(
-                                                color: isDark
-                                                    ? AppColors.darkTextSecondary
-                                                    : AppColors
-                                                        .lightTextSecondary)),
-                                        const SizedBox(width: 8),
-                                        Text(
-                                          'PR: ${seg.formattedBestTime}',
-                                          style: AppTypography.bodySm(
-                                            color: isDark
-                                                ? AppColors.primaryVolt
-                                                : AppColors.lightPrimary,
-                                          ).copyWith(
-                                            fontSize: 12,
-                                            fontWeight: FontWeight.bold,
-                                          ),
-                                          maxLines: 1,
-                                          softWrap: false,
-                                        ),
-                                        if (seg.elevationGainMeters > 0) ...[
-                                          const SizedBox(width: 8),
-                                          Text('•',
-                                              style: TextStyle(
-                                                  color: isDark
-                                                      ? AppColors
-                                                          .darkTextSecondary
-                                                      : AppColors
-                                                          .lightTextSecondary)),
-                                          const SizedBox(width: 8),
-                                          Text(
-                                            '+${seg.elevationGainMeters.toInt()}m',
-                                            style: AppTypography.bodySm(
-                                              color: isDark
-                                                  ? AppColors.darkTextSecondary
-                                                  : AppColors
-                                                      .lightTextSecondary,
-                                            ).copyWith(fontSize: 12),
-                                            maxLines: 1,
-                                            softWrap: false,
-                                          ),
-                                        ],
-                                      ],
+                                    Text(
+                                      '${seg.formattedDistance} • PR: ${seg.formattedBestTime}${seg.elevationGainMeters > 0 ? ' • +${seg.elevationGainMeters.toInt()}m' : ''}',
+                                      style: AppTypography.bodySm(
+                                        color: isDark
+                                            ? AppColors.darkTextSecondary
+                                            : AppColors.lightTextSecondary,
+                                      ).copyWith(
+                                        fontSize: 11.5,
+                                        fontWeight: FontWeight.w500,
+                                      ),
+                                      maxLines: 1,
+                                      softWrap: false,
+                                      overflow: TextOverflow.ellipsis,
                                     ),
                                   ],
                                 ),
@@ -381,9 +335,11 @@ class LiveSegmentPickerSheet extends ConsumerWidget {
                                           ? AppColors.primaryVoltOn
                                           : Colors.white),
                                   padding: const EdgeInsets.symmetric(
-                                    horizontal: 12,
+                                    horizontal: 10,
                                     vertical: 8,
                                   ),
+                                  minimumSize: Size.zero,
+                                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                                   shape: RoundedRectangleBorder(
                                     borderRadius: BorderRadius.circular(10),
                                   ),
@@ -398,7 +354,7 @@ class LiveSegmentPickerSheet extends ConsumerWidget {
                                 child: Text(
                                   isSelected ? 'UNSELECT' : 'RACE GHOST',
                                   style: const TextStyle(
-                                    fontSize: 11,
+                                    fontSize: 10.5,
                                     fontWeight: FontWeight.bold,
                                     letterSpacing: 0.5,
                                   ),

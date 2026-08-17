@@ -26,7 +26,7 @@ class LiveSegmentHud extends ConsumerWidget {
     // Mode A: Approaching start of manually targeted Ghost Segment
     if (effort == null && selectedGhost != null) {
       return Container(
-        margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        margin: const EdgeInsets.symmetric(vertical: 4),
         padding: const EdgeInsets.all(12),
         decoration: BoxDecoration(
           color: isDark
@@ -117,7 +117,7 @@ class LiveSegmentHud extends ConsumerWidget {
         : (isAhead ? '+0m' : '-0m');
 
     return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      margin: const EdgeInsets.symmetric(vertical: 4),
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
         color: isDark

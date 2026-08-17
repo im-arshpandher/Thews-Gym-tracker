@@ -1,21 +1,6 @@
 import 'package:flutter/material.dart';
 import '../theme/app_colors.dart';
 
-/// Centralized Animations & Micro-Interactions System for Thews
-class AppAnimations {
-  // Global Duration Standards
-  static const Duration durationFast = Duration(milliseconds: 200);
-  static const Duration durationMedium = Duration(milliseconds: 350);
-  static const Duration durationSlow = Duration(milliseconds: 500);
-  static const Duration durationPageTransition = Duration(milliseconds: 300);
-
-  // Global Easing Curves
-  static const Curve curveEnter = Curves.easeOutCubic;
-  static const Curve curveExit = Curves.easeInCubic;
-  static const Curve curveSpring = Curves.easeOutBack;
-  static const Curve curvePulse = Curves.easeInOut;
-}
-
 /// Clean Fade-In Entrance Animation (No positional displacement / movement)
 class FadeSlideEntrance extends StatefulWidget {
   final Widget child;
@@ -157,27 +142,6 @@ class _BouncingButtonState extends State<BouncingButton>
         child: widget.child,
       ),
     );
-  }
-}
-
-/// Static Glow Beacon Container (No continuous movement when static)
-class PulsingBeacon extends StatelessWidget {
-  final Widget child;
-  final Color glowColor;
-  final double maxRadius;
-  final Duration duration;
-
-  const PulsingBeacon({
-    super.key,
-    required this.child,
-    this.glowColor = AppColors.primaryVolt,
-    this.maxRadius = 36.0,
-    this.duration = const Duration(milliseconds: 1800),
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return child;
   }
 }
 

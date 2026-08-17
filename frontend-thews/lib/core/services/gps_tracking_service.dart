@@ -206,7 +206,9 @@ class RunTrackingNotifier extends StateNotifier<RunTrackingState> {
         _lastValidElevation = lastPos.altitude;
         state = state.copyWith(waypoints: [lastPoint]);
       }
-    } catch (_) {}
+    } catch (e) {
+      debugPrint('GPS initialization notice: $e');
+    }
     await checkGpsStatusAndFetchLocation();
   }
 
@@ -226,7 +228,9 @@ class RunTrackingNotifier extends StateNotifier<RunTrackingState> {
           state = state.copyWith(waypoints: [cachedPoint]);
         }
       }
-    } catch (_) {}
+    } catch (e) {
+      debugPrint('Error loading cached GPS location: $e');
+    }
   }
 
   /// Save last known real GPS coordinates to SharedPreferences
@@ -235,7 +239,9 @@ class RunTrackingNotifier extends StateNotifier<RunTrackingState> {
       final prefs = await SharedPreferences.getInstance();
       await prefs.setDouble(_keyLastLat, lat);
       await prefs.setDouble(_keyLastLng, lng);
-    } catch (_) {}
+    } catch (e) {
+      debugPrint('Error saving cached GPS location: $e');
+    }
   }
 
   /// Check phone location status and fetch initial location
@@ -274,7 +280,9 @@ class RunTrackingNotifier extends StateNotifier<RunTrackingState> {
       );
 
       await fetchCurrentLocation();
-    } catch (_) {}
+    } catch (e) {
+      debugPrint('Error checking GPS status: $e');
+    }
   }
 
   /// Request Phone GPS Permissions or open OS Settings
@@ -310,9 +318,7 @@ class RunTrackingNotifier extends StateNotifier<RunTrackingState> {
             'GPS plugin requires full app restart. Stop and run `flutter run`.',
       );
     } catch (e) {
-      state = state.copyWith(
-        permissionStatusMessage: 'Error requesting GPS: $e',
-      );
+      debugPrint('Error requesting location permission: $e');
     }
   }
 
@@ -320,8 +326,8 @@ class RunTrackingNotifier extends StateNotifier<RunTrackingState> {
     try {
       final currentPos = await Geolocator.getCurrentPosition(
         locationSettings: const LocationSettings(
-          accuracy: LocationAccuracy.bestForNavigation,
-          distanceFilter: 2,
+          accuracy: LocationAccuracy.high,
+          timeLimit: Duration(seconds: 5),
         ),
       );
 
@@ -343,7 +349,9 @@ class RunTrackingNotifier extends StateNotifier<RunTrackingState> {
               : state.headingDegrees,
         );
       }
-    } catch (_) {}
+    } catch (e) {
+      debugPrint('Error fetching single location fix: $e');
+    }
   }
 
   void setActivityType(String activityType) {
@@ -383,7 +391,9 @@ class RunTrackingNotifier extends StateNotifier<RunTrackingState> {
       if (rawStride != null && rawStride > 0) {
         manualStride = rawStride;
       }
-    } catch (_) {}
+    } catch (e) {
+      debugPrint('Error reading manual stride length: $e');
+    }
 
     state = RunTrackingState(
       isTracking: true,
@@ -531,9 +541,9 @@ class RunTrackingNotifier extends StateNotifier<RunTrackingState> {
         onError: (_) {},
         cancelOnError: false,
       );
-    } on MissingPluginException {
-      // Silently ignore hardware sensor channel unavailability in test environment
-    } catch (_) {}
+    } catch (e) {
+      debugPrint('Hardware sensor notice: $e');
+    }
   }
 
   void _processNewPosition(

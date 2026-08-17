@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import 'package:latlong2/latlong.dart';
 
 import '../../../core/animations/app_animations.dart';
+import '../../../core/services/tile_cache_service.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_typography.dart';
 import '../domain/challenge_models.dart';
@@ -490,6 +491,7 @@ class _ChallengesScreenState extends ConsumerState<ChallengesScreen>
                         subdomains: const ['a', 'b', 'c', 'd'],
                         retinaMode: RetinaMode.isHighDensity(context),
                         userAgentPackageName: 'com.thews.fitnessapp',
+                        tileProvider: PersistentDiskTileProvider(),
                       ),
                       PolylineLayer(
                         polylines: [

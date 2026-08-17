@@ -1,3 +1,4 @@
+import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -15,7 +16,9 @@ void main() {
         child: const ThewsApp(),
       ),
     );
-    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 350));
     expect(find.byType(ThewsApp), findsOneWidget);
+    await tester.pumpWidget(const SizedBox.shrink());
+    await tester.pump(const Duration(milliseconds: 50));
   });
 }

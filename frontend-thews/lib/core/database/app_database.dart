@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'package:drift/drift.dart';
 import 'package:drift/native.dart';
+import 'package:flutter/foundation.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:path/path.dart' as p;
 import '../utils/volume_calculator.dart';
@@ -53,42 +54,58 @@ class AppDatabase extends _$AppDatabase {
           await customStatement(
             'ALTER TABLE exercises ADD COLUMN video_url TEXT;',
           );
-        } catch (_) {}
+        } catch (e) {
+          debugPrint('DB Migration note (video_url): $e');
+        }
         try {
           await customStatement(
             "ALTER TABLE set_entries ADD COLUMN type TEXT DEFAULT 'normal';",
           );
-        } catch (_) {}
+        } catch (e) {
+          debugPrint('DB Migration note (set_entries.type): $e');
+        }
         try {
           await customStatement(
             "CREATE TABLE IF NOT EXISTS routines (id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT, name TEXT NOT NULL, description TEXT, created_at INTEGER NOT NULL DEFAULT (UNIXEPOCH()));",
           );
-        } catch (_) {}
+        } catch (e) {
+          debugPrint('DB Migration note (routines table): $e');
+        }
         try {
           await customStatement(
             "CREATE TABLE IF NOT EXISTS routine_exercises (id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT, routine_id INTEGER NOT NULL REFERENCES routines (id) ON DELETE CASCADE, exercise_id INTEGER NOT NULL REFERENCES exercises (id) ON DELETE CASCADE, target_sets INTEGER NOT NULL DEFAULT 3, target_reps INTEGER NOT NULL DEFAULT 10, target_weight REAL NOT NULL DEFAULT 0.0, sort_order INTEGER NOT NULL DEFAULT 0);",
           );
-        } catch (_) {}
+        } catch (e) {
+          debugPrint('DB Migration note (routine_exercises table): $e');
+        }
         try {
           await customStatement(
             "ALTER TABLE routine_exercises ADD COLUMN target_weight REAL DEFAULT 0.0;",
           );
-        } catch (_) {}
+        } catch (e) {
+          debugPrint('DB Migration note (target_weight): $e');
+        }
         try {
           await customStatement(
             "ALTER TABLE exercises ADD COLUMN secondary_muscle_groups TEXT;",
           );
-        } catch (_) {}
+        } catch (e) {
+          debugPrint('DB Migration note (secondary_muscle_groups): $e');
+        }
         try {
           await customStatement(
             "ALTER TABLE exercises ADD COLUMN is_deleted INTEGER NOT NULL DEFAULT 0;",
           );
-        } catch (_) {}
+        } catch (e) {
+          debugPrint('DB Migration note (is_deleted): $e');
+        }
         try {
           await customStatement(
             "CREATE TABLE IF NOT EXISTS run_activities (id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT, workout_id INTEGER REFERENCES workouts (id) ON DELETE CASCADE, activity_type TEXT NOT NULL DEFAULT 'run', start_time INTEGER NOT NULL DEFAULT (UNIXEPOCH()), distance_meters REAL NOT NULL DEFAULT 0.0, duration_seconds INTEGER NOT NULL DEFAULT 0, avg_pace_seconds_per_km REAL NOT NULL DEFAULT 0.0, elevation_gain_meters REAL NOT NULL DEFAULT 0.0, gpx_data TEXT);",
           );
-        } catch (_) {}
+        } catch (e) {
+          debugPrint('DB Migration note (run_activities table): $e');
+        }
       },
     );
   }

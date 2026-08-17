@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import 'package:latlong2/latlong.dart';
+
 import '../../../core/animations/app_animations.dart';
 import '../../../core/models/smartwatch_models.dart';
 import '../../../core/services/audio_coach_service.dart';
@@ -11,6 +13,7 @@ import '../../../core/services/smartwatch_sync_service.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_spacing.dart';
 import '../../../core/theme/app_typography.dart';
+import '../../challenges/presentation/challenges_provider.dart';
 import '../domain/gap_calculator.dart';
 import '../domain/live_segment_engine.dart';
 import 'widgets/audio_coach_settings_sheet.dart';
@@ -54,6 +57,10 @@ class _RunTrackerScreenState extends ConsumerState<RunTrackerScreen> {
     final smartwatchState = ref.watch(smartwatchServiceProvider);
     final heatmapRoutes = ref.watch(heatmapRoutesProvider).valueOrNull ?? [];
     final segmentEngineState = ref.watch(liveSegmentEngineProvider);
+    final challengesState = ref.watch(challengesProvider);
+    final userCurrentLocation = runState.waypoints.isNotEmpty
+        ? LatLng(runState.waypoints.last.latitude, runState.waypoints.last.longitude)
+        : challengesState.userLocation;
 
     // Listen to GPS stream to feed Live Segment Detection & Ghost Racing + Voice Splits
     ref.listen<RunTrackingState>(runTrackingProvider, (previous, next) {
@@ -438,6 +445,7 @@ class _RunTrackerScreenState extends ConsumerState<RunTrackerScreen> {
                           isDark: isDark,
                           isTracking: runState.isTracking,
                           headingDegrees: runState.headingDegrees,
+                          showHeatmapButton: true,
                           isHeatmapVisible: _isHeatmapVisible,
                           heatmapRoutes: heatmapRoutes,
                           ghostPosition:
@@ -445,6 +453,7 @@ class _RunTrackerScreenState extends ConsumerState<RunTrackerScreen> {
                           activeGhostSegment:
                               segmentEngineState.selectedGhostSegment ??
                                   segmentEngineState.activeEffort?.segment,
+                          currentLocation: userCurrentLocation,
                           onHeatmapTap: () {
                             setState(() {
                               _isHeatmapVisible = !_isHeatmapVisible;
@@ -514,19 +523,19 @@ class _RunTrackerScreenState extends ConsumerState<RunTrackerScreen> {
                           ),
                         ),
                       ),
-                    if (runState.isTracking ||
-                        segmentEngineState.selectedGhostSegment != null)
-                      const Positioned(
-                        top: 8,
-                        left: 0,
-                        right: 0,
-                        child: LiveSegmentHud(),
-                      ),
                   ],
                 ),
               ),
 
-              const SizedBox(height: AppSpacing.md),
+              // Live Segment / Ghost Racer HUD Banner (Positioned cleanly below the map)
+              if (runState.isTracking ||
+                  segmentEngineState.selectedGhostSegment != null)
+                const Padding(
+                  padding: EdgeInsets.only(top: 8),
+                  child: LiveSegmentHud(),
+                ),
+
+              const SizedBox(height: AppSpacing.sm),
 
               // Real-time Telemetry HUD Panel
               Container(

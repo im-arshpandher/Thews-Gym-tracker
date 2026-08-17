@@ -81,7 +81,7 @@ void main() {
       expect(find.text('Mission District'), findsOneWidget);
       expect(find.text('3.0 KM'), findsOneWidget);
       expect(find.text('MEDIUM CIRCUIT'), findsOneWidget);
-      expect(find.text('START THIS CHALLENGE'), findsOneWidget);
+      expect(find.text('START CHALLENGE & RACE GHOST'), findsOneWidget);
       expect(find.text('+400 XP'), findsOneWidget);
 
       // Verify floating zoom controls exist
@@ -94,6 +94,9 @@ void main() {
       await tester.pump(const Duration(milliseconds: 100));
       await tester.tap(find.byIcon(Icons.remove));
       await tester.pump(const Duration(milliseconds: 100));
+
+      await tester.pumpWidget(const SizedBox.shrink());
+      await tester.pump(const Duration(milliseconds: 50));
     });
   });
 
@@ -138,6 +141,9 @@ void main() {
       // Tap Create & Save Challenge
       await tester.tap(find.text('CREATE & SAVE CHALLENGE'));
       await tester.pump(const Duration(milliseconds: 300));
+
+      await tester.pumpWidget(const SizedBox.shrink());
+      await tester.pump(const Duration(milliseconds: 50));
     });
   });
 
@@ -165,6 +171,9 @@ void main() {
       expect(find.text('NEW ROUTE'), findsOneWidget);
       expect(find.byIcon(Icons.add_circle_outline), findsOneWidget);
       expect(find.text('VIEW MAP'), findsWidgets);
+
+      await tester.pumpWidget(const SizedBox.shrink());
+      await tester.pump(const Duration(milliseconds: 50));
     });
   });
 
@@ -190,23 +199,26 @@ void main() {
 
       expect(find.text('OUTDOOR TRACKER'), findsOneWidget);
       expect(find.byIcon(Icons.local_fire_department), findsOneWidget);
-      expect(find.byIcon(Icons.local_fire_department_rounded), findsOneWidget);
+      expect(find.byTooltip('Show Heatmap Overlay'), findsWidgets);
 
       // Initially heatmap is OFF (no HEATMAP ON badge)
       expect(find.text('HEATMAP ON'), findsNothing);
 
       // Tap the heatmap button on the map to toggle ON
-      await tester.tap(find.byTooltip('Show Heatmap Overlay'));
+      await tester.tap(find.byTooltip('Show Heatmap Overlay').first);
       await tester.pump(const Duration(milliseconds: 100));
 
       // Now heatmap overlay is active and badge is shown
       expect(find.textContaining('HEATMAP'), findsWidgets);
 
       // Tap again to toggle OFF
-      await tester.tap(find.byTooltip('Hide Heatmap Overlay'));
+      await tester.tap(find.byTooltip('Hide Heatmap Overlay').first);
       await tester.pump(const Duration(milliseconds: 100));
 
       expect(find.text('HEATMAP ON'), findsNothing);
+
+      await tester.pumpWidget(const SizedBox.shrink());
+      await tester.pump(const Duration(milliseconds: 50));
     });
   });
 
@@ -248,17 +260,18 @@ void main() {
       expect(find.byIcon(Icons.center_focus_strong), findsOneWidget);
 
       // Tap filter chips
-      await tester.ensureVisible(find.text('Jog / Runs'));
       await tester.tap(find.text('Jog / Runs'));
       await tester.pump(const Duration(milliseconds: 100));
 
-      await tester.ensureVisible(find.text('Last 30 Days'));
       await tester.tap(find.text('Last 30 Days'));
       await tester.pump(const Duration(milliseconds: 100));
 
       // Tap Fit Territory button
       await tester.tap(find.byIcon(Icons.center_focus_strong));
       await tester.pump(const Duration(milliseconds: 100));
+
+      await tester.pumpWidget(const SizedBox.shrink());
+      await tester.pump(const Duration(milliseconds: 50));
     });
   });
 }

@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_tts/flutter_tts.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -101,11 +102,9 @@ class AudioCoachConfig {
   factory AudioCoachConfig.fromJson(Map<String, dynamic> json) {
     HeartRateZoneType? parsedZone;
     if (json['targetHrZone'] != null) {
-      try {
-        parsedZone = HeartRateZoneType.values.firstWhere(
-          (z) => z.name == json['targetHrZone'],
-        );
-      } catch (_) {}
+      parsedZone = HeartRateZoneType.values
+          .where((z) => z.name == json['targetHrZone'])
+          .firstOrNull;
     }
 
     return AudioCoachConfig(
@@ -196,23 +195,39 @@ class AudioCoachService extends StateNotifier<AudioCoachState> {
         final data = jsonDecode(raw) as Map<String, dynamic>;
         state = state.copyWith(config: AudioCoachConfig.fromJson(data));
       }
-    } catch (_) {}
+    } catch (e) {
+      debugPrint('AudioCoach load config notice: $e');
+    }
   }
 
   Future<void> _saveConfig(AudioCoachConfig config) async {
     try {
       final prefs = await SharedPreferences.getInstance();
       await prefs.setString(_keyPrefs, jsonEncode(config.toJson()));
-    } catch (_) {}
+    } catch (e) {
+      debugPrint('AudioCoach save config notice: $e');
+    }
   }
 
   Future<void> _initTts() async {
     if (_ttsInitialized) return;
     try {
-      await _flutterTts.setLanguage('en-US').catchError((_) => null);
-      await _flutterTts.setSpeechRate(state.config.speechRate).catchError((_) => null);
-      await _flutterTts.setVolume(state.config.volume).catchError((_) => null);
-      await _flutterTts.setPitch(state.config.pitch).catchError((_) => null);
+      await _flutterTts.setLanguage('en-US').catchError((e) {
+        debugPrint('TTS setLanguage notice: $e');
+        return null;
+      });
+      await _flutterTts.setSpeechRate(state.config.speechRate).catchError((e) {
+        debugPrint('TTS setSpeechRate notice: $e');
+        return null;
+      });
+      await _flutterTts.setVolume(state.config.volume).catchError((e) {
+        debugPrint('TTS setVolume notice: $e');
+        return null;
+      });
+      await _flutterTts.setPitch(state.config.pitch).catchError((e) {
+        debugPrint('TTS setPitch notice: $e');
+        return null;
+      });
 
       _flutterTts.setStartHandler(() {
         state = state.copyWith(isSpeaking: true);
@@ -222,13 +237,14 @@ class AudioCoachService extends StateNotifier<AudioCoachState> {
         state = state.copyWith(isSpeaking: false);
       });
 
-      _flutterTts.setErrorHandler((_) {
+      _flutterTts.setErrorHandler((e) {
+        debugPrint('TTS error handler notice: $e');
         state = state.copyWith(isSpeaking: false);
       });
 
       _ttsInitialized = true;
-    } catch (_) {
-      // Ignored gracefully in headless/mock test environments
+    } catch (e) {
+      debugPrint('TTS initialization notice: $e');
     }
   }
 
@@ -236,10 +252,21 @@ class AudioCoachService extends StateNotifier<AudioCoachState> {
     state = state.copyWith(config: newConfig);
     await _saveConfig(newConfig);
     try {
-      await _flutterTts.setSpeechRate(newConfig.speechRate).catchError((_) => null);
-      await _flutterTts.setVolume(newConfig.volume).catchError((_) => null);
-      await _flutterTts.setPitch(newConfig.pitch).catchError((_) => null);
-    } catch (_) {}
+      await _flutterTts.setSpeechRate(newConfig.speechRate).catchError((e) {
+        debugPrint('TTS update speech rate notice: $e');
+        return null;
+      });
+      await _flutterTts.setVolume(newConfig.volume).catchError((e) {
+        debugPrint('TTS update volume notice: $e');
+        return null;
+      });
+      await _flutterTts.setPitch(newConfig.pitch).catchError((e) {
+        debugPrint('TTS update pitch notice: $e');
+        return null;
+      });
+    } catch (e) {
+      debugPrint('TTS update config notice: $e');
+    }
   }
 
   /// Speak plain cue text through TTS engine
@@ -253,9 +280,17 @@ class AudioCoachService extends StateNotifier<AudioCoachState> {
 
     try {
       await _initTts();
-      await _flutterTts.stop().catchError((_) => null);
-      await _flutterTts.speak(text).catchError((_) => null);
-    } catch (_) {}
+      await _flutterTts.stop().catchError((e) {
+        debugPrint('TTS stop notice: $e');
+        return null;
+      });
+      await _flutterTts.speak(text).catchError((e) {
+        debugPrint('TTS speak error notice: $e');
+        return null;
+      });
+    } catch (e) {
+      debugPrint('TTS speak failure notice: $e');
+    }
   }
 
   /// Format pace into spoken voice text (e.g. "4 minutes 55 seconds per kilometer")
@@ -420,8 +455,13 @@ class AudioCoachService extends StateNotifier<AudioCoachState> {
   @override
   void dispose() {
     try {
-      _flutterTts.stop().catchError((_) => null);
-    } catch (_) {}
+      _flutterTts.stop().catchError((e) {
+        debugPrint('TTS stop on dispose notice: $e');
+        return null;
+      });
+    } catch (e) {
+      debugPrint('TTS dispose notice: $e');
+    }
     super.dispose();
   }
 }

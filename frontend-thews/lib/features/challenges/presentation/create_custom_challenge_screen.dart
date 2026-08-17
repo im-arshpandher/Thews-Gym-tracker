@@ -3,6 +3,7 @@ import 'package:flutter_map/flutter_map.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:latlong2/latlong.dart';
 
+import '../../../core/services/tile_cache_service.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_spacing.dart';
 import '../../../core/theme/app_typography.dart';
@@ -102,7 +103,9 @@ class _CreateCustomChallengeScreenState
           LatLng(latTween.evaluate(animation), lngTween.evaluate(animation)),
           zoomTween.evaluate(animation),
         );
-      } catch (_) {}
+      } catch (e) {
+        debugPrint('Custom challenge map move notice: $e');
+      }
     });
 
     animation.addStatusListener((status) {
@@ -304,6 +307,7 @@ class _CreateCustomChallengeScreenState
                   subdomains: const ['a', 'b', 'c', 'd'],
                   retinaMode: RetinaMode.isHighDensity(context),
                   userAgentPackageName: 'com.thews.fitnessapp',
+                  tileProvider: PersistentDiskTileProvider(),
                 ),
                 // Glowing background polyline for drawn route
                 if (_waypoints.isNotEmpty)

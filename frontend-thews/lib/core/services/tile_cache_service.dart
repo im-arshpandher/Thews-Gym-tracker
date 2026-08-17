@@ -40,7 +40,9 @@ class DiskCachedTileImageProvider
           await cacheDir.create(recursive: true);
         }
         _cacheDirPath = cacheDir.path;
-      } catch (_) {}
+      } catch (e) {
+        debugPrint('Cache dir creation notice: $e');
+      }
     }
   }
 
@@ -68,7 +70,9 @@ class DiskCachedTileImageProvider
         if (file is File) {
           try {
             await file.delete();
-          } catch (_) {}
+          } catch (e) {
+            debugPrint('Delete cached tile notice: $e');
+          }
         }
       }
     }
@@ -131,7 +135,9 @@ class DiskCachedTileImageProvider
             await file.delete();
           }
         }
-      } catch (_) {}
+      } catch (e) {
+        debugPrint('Read cached tile notice: $e');
+      }
 
       // 2. Fetch over HTTP and perform atomic file write to prevent corruption
       try {
@@ -148,7 +154,7 @@ class DiskCachedTileImageProvider
             final tempFile = File(tempFilePath);
             await tempFile.writeAsBytes(response.bodyBytes, flush: true);
             await tempFile.rename(filePath);
-          } catch (_) {
+          } catch (e) {
             // Fallback direct write if atomic rename is restricted
             await file.writeAsBytes(response.bodyBytes, flush: true);
           }
@@ -156,7 +162,9 @@ class DiskCachedTileImageProvider
               await ui.ImmutableBuffer.fromUint8List(response.bodyBytes);
           return decode(buffer);
         }
-      } catch (_) {}
+      } catch (e) {
+        debugPrint('Fetch network tile notice: $e');
+      }
     }
 
     // 1x1 Transparent Fallback Image if offline and not cached

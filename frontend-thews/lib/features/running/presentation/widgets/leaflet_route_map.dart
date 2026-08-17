@@ -21,6 +21,7 @@ class LeafletRouteMap extends StatefulWidget {
   final VoidCallback? onHeatmapTap;
   final LatLng? ghostPosition;
   final RunSegment? activeGhostSegment;
+  final LatLng? currentLocation;
 
   const LeafletRouteMap({
     super.key,
@@ -35,6 +36,7 @@ class LeafletRouteMap extends StatefulWidget {
     this.onHeatmapTap,
     this.ghostPosition,
     this.activeGhostSegment,
+    this.currentLocation,
   });
 
   @override
@@ -56,13 +58,19 @@ class _LeafletRouteMapState extends State<LeafletRouteMap>
   @override
   void didUpdateWidget(covariant LeafletRouteMap oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (widget.waypoints.isNotEmpty) {
+    if (widget.activeGhostSegment?.id != oldWidget.activeGhostSegment?.id &&
+        widget.activeGhostSegment != null) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        _autoZoomAndCenterMap(animate: true);
+      });
+    } else if (widget.waypoints.isNotEmpty) {
       if (!_hasInitialCentered) {
         _hasInitialCentered = true;
         WidgetsBinding.instance.addPostFrameCallback((_) {
           _autoZoomAndCenterMap();
         });
-      } else if (widget.isTracking && widget.waypoints.length != oldWidget.waypoints.length) {
+      } else if (widget.isTracking &&
+          widget.waypoints.length != oldWidget.waypoints.length) {
         // Auto follow live user location during active tracking
         final newCenter = LatLng(
           widget.waypoints.last.latitude,
@@ -71,7 +79,9 @@ class _LeafletRouteMapState extends State<LeafletRouteMap>
         WidgetsBinding.instance.addPostFrameCallback((_) {
           try {
             _mapController.move(newCenter, _mapController.camera.zoom);
-          } catch (_) {}
+          } catch (e) {
+            debugPrint('Map move follow location notice: $e');
+          }
         });
       }
     }
@@ -119,7 +129,9 @@ class _LeafletRouteMapState extends State<LeafletRouteMap>
           LatLng(latTween.evaluate(animation), lngTween.evaluate(animation)),
           zoomTween.evaluate(animation),
         );
-      } catch (_) {}
+      } catch (e) {
+        debugPrint('Animated map move notice: $e');
+      }
     });
 
     animation.addStatusListener((status) {
@@ -135,37 +147,51 @@ class _LeafletRouteMapState extends State<LeafletRouteMap>
     controller.forward();
   }
 
-  /// Automatically zooms and centers the map based on the geographic distance covered by the waypoints.
+  /// Automatically zooms and centers the map based on the geographic distance covered by the waypoints and active ghost segment.
   void _autoZoomAndCenterMap({bool animate = false}) {
-    if (widget.waypoints.isEmpty) return;
-
     final latLngPoints = widget.waypoints
         .map((p) => LatLng(p.latitude, p.longitude))
         .toList();
 
-    if (latLngPoints.length < 2) {
+    final allBoundsPoints = <LatLng>[...latLngPoints];
+    if (widget.currentLocation != null && latLngPoints.isEmpty) {
+      allBoundsPoints.add(widget.currentLocation!);
+    }
+    if (widget.activeGhostSegment != null) {
+      allBoundsPoints.addAll(
+        widget.activeGhostSegment!.polyline.map((p) => p.toLatLng()),
+      );
+    }
+
+    if (allBoundsPoints.isEmpty) return;
+
+    if (allBoundsPoints.length < 2) {
       if (animate) {
-        _animatedMapMove(latLngPoints.first, 16.5);
+        _animatedMapMove(allBoundsPoints.first, 16.5);
       } else {
         try {
-          _mapController.move(latLngPoints.first, 16.5);
-        } catch (_) {}
+          _mapController.move(allBoundsPoints.first, 16.5);
+        } catch (e) {
+          debugPrint('Map move single point notice: $e');
+        }
       }
       return;
     }
 
-    final bounds = LatLngBounds.fromPoints(latLngPoints);
+    final bounds = LatLngBounds.fromPoints(allBoundsPoints);
     final latDiff = (bounds.north - bounds.south).abs();
     final lngDiff = (bounds.east - bounds.west).abs();
 
     // If points are practically at the same location (< 10 meters distance)
     if (latDiff < 0.0001 && lngDiff < 0.0001) {
       if (animate) {
-        _animatedMapMove(latLngPoints.last, 16.5);
+        _animatedMapMove(allBoundsPoints.last, 16.5);
       } else {
         try {
-          _mapController.move(latLngPoints.last, 16.5);
-        } catch (_) {}
+          _mapController.move(allBoundsPoints.last, 16.5);
+        } catch (e) {
+          debugPrint('Map move same location notice: $e');
+        }
       }
       return;
     }
@@ -180,10 +206,12 @@ class _LeafletRouteMapState extends State<LeafletRouteMap>
           padding: const EdgeInsets.all(40.0),
         ),
       );
-    } catch (_) {
+    } catch (e) {
       try {
-        _mapController.move(latLngPoints.last, 15.0);
-      } catch (_) {}
+        _mapController.move(allBoundsPoints.last, 15.0);
+      } catch (err) {
+        debugPrint('Map fitCamera fallback notice: $err');
+      }
     }
   }
 
@@ -196,7 +224,9 @@ class _LeafletRouteMapState extends State<LeafletRouteMap>
         nextZoom,
         duration: const Duration(milliseconds: 300),
       );
-    } catch (_) {}
+    } catch (e) {
+      debugPrint('Map zoomIn notice: $e');
+    }
   }
 
   void _zoomOut() {
@@ -208,7 +238,9 @@ class _LeafletRouteMapState extends State<LeafletRouteMap>
         nextZoom,
         duration: const Duration(milliseconds: 300),
       );
-    } catch (_) {}
+    } catch (e) {
+      debugPrint('Map zoomOut notice: $e');
+    }
   }
 
   @override
@@ -226,10 +258,14 @@ class _LeafletRouteMapState extends State<LeafletRouteMap>
         .map((p) => LatLng(p.latitude, p.longitude))
         .toList();
 
-    // Center on user's last waypoints, fallback to (0,0) if awaiting location
-    final centerLatLng = latLngPoints.isNotEmpty
+    final effectiveUserLocation = (latLngPoints.isNotEmpty)
         ? latLngPoints.last
-        : const LatLng(0.0, 0.0);
+        : widget.currentLocation;
+
+    // Center on user's last waypoints or current location, fallback to active ghost start point or (0,0)
+    final centerLatLng = effectiveUserLocation ??
+        widget.activeGhostSegment?.startPoint.toLatLng() ??
+        const LatLng(0.0, 0.0);
 
     // Leaflet OpenStreetMap tile URLs for dark and light themes
     // CartoDB Positron & Dark Matter provide high-contrast street lines and clear labels
@@ -251,7 +287,8 @@ class _LeafletRouteMapState extends State<LeafletRouteMap>
               flags: widget.interactive ? InteractiveFlag.all : InteractiveFlag.none,
             ),
             onMapReady: () {
-              if (latLngPoints.length >= 2 && !_hasInitialCentered) {
+              if ((latLngPoints.length >= 2 || widget.activeGhostSegment != null) &&
+                  !_hasInitialCentered) {
                 _hasInitialCentered = true;
                 _autoZoomAndCenterMap();
               }
@@ -304,19 +341,44 @@ class _LeafletRouteMapState extends State<LeafletRouteMap>
                     : const Color(0xFFE65100),
               ),
 
-            // Ghost Segment Polyline (Glowing Neon Cyan)
+            // 1. Ghost Pre-Path Lead-in Connector Line (from current user position -> Ghost start line)
+            if (widget.activeGhostSegment != null && effectiveUserLocation != null)
+              PolylineLayer(
+                polylines: [
+                  Polyline(
+                    points: [
+                      effectiveUserLocation,
+                      widget.activeGhostSegment!.startPoint.toLatLng(),
+                    ],
+                    pattern: StrokePattern.dashed(segments: const [8, 6]),
+                    strokeWidth: 3.5,
+                    color: AppColors.neonCyan.withValues(alpha: 0.85),
+                  ),
+                ],
+              ),
+
+            // 2. Ghost Racer Target Segment Pre-Path Polyline (Glowing Neon Cyan)
             if (widget.activeGhostSegment != null &&
                 widget.activeGhostSegment!.polyline.length >= 2)
               PolylineLayer(
                 polylines: [
+                  // Outer Glow Halo
                   Polyline(
                     points: widget.activeGhostSegment!.polyline
                         .map((p) => p.toLatLng())
                         .toList(),
-                    strokeWidth: 5.5,
-                    color: AppColors.neonCyan.withValues(alpha: 0.85),
+                    strokeWidth: 9.5,
+                    color: AppColors.neonCyan.withValues(alpha: 0.32),
+                  ),
+                  // Core Electric Track Polyline
+                  Polyline(
+                    points: widget.activeGhostSegment!.polyline
+                        .map((p) => p.toLatLng())
+                        .toList(),
+                    strokeWidth: 5.0,
+                    color: AppColors.neonCyan,
                     borderColor: Colors.black.withValues(alpha: 0.5),
-                    borderStrokeWidth: 1.5,
+                    borderStrokeWidth: 1.2,
                   ),
                 ],
               ),
@@ -342,44 +404,66 @@ class _LeafletRouteMapState extends State<LeafletRouteMap>
                 if (widget.activeGhostSegment != null) ...[
                   Marker(
                     point: widget.activeGhostSegment!.startPoint.toLatLng(),
-                    width: 32,
-                    height: 32,
+                    width: 36,
+                    height: 36,
                     rotate: false,
                     child: Container(
-                      decoration: const BoxDecoration(
-                        color: Colors.green,
+                      decoration: BoxDecoration(
+                        color: Colors.green.shade600,
                         shape: BoxShape.circle,
+                        border: Border.all(color: Colors.white, width: 2),
+                        boxShadow: const [
+                          BoxShadow(
+                            color: Colors.black38,
+                            blurRadius: 6,
+                            offset: Offset(0, 2),
+                          ),
+                        ],
                       ),
-                      child: const Icon(
-                        Icons.flag,
-                        color: Colors.white,
-                        size: 18,
+                      child: const Center(
+                        child: Icon(
+                          Icons.flag_rounded,
+                          color: Colors.white,
+                          size: 20,
+                        ),
                       ),
                     ),
                   ),
                   Marker(
                     point: widget.activeGhostSegment!.endPoint.toLatLng(),
-                    width: 32,
-                    height: 32,
+                    width: 36,
+                    height: 36,
                     rotate: false,
                     child: Container(
-                      decoration: const BoxDecoration(
-                        color: Colors.redAccent,
+                      decoration: BoxDecoration(
+                        color: Colors.redAccent.shade700,
                         shape: BoxShape.circle,
+                        border: Border.all(color: Colors.white, width: 2),
+                        boxShadow: const [
+                          BoxShadow(
+                            color: Colors.black38,
+                            blurRadius: 6,
+                            offset: Offset(0, 2),
+                          ),
+                        ],
                       ),
-                      child: const Icon(
-                        Icons.sports_score,
-                        color: Colors.white,
-                        size: 18,
+                      child: const Center(
+                        child: Icon(
+                          Icons.sports_score,
+                          color: Colors.white,
+                          size: 20,
+                        ),
                       ),
                     ),
                   ),
                 ],
 
-                // 2. Ghost Runner Position Marker (Moving 👻 along segment)
-                if (widget.ghostPosition != null)
+                // 2. Ghost Runner Position Marker (Moving 👻 along segment, or waiting at start line)
+                if (widget.ghostPosition != null ||
+                    widget.activeGhostSegment != null)
                   Marker(
-                    point: widget.ghostPosition!,
+                    point: widget.ghostPosition ??
+                        widget.activeGhostSegment!.startPoint.toLatLng(),
                     width: 44,
                     height: 44,
                     rotate: false,
@@ -389,7 +473,7 @@ class _LeafletRouteMapState extends State<LeafletRouteMap>
                         shape: BoxShape.circle,
                         boxShadow: [
                           BoxShadow(
-                            color: AppColors.neonCyan.withValues(alpha: 0.6),
+                            color: AppColors.neonCyan.withValues(alpha: 0.65),
                             blurRadius: 10,
                             spreadRadius: 2,
                           ),
@@ -403,23 +487,24 @@ class _LeafletRouteMapState extends State<LeafletRouteMap>
                   ),
 
                 // 3. User Tracker Markers
-                if (latLngPoints.isNotEmpty) ...[
+                if (effectiveUserLocation != null) ...[
                   if (widget.isTracking) ...[
                     // Active Workout: Start Origin Pin
-                    Marker(
-                      point: latLngPoints.first,
-                      width: 32,
-                      height: 32,
-                      rotate: true,
-                      child: const Icon(
-                        Icons.trip_origin,
-                        color: AppColors.success,
-                        size: 26,
+                    if (latLngPoints.isNotEmpty)
+                      Marker(
+                        point: latLngPoints.first,
+                        width: 32,
+                        height: 32,
+                        rotate: true,
+                        child: const Icon(
+                          Icons.trip_origin,
+                          color: AppColors.success,
+                          size: 26,
+                        ),
                       ),
-                    ),
                     // Active Workout: Live Navigation Pointer
                     Marker(
-                      point: latLngPoints.last,
+                      point: effectiveUserLocation,
                       width: 40,
                       height: 40,
                       rotate: true,
@@ -442,18 +527,81 @@ class _LeafletRouteMapState extends State<LeafletRouteMap>
                       ),
                     ),
                   ] else ...[
-                    // Standby (Out of Workout): Upright Location Drop Pin
+                    // Standby Live Location Pointer with Compass Heading Halo
                     Marker(
-                      point: latLngPoints.last,
-                      width: 40,
-                      height: 40,
-                      rotate: true,
-                      child: Icon(
-                        Icons.location_on,
-                        color: widget.isDark
-                            ? AppColors.primaryVolt
-                            : AppColors.lightPrimary,
-                        size: 34,
+                      point: effectiveUserLocation,
+                      width: 52,
+                      height: 52,
+                      rotate: false,
+                      child: Stack(
+                        alignment: Alignment.center,
+                        children: [
+                          Container(
+                            width: 48,
+                            height: 48,
+                            decoration: BoxDecoration(
+                              color: const Color(0xFF2979FF)
+                                  .withValues(alpha: 0.22),
+                              shape: BoxShape.circle,
+                            ),
+                          ),
+                          Transform.rotate(
+                            angle: widget.headingDegrees *
+                                (3.141592653589793 / 180.0),
+                            child: Container(
+                              width: 26,
+                              height: 26,
+                              decoration: BoxDecoration(
+                                color: const Color(0xFF2979FF),
+                                shape: BoxShape.circle,
+                                border: Border.all(
+                                  color: Colors.white,
+                                  width: 2.5,
+                                ),
+                                boxShadow: const [
+                                  BoxShadow(
+                                    color: Colors.black38,
+                                    blurRadius: 6,
+                                    offset: Offset(0, 2),
+                                  ),
+                                ],
+                              ),
+                              child: const Center(
+                                child: Icon(
+                                  Icons.navigation,
+                                  size: 13,
+                                  color: Colors.white,
+                                ),
+                              ),
+                            ),
+                          ),
+                          Positioned(
+                            top: 0,
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 5,
+                                vertical: 1,
+                              ),
+                              decoration: BoxDecoration(
+                                color: const Color(0xFF1E88E5),
+                                borderRadius: BorderRadius.circular(6),
+                                border: Border.all(
+                                  color: Colors.white,
+                                  width: 1,
+                                ),
+                              ),
+                              child: const Text(
+                                'YOU',
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 7.5,
+                                  fontWeight: FontWeight.w900,
+                                  letterSpacing: 0.5,
+                                ),
+                              ),
+                            ),
+                          ),
+                        ],
                       ),
                     ),
                   ],

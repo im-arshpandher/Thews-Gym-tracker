@@ -5,6 +5,7 @@ import 'package:latlong2/latlong.dart';
 
 import '../../../core/database/app_database.dart';
 import '../../../core/database/database_provider.dart';
+import '../../../core/services/tile_cache_service.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_typography.dart';
 import '../../../core/utils/gpx_parser.dart';
@@ -84,7 +85,9 @@ class _RunHeatmapScreenState extends ConsumerState<RunHeatmapScreen>
           LatLng(latTween.evaluate(animation), lngTween.evaluate(animation)),
           zoomTween.evaluate(animation),
         );
-      } catch (_) {}
+      } catch (e) {
+        debugPrint('Heatmap animated map move notice: $e');
+      }
     });
 
     animation.addStatusListener((status) {
@@ -110,7 +113,9 @@ class _RunHeatmapScreenState extends ConsumerState<RunHeatmapScreen>
       } else {
         try {
           _mapController.move(allPoints.first, 16.5);
-        } catch (_) {}
+        } catch (e) {
+          debugPrint('Heatmap map move single point notice: $e');
+        }
       }
       return;
     }
@@ -125,7 +130,9 @@ class _RunHeatmapScreenState extends ConsumerState<RunHeatmapScreen>
       } else {
         try {
           _mapController.move(bounds.center, 16.5);
-        } catch (_) {}
+        } catch (e) {
+          debugPrint('Heatmap map move same point notice: $e');
+        }
       }
       return;
     }
@@ -146,10 +153,12 @@ class _RunHeatmapScreenState extends ConsumerState<RunHeatmapScreen>
           ),
         ),
       );
-    } catch (_) {
+    } catch (e) {
       try {
         _mapController.move(bounds.center, 16.0);
-      } catch (_) {}
+      } catch (err) {
+        debugPrint('Heatmap fitCamera fallback notice: $err');
+      }
     }
   }
 
@@ -191,11 +200,8 @@ class _RunHeatmapScreenState extends ConsumerState<RunHeatmapScreen>
       ),
       body: StreamBuilder<List<RunActivityData>>(
         stream: db.watchAllRunActivities(),
+        initialData: const [],
         builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(child: CircularProgressIndicator());
-          }
-
           final allActivities = snapshot.data ?? [];
           final filteredActivities = _filterActivities(allActivities);
 
@@ -260,6 +266,7 @@ class _RunHeatmapScreenState extends ConsumerState<RunHeatmapScreen>
                     subdomains: const ['a', 'b', 'c', 'd'],
                     retinaMode: RetinaMode.isHighDensity(context),
                     userAgentPackageName: 'com.thews.fitnessapp',
+                    tileProvider: PersistentDiskTileProvider(),
                   ),
                   HeatmapPolylineLayer(
                     polylineRoutes: routes,

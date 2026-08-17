@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:math';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_blue_plus/flutter_blue_plus.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -198,7 +199,9 @@ class SmartwatchSyncService extends StateNotifier<SmartwatchState> {
   Future<void> stopBleScan() async {
     try {
       await FlutterBluePlus.stopScan();
-    } catch (_) {}
+    } catch (e) {
+      debugPrint('BLE stopScan notice: $e');
+    }
     state = state.copyWith(isScanning: false);
   }
 
@@ -263,7 +266,9 @@ class SmartwatchSyncService extends StateNotifier<SmartwatchState> {
                 if (val.isNotEmpty) {
                   batteryLevel = val.first;
                 }
-              } catch (_) {}
+              } catch (e) {
+                debugPrint('Battery level read notice: $e');
+              }
             }
           }
         }
@@ -332,7 +337,9 @@ class SmartwatchSyncService extends StateNotifier<SmartwatchState> {
     _deviceConnectionSubscription = null;
     try {
       _activeBleDevice?.disconnect();
-    } catch (_) {}
+    } catch (e) {
+      debugPrint('BLE disconnect notice: $e');
+    }
     _activeBleDevice = null;
 
     state = state.copyWith(
@@ -362,7 +369,8 @@ class SmartwatchSyncService extends StateNotifier<SmartwatchState> {
         device: state.device?.copyWith(lastSyncTime: DateTime.now()),
         lastMessage: 'Synced with ${state.device?.name}',
       );
-    } catch (_) {
+    } catch (e) {
+      debugPrint('Workout payload sync notice: $e');
       state = state.copyWith(
         status: SmartwatchConnectionStatus.connected,
         lastMessage: 'Payload updated',
@@ -454,7 +462,9 @@ class SmartwatchSyncService extends StateNotifier<SmartwatchState> {
     _hrDataSubscription?.cancel();
     try {
       _activeBleDevice?.disconnect();
-    } catch (_) {}
+    } catch (e) {
+      debugPrint('BLE active device disconnect in dispose: $e');
+    }
     _wristActionController.close();
     super.dispose();
   }

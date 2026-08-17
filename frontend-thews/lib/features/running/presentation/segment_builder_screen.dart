@@ -6,6 +6,7 @@ import 'package:latlong2/latlong.dart';
 
 import '../../../core/database/database_provider.dart';
 import '../../../core/services/segment_storage_service.dart';
+import '../../../core/services/tile_cache_service.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_typography.dart';
 import '../../../core/utils/gpx_parser.dart';
@@ -136,6 +137,7 @@ class _SegmentBuilderScreenState extends ConsumerState<SegmentBuilderScreen> {
                   subdomains: const ['a', 'b', 'c', 'd'],
                   retinaMode: RetinaMode.isHighDensity(context),
                   userAgentPackageName: 'com.thews.fitnessapp',
+                  tileProvider: PersistentDiskTileProvider(),
                 ),
                 // Full route in dim color
                 PolylineLayer(
