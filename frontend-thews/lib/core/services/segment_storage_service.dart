@@ -76,40 +76,7 @@ class SegmentStorageService {
   }
 
   static List<RunSegment> _getSeedSegments() {
-    return [
-      RunSegment(
-        id: 'seed_segment_sprint_400',
-        name: 'Track Sprint 400m',
-        startPoint: const SegmentCoordinate(latitude: 37.7749, longitude: -122.4194),
-        endPoint: const SegmentCoordinate(latitude: 37.7770, longitude: -122.4170),
-        distanceMeters: 400.0,
-        bestTimeSeconds: 78,
-        elevationGainMeters: 2.0,
-        polyline: const [
-          SegmentCoordinate(latitude: 37.7749, longitude: -122.4194),
-          SegmentCoordinate(latitude: 37.7760, longitude: -122.4182),
-          SegmentCoordinate(latitude: 37.7770, longitude: -122.4170),
-        ],
-        createdAt: DateTime(2026, 1, 1),
-        attemptCount: 3,
-      ),
-      RunSegment(
-        id: 'seed_segment_hill_climb',
-        name: 'Alpine Hill Climb 1K',
-        startPoint: const SegmentCoordinate(latitude: 37.7800, longitude: -122.4200),
-        endPoint: const SegmentCoordinate(latitude: 37.7880, longitude: -122.4250),
-        distanceMeters: 1000.0,
-        bestTimeSeconds: 265,
-        elevationGainMeters: 45.0,
-        polyline: const [
-          SegmentCoordinate(latitude: 37.7800, longitude: -122.4200),
-          SegmentCoordinate(latitude: 37.7840, longitude: -122.4225),
-          SegmentCoordinate(latitude: 37.7880, longitude: -122.4250),
-        ],
-        createdAt: DateTime(2026, 1, 1),
-        attemptCount: 5,
-      ),
-    ];
+    return <RunSegment>[];
   }
 }
 

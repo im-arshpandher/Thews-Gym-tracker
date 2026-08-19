@@ -87,7 +87,7 @@ void main() {
       // Verify floating zoom controls exist
       expect(find.byIcon(Icons.add), findsOneWidget);
       expect(find.byIcon(Icons.remove), findsOneWidget);
-      expect(find.byIcon(Icons.center_focus_strong), findsOneWidget);
+      expect(find.byIcon(Icons.my_location), findsOneWidget);
 
       // Tap Zoom In and Zoom Out
       await tester.tap(find.byIcon(Icons.add));
@@ -197,25 +197,29 @@ void main() {
 
       await tester.pump(const Duration(milliseconds: 300));
 
-      expect(find.text('OUTDOOR TRACKER'), findsOneWidget);
-      expect(find.byIcon(Icons.local_fire_department), findsOneWidget);
-      expect(find.byTooltip('Show Heatmap Overlay'), findsWidgets);
+      expect(find.text('Thews AI Run Coach'), findsOneWidget);
+      expect(find.text('Run'), findsOneWidget);
+      expect(find.text('Switch Route'), findsOneWidget);
+      expect(find.text('Share live location'), findsOneWidget);
+      expect(find.text('Route alerts'), findsOneWidget);
+      expect(find.text('Add a sensor'), findsOneWidget);
+      expect(find.text('Settings'), findsOneWidget);
 
-      // Initially heatmap is OFF (no HEATMAP ON badge)
-      expect(find.text('HEATMAP ON'), findsNothing);
+      // Verify floating heatmap control on map
+      expect(find.byTooltip('Show Heatmap Overlay'), findsWidgets);
 
       // Tap the heatmap button on the map to toggle ON
       await tester.tap(find.byTooltip('Show Heatmap Overlay').first);
       await tester.pump(const Duration(milliseconds: 100));
 
-      // Now heatmap overlay is active and badge is shown
-      expect(find.textContaining('HEATMAP'), findsWidgets);
+      // Now heatmap overlay is active and Hide tooltip is present
+      expect(find.byTooltip('Hide Heatmap Overlay'), findsWidgets);
 
       // Tap again to toggle OFF
       await tester.tap(find.byTooltip('Hide Heatmap Overlay').first);
       await tester.pump(const Duration(milliseconds: 100));
 
-      expect(find.text('HEATMAP ON'), findsNothing);
+      expect(find.byTooltip('Show Heatmap Overlay'), findsWidgets);
 
       await tester.pumpWidget(const SizedBox.shrink());
       await tester.pump(const Duration(milliseconds: 50));

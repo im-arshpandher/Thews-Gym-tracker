@@ -1,8 +1,32 @@
 import 'package:drift/drift.dart';
 
+@DataClassName('ProfileData')
+class Profiles extends Table {
+  IntColumn get id => integer().autoIncrement()();
+  TextColumn get uuid => text().nullable()(); // Maps to backend profileId (UUID)
+  TextColumn get displayName => text().withLength(min: 1, max: 100)();
+  TextColumn get username => text().nullable()();
+  TextColumn get gender => text().nullable()();
+  DateTimeColumn get birthDate => dateTime().nullable()();
+  RealColumn get heightCm => real().nullable()();
+  RealColumn get weightKg => real().nullable()();
+  TextColumn get unitPreference =>
+      text().withDefault(const Constant('kg'))(); // 'kg' | 'lbs'
+  TextColumn get distanceUnit =>
+      text().withDefault(const Constant('km'))(); // 'km' | 'miles'
+  TextColumn get fitnessGoal => text().nullable()();
+  TextColumn get experienceLevel => text().nullable()();
+  TextColumn get avatarUrl => text().nullable()();
+  TextColumn get bio => text().nullable()();
+  DateTimeColumn get createdAt => dateTime().withDefault(currentDateAndTime)();
+  DateTimeColumn get updatedAt => dateTime().withDefault(currentDateAndTime)();
+}
+
 @DataClassName('ExerciseData')
 class Exercises extends Table {
   IntColumn get id => integer().autoIncrement()();
+  IntColumn get profileId =>
+      integer().nullable().references(Profiles, #id, onDelete: KeyAction.cascade)();
   TextColumn get name => text().withLength(min: 1, max: 100)();
   TextColumn get muscleGroup => text()();
   TextColumn get secondaryMuscleGroups => text().nullable()();
@@ -18,6 +42,8 @@ class Exercises extends Table {
 @DataClassName('WorkoutData')
 class Workouts extends Table {
   IntColumn get id => integer().autoIncrement()();
+  IntColumn get profileId =>
+      integer().nullable().references(Profiles, #id, onDelete: KeyAction.cascade)();
   DateTimeColumn get date => dateTime().withDefault(currentDateAndTime)();
   TextColumn get notes => text().nullable()();
   IntColumn get durationSeconds => integer().withDefault(const Constant(0))();
@@ -59,6 +85,8 @@ class SetEntries extends Table {
 @DataClassName('RoutineData')
 class Routines extends Table {
   IntColumn get id => integer().autoIncrement()();
+  IntColumn get profileId =>
+      integer().nullable().references(Profiles, #id, onDelete: KeyAction.cascade)();
   TextColumn get name => text().withLength(min: 1, max: 100)();
   TextColumn get description => text().nullable()();
   DateTimeColumn get createdAt => dateTime().withDefault(currentDateAndTime)();
@@ -83,6 +111,8 @@ class RoutineExercises extends Table {
 @DataClassName('RunActivityData')
 class RunActivities extends Table {
   IntColumn get id => integer().autoIncrement()();
+  IntColumn get profileId =>
+      integer().nullable().references(Profiles, #id, onDelete: KeyAction.cascade)();
   IntColumn get workoutId =>
       integer().nullable().references(Workouts, #id, onDelete: KeyAction.cascade)();
   TextColumn get activityType =>

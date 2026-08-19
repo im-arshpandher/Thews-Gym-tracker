@@ -1,4 +1,6 @@
 import 'dart:async';
+import 'dart:math' as math;
+import 'dart:typed_data';
 import 'package:audioplayers/audioplayers.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -60,9 +62,16 @@ class CadenceMetronomeService extends StateNotifier<CadenceMetronomeState> {
 
   Timer? _tickerTimer;
   int _tickCount = 0;
-  final AudioPlayer _player = AudioPlayer(playerId: 'cadence_metronome');
+  static const int _poolSize = 4;
+  final List<AudioPlayer> _playerPool = List.generate(
+    _poolSize,
+    (i) => AudioPlayer(playerId: 'cadence_metronome_$i'),
+  );
+  int _poolIndex = 0;
   bool _audioInitialized = false;
   bool _isPreferencesLoaded = false;
+  Uint8List? _clickBytes;
+  Uint8List? _accentBytes;
 
   CadenceMetronomeService() : super(const CadenceMetronomeState()) {
     _loadPreferences();
@@ -136,9 +145,11 @@ class CadenceMetronomeService extends StateNotifier<CadenceMetronomeState> {
     final clamped = volume.clamp(0.0, 1.0);
     state = state.copyWith(volume: clamped);
     _savePreferences();
-    try {
-      _player.setVolume(clamped);
-    } catch (_) {}
+    for (final player in _playerPool) {
+      try {
+        player.setVolume(clamped);
+      } catch (_) {}
+    }
   }
 
   Future<void> _initAudio() async {
@@ -149,9 +160,9 @@ class CadenceMetronomeService extends StateNotifier<CadenceMetronomeState> {
           android: const AudioContextAndroid(
             isSpeakerphoneOn: false,
             stayAwake: true,
-            contentType: AndroidContentType.music,
-            usageType: AndroidUsageType.media,
-            audioFocus: AndroidAudioFocus.none,
+            contentType: AndroidContentType.sonification,
+            usageType: AndroidUsageType.assistanceSonification,
+            audioFocus: AndroidAudioFocus.gainTransientMayDuck,
           ),
           iOS: AudioContextIOS(
             category: AVAudioSessionCategory.playback,
@@ -162,12 +173,83 @@ class CadenceMetronomeService extends StateNotifier<CadenceMetronomeState> {
           ),
         ),
       );
-      await _player.setReleaseMode(ReleaseMode.stop);
-      await _player.setVolume(state.volume);
+
+      for (final player in _playerPool) {
+        await player.setPlayerMode(PlayerMode.lowLatency);
+        await player.setReleaseMode(ReleaseMode.stop);
+        await player.setVolume(state.volume);
+      }
+
+      // Preload WAV sound buffers from asset bundle or generate synthetic fallbacks
+      try {
+        final clickData = await rootBundle.load('assets/sounds/metronome_click.wav');
+        _clickBytes = clickData.buffer.asUint8List();
+      } catch (_) {
+        _clickBytes = _generateWavBytes(freq: 1200.0, durationMs: 25);
+      }
+
+      try {
+        final accentData = await rootBundle.load('assets/sounds/metronome_accent.wav');
+        _accentBytes = accentData.buffer.asUint8List();
+      } catch (_) {
+        _accentBytes = _generateWavBytes(freq: 2000.0, durationMs: 30);
+      }
+
       _audioInitialized = true;
     } catch (_) {
+      _clickBytes ??= _generateWavBytes(freq: 1200.0, durationMs: 25);
+      _accentBytes ??= _generateWavBytes(freq: 2000.0, durationMs: 30);
       _audioInitialized = true;
     }
+  }
+
+  static Uint8List _generateWavBytes({required double freq, required int durationMs}) {
+    const sampleRate = 44100;
+    final totalSamples = (sampleRate * (durationMs / 1000.0)).round();
+    final dataSize = totalSamples * 2; // 16-bit mono = 2 bytes per sample
+    final fileSize = 36 + dataSize;
+
+    final buffer = ByteData(44 + dataSize);
+
+    // RIFF header
+    buffer.setUint8(0, 0x52); // R
+    buffer.setUint8(1, 0x49); // I
+    buffer.setUint8(2, 0x46); // F
+    buffer.setUint8(3, 0x46); // F
+    buffer.setUint32(4, fileSize, Endian.little);
+    buffer.setUint8(8, 0x57);  // W
+    buffer.setUint8(9, 0x41);  // A
+    buffer.setUint8(10, 0x56); // V
+    buffer.setUint8(11, 0x45); // E
+
+    // fmt subchunk
+    buffer.setUint8(12, 0x66); // f
+    buffer.setUint8(13, 0x6D); // m
+    buffer.setUint8(14, 0x74); // t
+    buffer.setUint8(15, 0x20); // ' '
+    buffer.setUint32(16, 16, Endian.little); // Subchunk1Size (16 for PCM)
+    buffer.setUint16(20, 1, Endian.little);  // AudioFormat (1 = PCM)
+    buffer.setUint16(22, 1, Endian.little);  // NumChannels (1 = Mono)
+    buffer.setUint32(24, sampleRate, Endian.little); // SampleRate
+    buffer.setUint32(28, sampleRate * 2, Endian.little); // ByteRate
+    buffer.setUint16(32, 2, Endian.little);  // BlockAlign
+    buffer.setUint16(34, 16, Endian.little); // BitsPerSample (16-bit)
+
+    // data subchunk
+    buffer.setUint8(36, 0x64); // d
+    buffer.setUint8(37, 0x61); // a
+    buffer.setUint8(38, 0x74); // t
+    buffer.setUint8(39, 0x61); // a
+    buffer.setUint32(40, dataSize, Endian.little);
+
+    for (int i = 0; i < totalSamples; i++) {
+      final t = i / sampleRate;
+      final decay = math.exp(-120.0 * t);
+      final sampleVal = (math.sin(2.0 * math.pi * freq * t) * decay * 32767.0).clamp(-32768.0, 32767.0).toInt();
+      buffer.setInt16(44 + (i * 2), sampleVal, Endian.little);
+    }
+
+    return buffer.buffer.asUint8List();
   }
 
   void start() {
@@ -181,9 +263,11 @@ class CadenceMetronomeService extends StateNotifier<CadenceMetronomeState> {
   void stop() {
     _tickerTimer?.cancel();
     _tickerTimer = null;
-    try {
-      _player.stop();
-    } catch (_) {}
+    for (final player in _playerPool) {
+      try {
+        player.stop();
+      } catch (_) {}
+    }
     state = state.copyWith(isPlaying: false);
   }
 
@@ -249,15 +333,32 @@ class CadenceMetronomeService extends StateNotifier<CadenceMetronomeState> {
     final vol = state.volume.clamp(0.0, 1.0);
     if (vol <= 0.0) return;
 
+    final bytes = isAccent ? _accentBytes : _clickBytes;
+    final soundAsset = isAccent
+        ? 'sounds/metronome_accent.wav'
+        : 'sounds/metronome_click.wav';
+
     try {
-      final soundAsset = isAccent
-          ? 'sounds/metronome_accent.wav'
-          : 'sounds/metronome_click.wav';
-      _player.play(AssetSource(soundAsset), volume: vol).catchError((_) {
-        try {
-          SystemSound.play(SystemSoundType.click);
-        } catch (_) {}
-      });
+      final player = _playerPool[_poolIndex];
+      _poolIndex = (_poolIndex + 1) % _poolSize;
+
+      if (bytes != null && bytes.isNotEmpty) {
+        player.play(BytesSource(bytes), volume: vol).catchError((_) {
+          try {
+            player.play(AssetSource(soundAsset), volume: vol).catchError((_) {
+              try {
+                SystemSound.play(SystemSoundType.click);
+              } catch (_) {}
+            });
+          } catch (_) {}
+        });
+      } else {
+        player.play(AssetSource(soundAsset), volume: vol).catchError((_) {
+          try {
+            SystemSound.play(SystemSoundType.click);
+          } catch (_) {}
+        });
+      }
     } catch (_) {
       try {
         SystemSound.play(SystemSoundType.click);
@@ -282,9 +383,11 @@ class CadenceMetronomeService extends StateNotifier<CadenceMetronomeState> {
   @override
   void dispose() {
     _tickerTimer?.cancel();
-    try {
-      _player.dispose();
-    } catch (_) {}
+    for (final player in _playerPool) {
+      try {
+        player.dispose();
+      } catch (_) {}
+    }
     super.dispose();
   }
 }

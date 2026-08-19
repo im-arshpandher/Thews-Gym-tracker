@@ -7,12 +7,14 @@ import 'package:share_plus/share_plus.dart';
 
 import '../../../core/database/app_database.dart';
 import '../../../core/database/database_provider.dart';
+import '../../../core/services/course_storage_service.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_spacing.dart';
 import '../../../core/theme/app_typography.dart';
 import '../../../core/utils/gpx_parser.dart';
 import '../domain/aerobic_decoupling_engine.dart';
 import '../domain/gap_calculator.dart';
+import '../domain/gpx_course_navigator.dart';
 import '../domain/trimp_workload_calculator.dart';
 import 'segment_builder_screen.dart';
 import 'widgets/leaflet_route_map.dart';
@@ -137,6 +139,13 @@ class RunSummaryScreen extends ConsumerWidget {
             ),
             actions: [
               IconButton(
+                icon: const Icon(Icons.flight_takeoff_rounded),
+                tooltip: '3D Route Flyover',
+                onPressed: () {
+                  context.push('/running/flyover/${activity.id}');
+                },
+              ),
+              IconButton(
                 icon: const Icon(Icons.share_outlined),
                 tooltip: 'Share Activity',
                 onPressed: () => RunShareCardDialog.show(context, activity),
@@ -158,26 +167,69 @@ class RunSummaryScreen extends ConsumerWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Route Map Preview Canvas
-                Container(
-                  height: 240,
-                  width: double.infinity,
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(20),
-                    border: Border.all(
-                      color: isDark
-                          ? AppColors.darkOutline.withValues(alpha: 0.3)
-                          : AppColors.lightOutline.withValues(alpha: 0.3),
+                // Route Map Preview Canvas with Gradient toggle and 3D Flyover overlay button
+                Stack(
+                  children: [
+                    Container(
+                      height: 240,
+                      width: double.infinity,
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(20),
+                        border: Border.all(
+                          color: isDark
+                              ? AppColors.darkOutline.withValues(alpha: 0.3)
+                              : AppColors.lightOutline.withValues(alpha: 0.3),
+                        ),
+                      ),
+                      child: ClipRRect(
+                        borderRadius: BorderRadius.circular(19),
+                        child: LeafletRouteMap(
+                          waypoints: points,
+                          isDark: isDark,
+                          showHeatmapButton: false,
+                          showGradientToggleButton: true,
+                        ),
+                      ),
                     ),
-                  ),
-                  child: ClipRRect(
-                    borderRadius: BorderRadius.circular(19),
-                    child: LeafletRouteMap(
-                      waypoints: points,
-                      isDark: isDark,
-                      showHeatmapButton: false,
-                    ),
-                  ),
+                    if (points.length >= 2)
+                      Positioned(
+                        bottom: 12,
+                        left: 12,
+                        child: ElevatedButton.icon(
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: (isDark
+                                    ? AppColors.darkSurfaceContainerHighest
+                                    : Colors.white)
+                                .withValues(alpha: 0.92),
+                            foregroundColor: isDark
+                                ? AppColors.primaryVolt
+                                : AppColors.lightPrimary,
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 12,
+                              vertical: 8,
+                            ),
+                            elevation: 4,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(14),
+                              side: BorderSide(
+                                color: isDark
+                                    ? AppColors.darkOutline
+                                    : AppColors.lightOutline,
+                              ),
+                            ),
+                          ),
+                          onPressed: () {
+                            context.push('/running/flyover/${activity.id}');
+                          },
+                          icon: const Icon(Icons.flight_takeoff_rounded, size: 16),
+                          label: const Text(
+                            '3D FLYOVER',
+                            maxLines: 1,
+                            softWrap: false,
+                          ),
+                        ),
+                      ),
+                  ],
                 ),
 
                 const SizedBox(height: AppSpacing.md),
@@ -635,6 +687,59 @@ class RunSummaryScreen extends ConsumerWidget {
                       ),
                     ),
                   ],
+                ),
+                const SizedBox(height: AppSpacing.sm),
+                SizedBox(
+                  width: double.infinity,
+                  child: OutlinedButton.icon(
+                    onPressed: () async {
+                      if (activity.gpxData != null && activity.gpxData!.isNotEmpty) {
+                        try {
+                          final points = GpxParser.parseGpxXml(activity.gpxData!);
+                          if (points.length >= 2) {
+                            final course = GpxCourseNavigator.fromGpxPoints(
+                              name: 'Activity #${activity.id} (${(activity.distanceMeters / 1000).toStringAsFixed(1)} km)',
+                              points: points,
+                              description: 'Recorded run on ${activity.startTime.toLocal().toString().split('.').first}',
+                              source: 'activity_record',
+                            );
+                            await ref.read(courseDirectorProvider.notifier).addCourse(course);
+                            if (context.mounted) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  content: Row(
+                                    children: [
+                                      const Icon(Icons.check_circle_rounded, color: Colors.green, size: 18),
+                                      const SizedBox(width: 8),
+                                      Expanded(
+                                        child: Text(
+                                          'Saved "${course.name}" to Course Director!',
+                                          maxLines: 1,
+                                          softWrap: false,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              );
+                            }
+                          }
+                        } catch (e) {
+                          if (context.mounted) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(content: Text('Failed to save course: $e')),
+                            );
+                          }
+                        }
+                      }
+                    },
+                    icon: const Icon(Icons.navigation_rounded, size: 18),
+                    label: const Text(
+                      'SAVE AS NAVIGATION COURSE',
+                      maxLines: 1,
+                      softWrap: false,
+                    ),
+                  ),
                 ),
               ],
             ),

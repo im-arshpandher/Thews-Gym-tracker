@@ -9,6 +9,7 @@ import '../../features/exercises/presentation/exercise_list_screen.dart';
 import '../../features/history/presentation/history_screen.dart';
 import '../../features/history/presentation/workout_session_detail_screen.dart';
 import '../../features/profile/presentation/profile_screen.dart';
+import '../../features/running/presentation/animated_route_flyover_screen.dart';
 import '../../features/running/presentation/run_heatmap_screen.dart';
 import '../../features/running/presentation/run_history_screen.dart';
 import '../../features/running/presentation/run_summary_screen.dart';
@@ -122,6 +123,19 @@ final appRouter = GoRouter(
                       context: context,
                       state: state,
                       child: SegmentBuilderScreen(activityId: activityId),
+                    );
+                  },
+                ),
+                GoRoute(
+                  path: 'flyover/:id',
+                  parentNavigatorKey: _rootNavigatorKey,
+                  pageBuilder: (context, state) {
+                    final idStr = state.pathParameters['id'] ?? '0';
+                    final activityId = int.tryParse(idStr) ?? 0;
+                    return _buildFadeSlideTransitionPage(
+                      context: context,
+                      state: state,
+                      child: AnimatedRouteFlyoverScreen(activityId: activityId),
                     );
                   },
                 ),

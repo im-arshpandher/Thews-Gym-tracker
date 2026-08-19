@@ -8,6 +8,7 @@ import '../../../core/presentation/widgets/interactive_body_map.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_typography.dart';
 import '../../ai_coach/presentation/widgets/ai_coach_overview_card.dart';
+import '../../hybrid/presentation/hybrid_readiness_dashboard_card.dart';
 import '../../settings/domain/app_settings.dart';
 import '../../settings/presentation/settings_provider.dart';
 import 'dashboard_provider.dart';
@@ -510,6 +511,8 @@ class DashboardScreen extends ConsumerWidget {
                           context.push('/visualizer');
                         },
                       ),
+                      // Unified Hybrid Athlete Engine Card (Phase 5)
+                      const HybridReadinessDashboardCard(),
                       const SizedBox(height: 16),
 
                       // Redesigned AI Adaptive Coach Card (Relocated beneath Heatmap)

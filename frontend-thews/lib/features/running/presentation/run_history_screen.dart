@@ -11,6 +11,7 @@ import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_spacing.dart';
 import '../../../core/theme/app_typography.dart';
 import '../../../core/utils/gpx_parser.dart';
+import 'widgets/run_share_card.dart';
 
 final runActivitiesStreamProvider = StreamProvider<List<RunActivityData>>((ref) {
   final db = ref.watch(databaseProvider);
@@ -189,7 +190,11 @@ class RunHistoryScreen extends ConsumerWidget {
                               ),
                               onSelected: (value) async {
                                 final db = ref.read(databaseProvider);
-                                if (value == 'export') {
+                                if (value == 'flyover') {
+                                  context.push('/running/flyover/${run.id}');
+                                } else if (value == 'share_card') {
+                                  RunShareCardDialog.show(context, run);
+                                } else if (value == 'export') {
                                   final gpxContent = run.gpxData ?? '';
                                   if (gpxContent.isNotEmpty) {
                                     try {
@@ -245,6 +250,26 @@ class RunHistoryScreen extends ConsumerWidget {
                                 }
                               },
                               itemBuilder: (context) => [
+                                const PopupMenuItem(
+                                  value: 'flyover',
+                                  child: Row(
+                                    children: [
+                                      Icon(Icons.flight_takeoff_rounded, size: 18),
+                                      SizedBox(width: 8),
+                                      Text('3D Flyover Replay'),
+                                    ],
+                                  ),
+                                ),
+                                const PopupMenuItem(
+                                  value: 'share_card',
+                                  child: Row(
+                                    children: [
+                                      Icon(Icons.camera_alt_outlined, size: 18),
+                                      SizedBox(width: 8),
+                                      Text('Social Share Studio'),
+                                    ],
+                                  ),
+                                ),
                                 const PopupMenuItem(
                                   value: 'export',
                                   child: Row(

@@ -6,11 +6,16 @@ import 'package:latlong2/latlong.dart';
 import '../../../../core/services/tile_cache_service.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/utils/gpx_parser.dart';
+import '../../domain/gpx_course_navigator.dart';
 import '../../domain/live_segment_models.dart';
+import 'gradient_route_painter.dart';
 import 'heatmap_polyline_painter.dart';
 
 class LeafletRouteMap extends StatefulWidget {
   final List<GpxPoint> waypoints;
+  final List<LatLng>? circuitPolyline;
+  final CourseRoute? navigationCourse;
+  final TurnCue? nextNavigationCue;
   final bool isDark;
   final bool interactive;
   final bool isTracking;
@@ -22,10 +27,21 @@ class LeafletRouteMap extends StatefulWidget {
   final LatLng? ghostPosition;
   final RunSegment? activeGhostSegment;
   final LatLng? currentLocation;
+  final RouteColorMode routeColorMode;
+  final bool showGradientToggleButton;
+  final ValueChanged<RouteColorMode>? onRouteColorModeChanged;
+
+  final double? controlsBottomOffset;
+  final double? controlsTopOffset;
+  final VoidCallback? onMapTap;
+  final MapController? mapController;
 
   const LeafletRouteMap({
     super.key,
     required this.waypoints,
+    this.circuitPolyline,
+    this.navigationCourse,
+    this.nextNavigationCue,
     required this.isDark,
     this.interactive = true,
     this.isTracking = false,
@@ -34,9 +50,16 @@ class LeafletRouteMap extends StatefulWidget {
     this.isHeatmapVisible = false,
     this.heatmapRoutes,
     this.onHeatmapTap,
+    this.onMapTap,
+    this.mapController,
     this.ghostPosition,
     this.activeGhostSegment,
     this.currentLocation,
+    this.routeColorMode = RouteColorMode.solidVolt,
+    this.showGradientToggleButton = false,
+    this.onRouteColorModeChanged,
+    this.controlsBottomOffset,
+    this.controlsTopOffset,
   });
 
   @override
@@ -48,18 +71,22 @@ class _LeafletRouteMapState extends State<LeafletRouteMap>
   late final MapController _mapController;
   bool _hasInitialCentered = false;
   AnimationController? _animController;
+  late RouteColorMode _activeColorMode;
 
   @override
   void initState() {
     super.initState();
-    _mapController = MapController();
+    _mapController = widget.mapController ?? MapController();
+    _activeColorMode = widget.routeColorMode;
   }
 
   @override
   void didUpdateWidget(covariant LeafletRouteMap oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (widget.activeGhostSegment?.id != oldWidget.activeGhostSegment?.id &&
-        widget.activeGhostSegment != null) {
+    if ((widget.activeGhostSegment?.id != oldWidget.activeGhostSegment?.id &&
+            widget.activeGhostSegment != null) ||
+        (widget.navigationCourse?.id != oldWidget.navigationCourse?.id &&
+            widget.navigationCourse != null)) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         _autoZoomAndCenterMap(animate: true);
       });
@@ -162,6 +189,9 @@ class _LeafletRouteMapState extends State<LeafletRouteMap>
         widget.activeGhostSegment!.polyline.map((p) => p.toLatLng()),
       );
     }
+    if (widget.navigationCourse != null) {
+      allBoundsPoints.addAll(widget.navigationCourse!.waypoints);
+    }
 
     if (allBoundsPoints.isEmpty) return;
 
@@ -248,7 +278,9 @@ class _LeafletRouteMapState extends State<LeafletRouteMap>
     _animController?.stop();
     _animController?.dispose();
     _animController = null;
-    _mapController.dispose();
+    if (widget.mapController == null) {
+      _mapController.dispose();
+    }
     super.dispose();
   }
 
@@ -286,6 +318,9 @@ class _LeafletRouteMapState extends State<LeafletRouteMap>
             interactionOptions: InteractionOptions(
               flags: widget.interactive ? InteractiveFlag.all : InteractiveFlag.none,
             ),
+            onTap: (tapPosition, point) {
+              widget.onMapTap?.call();
+            },
             onMapReady: () {
               if ((latLngPoints.length >= 2 || widget.activeGhostSegment != null) &&
                   !_hasInitialCentered) {
@@ -383,23 +418,126 @@ class _LeafletRouteMapState extends State<LeafletRouteMap>
                 ],
               ),
 
-            // Route Polyline outlining the whole activity route
-            if (showRoute && latLngPoints.length >= 2)
+            // Navigation Course Guide Polyline (High-visibility Electric Cyan)
+            if (widget.navigationCourse != null &&
+                widget.navigationCourse!.waypoints.length >= 2)
               PolylineLayer(
                 polylines: [
+                  // Outer Glow Halo
                   Polyline(
-                    points: latLngPoints,
-                    strokeWidth: 5.0,
-                    color: widget.isDark
-                        ? AppColors.primaryVolt
-                        : AppColors.lightPrimary,
+                    points: widget.navigationCourse!.waypoints,
+                    strokeWidth: 8.5,
+                    color: AppColors.neonCyan.withValues(alpha: 0.35),
+                  ),
+                  // Core Course Track
+                  Polyline(
+                    points: widget.navigationCourse!.waypoints,
+                    strokeWidth: 4.5,
+                    color: AppColors.neonCyan,
+                    borderColor: Colors.black.withValues(alpha: 0.45),
+                    borderStrokeWidth: 1.0,
                   ),
                 ],
               ),
 
+            // Highlighted Challenge / Selected Circuit Loop (e.g. 1km / 3km / 7km street circuit)
+            if (widget.circuitPolyline != null && widget.circuitPolyline!.length >= 2)
+              PolylineLayer(
+                polylines: [
+                  // Outer Glow Halo
+                  Polyline(
+                    points: widget.circuitPolyline!,
+                    strokeWidth: 9.0,
+                    color: AppColors.chestAccent.withValues(alpha: 0.35),
+                  ),
+                  // Core Highlighted Polyline with Border
+                  Polyline(
+                    points: widget.circuitPolyline!,
+                    strokeWidth: 4.5,
+                    color: AppColors.chestAccent,
+                    borderColor: Colors.white,
+                    borderStrokeWidth: 1.2,
+                  ),
+                ],
+              ),
+
+            // Route Polyline outlining the whole activity route with dynamic color mode support
+            if (showRoute && widget.waypoints.length >= 2) ...[
+              if (_activeColorMode == RouteColorMode.slopeGradient)
+                PolylineLayer(
+                  polylines: SlopeGradientUtils.buildSlopeGradientPolylines(
+                    widget.waypoints,
+                    isDark: widget.isDark,
+                    strokeWidth: 5.0,
+                  ),
+                )
+              else if (_activeColorMode == RouteColorMode.heartRateZone)
+                PolylineLayer(
+                  polylines: SlopeGradientUtils.buildHeartRateZonePolylines(
+                    widget.waypoints,
+                    strokeWidth: 5.0,
+                  ),
+                )
+              else
+                PolylineLayer(
+                  polylines: [
+                    Polyline(
+                      points: latLngPoints,
+                      strokeWidth: 5.0,
+                      color: widget.isDark
+                          ? AppColors.primaryVolt
+                          : AppColors.lightPrimary,
+                    ),
+                  ],
+                ),
+            ],
+
             // Marker Layer (Fixed upright markers that do not spin when map rotates)
             MarkerLayer(
               markers: [
+                // Navigation Course Turn Cue Markers
+                if (widget.navigationCourse != null) ...[
+                  for (final cue in widget.navigationCourse!.turnCues) ...[
+                    Marker(
+                      point: cue.location,
+                      width: widget.nextNavigationCue?.id == cue.id ? 38 : 30,
+                      height: widget.nextNavigationCue?.id == cue.id ? 38 : 30,
+                      rotate: false,
+                      child: Container(
+                        decoration: BoxDecoration(
+                          color: widget.nextNavigationCue?.id == cue.id
+                              ? AppColors.chestAccent
+                              : (widget.isDark
+                                  ? AppColors.darkSurfaceContainerHighest
+                                  : Colors.white),
+                          shape: BoxShape.circle,
+                          border: Border.all(
+                            color: widget.nextNavigationCue?.id == cue.id
+                                ? Colors.white
+                                : AppColors.neonCyan,
+                            width: widget.nextNavigationCue?.id == cue.id ? 2.5 : 1.5,
+                          ),
+                          boxShadow: const [
+                            BoxShadow(
+                              color: Colors.black38,
+                              blurRadius: 6,
+                              offset: Offset(0, 2),
+                            ),
+                          ],
+                        ),
+                        child: Center(
+                          child: Icon(
+                            cue.type.icon,
+                            color: widget.nextNavigationCue?.id == cue.id
+                                ? Colors.black
+                                : (widget.isDark ? Colors.white : Colors.black87),
+                            size: widget.nextNavigationCue?.id == cue.id ? 20 : 16,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ],
                 // 1. Ghost Segment Start & Finish Markers
                 if (widget.activeGhostSegment != null) ...[
                   Marker(
@@ -611,14 +749,51 @@ class _LeafletRouteMapState extends State<LeafletRouteMap>
           ],
         ),
 
-        // Interactive Map Control Column (Heatmap, Zoom In, Zoom Out, Fit Route, Recenter)
+        // Dynamic Slope Gradient Legend Chip (Top Right)
+        if (_activeColorMode == RouteColorMode.slopeGradient && showRoute)
+          Positioned(
+            top: 10,
+            left: 10,
+            child: SlopeGradientLegendChip(isDark: widget.isDark),
+          ),
+
+        // Interactive Map Control Column (Heatmap, Gradient, Zoom In, Zoom Out, Fit Route, Recenter)
         if (widget.interactive)
           Positioned(
-            bottom: 12,
-            right: 12,
+            top: widget.controlsTopOffset,
+            bottom: widget.controlsTopOffset != null ? null : (widget.controlsBottomOffset ?? 12),
+            right: 14,
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
+                // Route Gradient Color Mode Toggle Button
+                if (widget.showGradientToggleButton && showRoute) ...[
+                  _buildControlButton(
+                    icon: Icons.terrain_rounded,
+                    tooltip: _activeColorMode == RouteColorMode.slopeGradient
+                        ? 'Color: Slope Gradient'
+                        : (_activeColorMode == RouteColorMode.heartRateZone
+                            ? 'Color: Heart Rate Zones'
+                            : 'Color: Solid Volt'),
+                    iconColor: _activeColorMode != RouteColorMode.solidVolt
+                        ? (widget.isDark ? AppColors.primaryVolt : AppColors.lightPrimary)
+                        : (widget.isDark ? AppColors.darkTextSecondary : AppColors.lightTextSecondary),
+                    onTap: () {
+                      setState(() {
+                        if (_activeColorMode == RouteColorMode.solidVolt) {
+                          _activeColorMode = RouteColorMode.slopeGradient;
+                        } else if (_activeColorMode == RouteColorMode.slopeGradient) {
+                          _activeColorMode = RouteColorMode.heartRateZone;
+                        } else {
+                          _activeColorMode = RouteColorMode.solidVolt;
+                        }
+                        widget.onRouteColorModeChanged?.call(_activeColorMode);
+                      });
+                    },
+                  ),
+                  const SizedBox(height: 8),
+                ],
+
                 // Territory Heatmap Toggle Button (Direct toggle on this map)
                 if (widget.showHeatmapButton) ...[
                   _buildControlButton(

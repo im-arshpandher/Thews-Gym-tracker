@@ -11,6 +11,7 @@ part 'app_database.g.dart';
 
 @DriftDatabase(
   tables: [
+    Profiles,
     Exercises,
     Workouts,
     WorkoutExercises,
@@ -25,7 +26,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase.forTesting(super.e);
 
   @override
-  int get schemaVersion => 6;
+  int get schemaVersion => 7;
 
   @override
   MigrationStrategy get migration {
@@ -46,6 +47,13 @@ class AppDatabase extends _$AppDatabase {
         }
         if (from < 6) {
           await m.createTable(runActivities);
+        }
+        if (from < 7) {
+          await m.createTable(profiles);
+          await m.addColumn(exercises, exercises.profileId);
+          await m.addColumn(workouts, workouts.profileId);
+          await m.addColumn(routines, routines.profileId);
+          await m.addColumn(runActivities, runActivities.profileId);
         }
       },
       beforeOpen: (details) async {
@@ -106,9 +114,84 @@ class AppDatabase extends _$AppDatabase {
         } catch (e) {
           debugPrint('DB Migration note (run_activities table): $e');
         }
+        try {
+          await customStatement(
+            "CREATE TABLE IF NOT EXISTS profiles ("
+            "id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT, "
+            "uuid TEXT, "
+            "display_name TEXT NOT NULL, "
+            "username TEXT, "
+            "gender TEXT, "
+            "birth_date INTEGER, "
+            "height_cm REAL, "
+            "weight_kg REAL, "
+            "unit_preference TEXT NOT NULL DEFAULT 'kg', "
+            "distance_unit TEXT NOT NULL DEFAULT 'km', "
+            "fitness_goal TEXT, "
+            "experience_level TEXT, "
+            "avatar_url TEXT, "
+            "bio TEXT, "
+            "created_at INTEGER NOT NULL DEFAULT (UNIXEPOCH()), "
+            "updated_at INTEGER NOT NULL DEFAULT (UNIXEPOCH())"
+            ");",
+          );
+        } catch (e) {
+          debugPrint('DB Migration note (profiles table): $e');
+        }
+        try {
+          await customStatement(
+            "ALTER TABLE exercises ADD COLUMN profile_id INTEGER REFERENCES profiles (id) ON DELETE CASCADE;",
+          );
+        } catch (e) {
+          debugPrint('DB Migration note (exercises.profile_id): $e');
+        }
+        try {
+          await customStatement(
+            "ALTER TABLE workouts ADD COLUMN profile_id INTEGER REFERENCES profiles (id) ON DELETE CASCADE;",
+          );
+        } catch (e) {
+          debugPrint('DB Migration note (workouts.profile_id): $e');
+        }
+        try {
+          await customStatement(
+            "ALTER TABLE routines ADD COLUMN profile_id INTEGER REFERENCES profiles (id) ON DELETE CASCADE;",
+          );
+        } catch (e) {
+          debugPrint('DB Migration note (routines.profile_id): $e');
+        }
+        try {
+          await customStatement(
+            "ALTER TABLE run_activities ADD COLUMN profile_id INTEGER REFERENCES profiles (id) ON DELETE CASCADE;",
+          );
+        } catch (e) {
+          debugPrint('DB Migration note (run_activities.profile_id): $e');
+        }
       },
     );
   }
+
+  // --- Profiles Queries ---
+  Future<List<ProfileData>> getAllProfiles() => select(profiles).get();
+  Stream<List<ProfileData>> watchAllProfiles() => select(profiles).watch();
+  Future<ProfileData?> getProfileById(int id) =>
+      (select(profiles)..where((t) => t.id.equals(id))).getSingleOrNull();
+  Stream<ProfileData?> watchProfileById(int id) =>
+      (select(profiles)..where((t) => t.id.equals(id))).watchSingleOrNull();
+  Future<ProfileData?> getProfileByUuid(String uuid) =>
+      (select(profiles)..where((t) => t.uuid.equals(uuid))).getSingleOrNull();
+  Future<ProfileData?> getActiveProfile() async {
+    final list = await (select(profiles)..limit(1)).get();
+    return list.isNotEmpty ? list.first : null;
+  }
+  Stream<ProfileData?> watchActiveProfile() {
+    return (select(profiles)..limit(1)).watchSingleOrNull();
+  }
+  Future<int> insertProfile(ProfilesCompanion profile) =>
+      into(profiles).insert(profile);
+  Future<bool> updateProfile(ProfileData profile) =>
+      update(profiles).replace(profile);
+  Future<int> deleteProfile(int id) =>
+      (delete(profiles)..where((t) => t.id.equals(id))).go();
 
   // --- Exercises Queries ---
   Future<List<ExerciseData>> getAllExercises() =>
